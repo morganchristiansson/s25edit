@@ -61,4 +61,10 @@ public:
     static void init();
     static void* open_file(const boost::filesystem::path& filepath, char filetype, bool only_loadPAL = false);
     static bool save_file(const boost::filesystem::path& filepath, char filetype, void* data);
+    /// Load editor settings from companion .s25edit file (alongside the map file)
+    static bool loadCompanionFile(const boost::filesystem::path& mapPath, Uint8& maxRaiseHeight,
+                                  Uint8& minReduceHeight);
+    /// Save editor settings to companion .s25edit file (alongside the map file)
+    static bool saveCompanionFile(const boost::filesystem::path& mapPath, Uint8 maxRaiseHeight,
+                                  Uint8 minReduceHeight);
 };

@@ -163,6 +163,10 @@ public:
 
     void drawMinimap(SDL_Surface* Window);
     void render();
+    /// Load editor-specific settings from companion .s25edit file
+    void loadEditorSettings();
+    /// Save editor-specific settings to companion .s25edit file
+    void saveEditorSettings();
     // get and set some variables necessary for cursor behavior
     void setHexagonMode(bool HexagonMode)
     {

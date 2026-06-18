@@ -153,6 +153,10 @@ void CMap::constructMap(const boost::filesystem::path& filepath, int width, int 
     modify = false;
     MaxRaiseHeight = 0x3C;
     MinReduceHeight = 0x00;
+    if(!filepath_.empty())
+    {
+        CFile::loadCompanionFile(filepath_, MaxRaiseHeight, MinReduceHeight);
+    }
     saveCurrentVertices = false;
     undoBuffer.clear();
     redoBuffer.clear();
@@ -218,6 +222,17 @@ void CMap::constructMap(const boost::filesystem::path& filepath, int width, int 
         }
     }
 }
+
+void CMap::loadEditorSettings()
+{
+    CFile::loadCompanionFile(filepath_, MaxRaiseHeight, MinReduceHeight);
+}
+
+void CMap::saveEditorSettings()
+{
+    CFile::saveCompanionFile(filepath_, MaxRaiseHeight, MinReduceHeight);
+}
+
 void CMap::destructMap()
 {
     // free all surfaces that MAP0x.LST needed
@@ -602,6 +617,7 @@ void CMap::onLeftMouseDown(const Point32& pos)
     {
         // the bugkill picture was clicked for quicksave
         callback::PleaseWait(INITIALIZING_CALL);
+        CFile::saveCompanionFile(global::userMapsPath / "quicksave.swd", MaxRaiseHeight, MinReduceHeight);
         if(!CFile::save_file(global::userMapsPath / "quicksave.swd", SWD, getMap()))
         {
             callback::ShowStatus(INITIALIZING_CALL);

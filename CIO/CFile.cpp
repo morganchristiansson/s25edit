@@ -504,6 +504,58 @@ bool CFile::read_gou(FILE* fp)
     return true;
 }
 
+namespace {
+constexpr uint8_t COMPANION_MAGIC[2] = {0x53, 0x45}; // "SE"
+constexpr uint8_t COMPANION_VERSION = 0x01;
+} // namespace
+
+bool CFile::loadCompanionFile(const boost::filesystem::path& mapPath, Uint8& maxRaiseHeight,
+                              Uint8& minReduceHeight)
+{
+    auto companionPath = mapPath;
+    companionPath.replace_extension(".s25edit");
+    s25util::file_handle fh(boost::nowide::fopen(companionPath.string().c_str(), "rb"));
+    if(!fh)
+        return false;
+
+    uint8_t magic[2];
+    if(!libendian::read(magic, 2, *fh))
+        return false;
+    if(magic[0] != COMPANION_MAGIC[0] || magic[1] != COMPANION_MAGIC[1])
+        return false;
+
+    uint8_t version;
+    if(!libendian::read(&version, 1, *fh))
+        return false;
+    if(version != COMPANION_VERSION)
+        return false;
+
+    uint8_t val;
+    if(!libendian::read(&val, 1, *fh))
+        return false;
+    maxRaiseHeight = val;
+    if(!libendian::read(&val, 1, *fh))
+        return false;
+    minReduceHeight = val;
+    return true;
+}
+
+bool CFile::saveCompanionFile(const boost::filesystem::path& mapPath, Uint8 maxRaiseHeight,
+                              Uint8 minReduceHeight)
+{
+    auto companionPath = mapPath;
+    companionPath.replace_extension(".s25edit");
+    s25util::file_handle fh(boost::nowide::fopen(companionPath.string().c_str(), "wb"));
+    if(!fh)
+        return false;
+
+    libendian::write(COMPANION_MAGIC, 2, *fh);
+    libendian::write(&COMPANION_VERSION, 1, *fh);
+    libendian::write(&maxRaiseHeight, 1, *fh);
+    libendian::write(&minReduceHeight, 1, *fh);
+    return true;
+}
+
 bobMAP* CFile::read_wld(FILE* fp)
 {
     auto myMap = std::make_unique<bobMAP>();

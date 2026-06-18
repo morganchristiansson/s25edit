@@ -890,6 +890,7 @@ void callback::EditorSaveMenu(int Param)
             if(!filepath.has_extension())
                 filepath.replace_extension("SWD");
             MapObj->setFilepath(filepath);
+            MapObj->saveEditorSettings();
             bool result = CFile::save_file(filepath, WLD, MapObj->getMap());
 
             ShowStatus(INITIALIZING_CALL);
