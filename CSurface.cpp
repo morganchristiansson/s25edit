@@ -6,6 +6,7 @@
 #include "CSurface.h"
 #include "CGame.h"
 #include "CMap.h"
+#include "Geometry.h"
 #include "Rect.h"
 #include "SGE/sge_blib.h"
 #include "SGE/sge_rotation.h"
@@ -333,47 +334,67 @@ void CSurface::DrawTriangleField(SDL_Surface* display, const DisplayRectangle& d
             {
                 if(y % 2 == 0)
                 {
-                    // first RightSideUp
+                    // first RightSideUp (edge wrap)
                     tempP2 = myMap.getVertex(width - 1, y + 1);
                     tempP2.x = 0;
                     DrawTriangle(display, displayRect, myMap, type, myMap.getVertex(0, y), tempP2,
                                  myMap.getVertex(0, y + 1));
-                    for(unsigned x = std::max(col_start, 1); x < width && x <= static_cast<unsigned>(col_end); x++)
+                    // first UpSideDown (s25client convention, visual column 0)
+                    const auto usd0 = clientUsdTriangleVertices(0, y);
+                    DrawTriangle(display, displayRect, myMap, type, myMap.getVertex(usd0.p1x, usd0.p1y),
+                                 myMap.getVertex(usd0.p2x, usd0.p2y), myMap.getVertex(usd0.p3x, usd0.p3y));
+                    for(unsigned x = std::max(col_start, 1); x < width - 1u && x <= static_cast<unsigned>(col_end); x++)
                     {
-                        // RightSideUp
+                        // RightSideUp (same in both conventions)
                         DrawTriangle(display, displayRect, myMap, type, myMap.getVertex(x, y),
                                      myMap.getVertex(x - 1, y + 1), myMap.getVertex(x, y + 1));
-                        // UpSideDown
-                        DrawTriangle(display, displayRect, myMap, type, myMap.getVertex(x - 1, y + 1),
-                                     myMap.getVertex(x - 1, y), myMap.getVertex(x, y));
+                        // UpSideDown (s25client convention)
+                        const auto usd = clientUsdTriangleVertices(x, y);
+                        DrawTriangle(display, displayRect, myMap, type, myMap.getVertex(usd.p1x, usd.p1y),
+                                     myMap.getVertex(usd.p2x, usd.p2y), myMap.getVertex(usd.p3x, usd.p3y));
                     }
-                    // last UpSideDown
-                    tempP3 = myMap.getVertex(0, y);
-                    tempP3.x = myMap.getVertex(width - 1, y).x + triangleWidth;
-                    DrawTriangle(display, displayRect, myMap, type, myMap.getVertex(width - 1, y + 1),
-                                 myMap.getVertex(width - 1, y), tempP3);
+                    // last RightSideUp
+                    DrawTriangle(display, displayRect, myMap, type, myMap.getVertex(static_cast<int>(width) - 1, y),
+                                 myMap.getVertex(static_cast<int>(width) - 2, static_cast<int>(y) + 1),
+                                 myMap.getVertex(static_cast<int>(width) - 1, static_cast<int>(y) + 1));
+                    // last UpSideDown (wrap edge, s25client convention)
+                    // Visual column width-1, source vertex = width-1, P3 wraps to 0
+                    const int sx = clientUsdX(static_cast<int>(width) - 1, static_cast<int>(y));
+                    const int sx_p3 = (sx + 1 >= static_cast<int>(width)) ? sx + 1 - static_cast<int>(width) : sx + 1;
+                    MapNode tP3 = myMap.getVertex(sx_p3, y);
+                    tP3.x = myMap.getVertex(sx, y).x + triangleWidth;
+                    DrawTriangle(display, displayRect, myMap, type,
+                                 myMap.getVertex(sx, y + 1), // P1 = bottom-left (even y: y&1=0)
+                                 myMap.getVertex(sx, y),     // P2 = top
+                                 tP3);                       // P3 = bottom-right, wrapped to (0,y)
                 } else
                 {
                     for(unsigned x = col_start; x < width - 1u && x <= static_cast<unsigned>(col_end); x++)
                     {
-                        // RightSideUp
+                        // RightSideUp (same in both conventions)
                         DrawTriangle(display, displayRect, myMap, type, myMap.getVertex(x, y),
                                      myMap.getVertex(x, y + 1), myMap.getVertex(x + 1, y + 1));
-                        // UpSideDown
-                        DrawTriangle(display, displayRect, myMap, type, myMap.getVertex(x + 1, y + 1),
-                                     myMap.getVertex(x, y), myMap.getVertex(x + 1, y));
+                        // UpSideDown (s25client convention)
+                        const auto usd = clientUsdTriangleVertices(x, y);
+                        DrawTriangle(display, displayRect, myMap, type, myMap.getVertex(usd.p1x, usd.p1y),
+                                     myMap.getVertex(usd.p2x, usd.p2y), myMap.getVertex(usd.p3x, usd.p3y));
                     }
                     // last RightSideUp
                     tempP3 = myMap.getVertex(0, y + 1);
                     tempP3.x = myMap.getVertex(width - 1, y + 1).x + triangleWidth;
                     DrawTriangle(display, displayRect, myMap, type, myMap.getVertex(width - 1, y),
                                  myMap.getVertex(width - 1, y + 1), tempP3);
-                    // last UpSideDown
-                    tempP1 = myMap.getVertex(0, y + 1);
-                    tempP1.x = myMap.getVertex(width - 1, y + 1).x + triangleWidth;
-                    tempP3 = myMap.getVertex(0, y);
-                    tempP3.x = myMap.getVertex(width - 1, y).x + triangleWidth;
-                    DrawTriangle(display, displayRect, myMap, type, tempP1, myMap.getVertex(width - 1, y), tempP3);
+                    // last UpSideDown (wrap edge, s25client convention)
+                    const int sx = clientUsdX(static_cast<int>(width) - 1, static_cast<int>(y));
+                    const int sx1_w = (sx + 1 >= static_cast<int>(width)) ? sx + 1 - static_cast<int>(width) : sx + 1;
+                    MapNode tP1 = myMap.getVertex(sx1_w, y + 1);
+                    tP1.x = myMap.getVertex(sx, y + 1).x + triangleWidth;
+                    MapNode tP3 = myMap.getVertex(sx1_w, y);
+                    tP3.x = myMap.getVertex(sx, y).x + triangleWidth;
+                    DrawTriangle(display, displayRect, myMap, type,
+                                 tP1,                    // P1 = bottom-left (odd y: y&1=1)
+                                 myMap.getVertex(sx, y), // P2 = top
+                                 tP3);                   // P3 = bottom-right, wrapped
                 }
             }
 
