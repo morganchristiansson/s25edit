@@ -1279,96 +1279,51 @@ void CMap::render()
     CFont::writeText(Surf_Map, "Save", Position(rightMenubarPos.x - 35, rightMenubarPos.y + 231));
 }
 
-static void getTriangleColor(TriangleTerrainType terrainType, MapType mapType, Sint16& r, Sint16& g, Sint16& b)
+static const TerrainDesc* getTerrainDesc(const bobMAP& map, Uint8 rawTextureId)
 {
-    switch(terrainType)
+    // Mask out harbour bit
+    const Uint8 s2Id = rawTextureId & ~0x40;
+    if(s2Id < map.s2IdToTerrain.size())
     {
-        case TRIANGLE_TEXTURE_STEPPE_MEADOW1:
-            r = (mapType == MAP_GREENLAND ? 100 : (mapType == MAP_WASTELAND ? 68 : 160));
-            g = (mapType == MAP_GREENLAND ? 144 : (mapType == MAP_WASTELAND ? 72 : 172));
-            b = (mapType == MAP_GREENLAND ? 20 : (mapType == MAP_WASTELAND ? 80 : 204));
-            break;
-        case TRIANGLE_TEXTURE_MINING1:
-            r = (mapType == MAP_GREENLAND ? 156 : (mapType == MAP_WASTELAND ? 112 : 84));
-            g = (mapType == MAP_GREENLAND ? 128 : (mapType == MAP_WASTELAND ? 108 : 88));
-            b = (mapType == MAP_GREENLAND ? 88 : (mapType == MAP_WASTELAND ? 84 : 108));
-            break;
-        case TRIANGLE_TEXTURE_SNOW:
-            r = (mapType == MAP_GREENLAND ? 180 : (mapType == MAP_WASTELAND ? 132 : 0));
-            g = (mapType == MAP_GREENLAND ? 192 : (mapType == MAP_WASTELAND ? 0 : 48));
-            b = (mapType == MAP_GREENLAND ? 200 : (mapType == MAP_WASTELAND ? 0 : 104));
-            break;
-        case TRIANGLE_TEXTURE_SWAMP:
-            r = (mapType == MAP_GREENLAND ? 100 : 0);
-            g = (mapType == MAP_GREENLAND ? 144 : (mapType == MAP_WASTELAND ? 24 : 40));
-            b = (mapType == MAP_GREENLAND ? 20 : (mapType == MAP_WASTELAND ? 32 : 108));
-            break;
-        case TRIANGLE_TEXTURE_STEPPE:
-            r = (mapType == MAP_GREENLAND ? 192 : (mapType == MAP_WASTELAND ? 156 : 0));
-            g = (mapType == MAP_GREENLAND ? 156 : (mapType == MAP_WASTELAND ? 124 : 112));
-            b = (mapType == MAP_GREENLAND ? 124 : (mapType == MAP_WASTELAND ? 100 : 176));
-            break;
-        case TRIANGLE_TEXTURE_WATER:
-            r = (mapType == MAP_GREENLAND ? 16 : (mapType == MAP_WASTELAND ? 68 : 0));
-            g = (mapType == MAP_GREENLAND ? 56 : (mapType == MAP_WASTELAND ? 68 : 48));
-            b = (mapType == MAP_GREENLAND ? 164 : (mapType == MAP_WASTELAND ? 44 : 104));
-            break;
-        case TRIANGLE_TEXTURE_MEADOW1:
-            r = (mapType == MAP_GREENLAND ? 72 : (mapType == MAP_WASTELAND ? 92 : 176));
-            g = (mapType == MAP_GREENLAND ? 120 : (mapType == MAP_WASTELAND ? 88 : 164));
-            b = (mapType == MAP_GREENLAND ? 12 : (mapType == MAP_WASTELAND ? 64 : 148));
-            break;
-        case TRIANGLE_TEXTURE_MEADOW2:
-            r = (mapType == MAP_GREENLAND ? 100 : (mapType == MAP_WASTELAND ? 100 : 180));
-            g = (mapType == MAP_GREENLAND ? 144 : (mapType == MAP_WASTELAND ? 96 : 184));
-            b = (mapType == MAP_GREENLAND ? 20 : (mapType == MAP_WASTELAND ? 72 : 180));
-            break;
-        case TRIANGLE_TEXTURE_MEADOW3:
-            r = (mapType == MAP_GREENLAND ? 64 : (mapType == MAP_WASTELAND ? 100 : 160));
-            g = (mapType == MAP_GREENLAND ? 112 : (mapType == MAP_WASTELAND ? 96 : 172));
-            b = (mapType == MAP_GREENLAND ? 8 : (mapType == MAP_WASTELAND ? 72 : 204));
-            break;
-        case TRIANGLE_TEXTURE_MINING2:
-            r = (mapType == MAP_GREENLAND ? 156 : (mapType == MAP_WASTELAND ? 112 : 96));
-            g = (mapType == MAP_GREENLAND ? 128 : (mapType == MAP_WASTELAND ? 100 : 96));
-            b = (mapType == MAP_GREENLAND ? 88 : (mapType == MAP_WASTELAND ? 84 : 124));
-            break;
-        case TRIANGLE_TEXTURE_MINING3:
-            r = (mapType == MAP_GREENLAND ? 156 : 104);
-            g = (mapType == MAP_GREENLAND ? 128 : (mapType == MAP_WASTELAND ? 76 : 108));
-            b = (mapType == MAP_GREENLAND ? 88 : (mapType == MAP_WASTELAND ? 36 : 140));
-            break;
-        case TRIANGLE_TEXTURE_MINING4:
-            r = (mapType == MAP_GREENLAND ? 140 : 104);
-            g = (mapType == MAP_GREENLAND ? 112 : (mapType == MAP_WASTELAND ? 76 : 108));
-            b = (mapType == MAP_GREENLAND ? 72 : (mapType == MAP_WASTELAND ? 36 : 140));
-            break;
-        case TRIANGLE_TEXTURE_STEPPE_MEADOW2:
-            r = (mapType == MAP_GREENLAND ? 136 : (mapType == MAP_WASTELAND ? 112 : 100));
-            g = (mapType == MAP_GREENLAND ? 176 : (mapType == MAP_WASTELAND ? 108 : 144));
-            b = (mapType == MAP_GREENLAND ? 40 : (mapType == MAP_WASTELAND ? 84 : 20));
-            break;
-        case TRIANGLE_TEXTURE_FLOWER:
-            r = (mapType == MAP_GREENLAND ? 72 : (mapType == MAP_WASTELAND ? 68 : 124));
-            g = (mapType == MAP_GREENLAND ? 120 : (mapType == MAP_WASTELAND ? 72 : 132));
-            b = (mapType == MAP_GREENLAND ? 12 : (mapType == MAP_WASTELAND ? 80 : 172));
-            break;
-        case TRIANGLE_TEXTURE_LAVA:
-            r = (mapType == MAP_GREENLAND ? 192 : (mapType == MAP_WASTELAND ? 128 : 144));
-            g = (mapType == MAP_GREENLAND ? 32 : (mapType == MAP_WASTELAND ? 20 : 44));
-            b = (mapType == MAP_GREENLAND ? 32 : (mapType == MAP_WASTELAND ? 0 : 4));
-            break;
-        case TRIANGLE_TEXTURE_MINING_MEADOW:
-            r = (mapType == MAP_GREENLAND ? 156 : (mapType == MAP_WASTELAND ? 0 : 148));
-            g = (mapType == MAP_GREENLAND ? 128 : (mapType == MAP_WASTELAND ? 24 : 160));
-            b = (mapType == MAP_GREENLAND ? 88 : (mapType == MAP_WASTELAND ? 32 : 192));
-            break;
-        default: // color grey
-            r = 128;
-            g = 128;
-            b = 128;
-            break;
+        const auto idx = map.s2IdToTerrain[s2Id];
+        if(idx)
+            return &global::worldDesc.get(idx);
     }
+    return nullptr;
+}
+
+static bool nodeIsMountain(const bobMAP& map, const MapNode& node, bool checkBoth = true)
+{
+    const auto* rsu = getTerrainDesc(map, node.rsuTexture);
+    const auto* usd = getTerrainDesc(map, node.usdTexture);
+    if(checkBoth)
+        return rsu && usd && rsu->kind == TerrainKind::Mountain && usd->kind == TerrainKind::Mountain;
+    return (rsu && rsu->kind == TerrainKind::Mountain) || (usd && usd->kind == TerrainKind::Mountain);
+}
+
+static bool nodeHasTerrainFlag(const bobMAP& map, const MapNode& node, ETerrain flag, bool checkBoth = true)
+{
+    const auto* rsu = getTerrainDesc(map, node.rsuTexture);
+    const auto* usd = getTerrainDesc(map, node.usdTexture);
+    if(checkBoth)
+        return rsu && usd && rsu->Is(flag) && usd->Is(flag);
+    return (rsu && rsu->Is(flag)) || (usd && usd->Is(flag));
+}
+
+static void getMinimapColor(const bobMAP& map, Uint8 rawTextureId, Sint16& r, Sint16& g, Sint16& b)
+{
+    const auto* desc = getTerrainDesc(map, rawTextureId);
+    if(desc)
+    {
+        r = (desc->minimapColor >> 16) & 0xFF;
+        g = (desc->minimapColor >> 8) & 0xFF;
+        b = desc->minimapColor & 0xFF;
+        return;
+    }
+    // Fallback: grey for unknown terrain (e.g. MEADOW_MIXED sentinel)
+    r = 128;
+    g = 128;
+    b = 128;
 }
 
 void CMap::drawMinimap(SDL_Surface* Window)
@@ -1395,7 +1350,7 @@ void CMap::drawMinimap(SDL_Surface* Window)
                 continue;
 
             Sint16 r, g, b;
-            getTriangleColor(TriangleTerrainType(map->getVertex(x, y).rsuTexture), map->type, r, g, b);
+            getMinimapColor(*map, map->getVertex(x, y).rsuTexture, r, g, b);
 
             Uint32* row = (Uint32*)Window->pixels + (y / num_y + 20) * Window->pitch / 4; //-V206
             //+6 because of the left window frame
@@ -1885,10 +1840,8 @@ void CMap::modifyTexture(Position pos, bool rsu, bool usd)
 void CMap::modifyTextureMakeHarbour(Position pos)
 {
     MapNode& vertex = map->getVertex(pos.x, pos.y);
-    if(vertex.rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1 || vertex.rsuTexture == TRIANGLE_TEXTURE_MEADOW1
-       || vertex.rsuTexture == TRIANGLE_TEXTURE_MEADOW2 || vertex.rsuTexture == TRIANGLE_TEXTURE_MEADOW3
-       || vertex.rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2 || vertex.rsuTexture == TRIANGLE_TEXTURE_FLOWER
-       || vertex.rsuTexture == TRIANGLE_TEXTURE_MINING_MEADOW)
+    const auto* desc = getTerrainDesc(*map, vertex.rsuTexture);
+    if(desc && desc->kind == TerrainKind::Land && desc->Is(ETerrain::Buildable))
     {
         vertex.rsuTexture |= 0x40;
     }
@@ -2204,46 +2157,29 @@ void CMap::modifyBuild(Position pos)
     // test if vertex is surrounded by water or swamp
     if(building > 0x00)
     {
-        if((mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_WATER
-            || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_SWAMP)
-           && (mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_WATER
-               || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_SWAMP)
-           && (mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_WATER
-               || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_SWAMP)
-           && (mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_WATER
-               || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_SWAMP)
-           && (mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_WATER
-               || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_SWAMP)
-           && (mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_WATER
-               || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_SWAMP))
+        bool v0Shippable = nodeHasTerrainFlag(*map, *mapVertices[0], ETerrain::Shippable, true);
+        bool v1Shippable = nodeHasTerrainFlag(*map, *mapVertices[1], ETerrain::Shippable, true);
+        bool v2Shippable = nodeHasTerrainFlag(*map, *mapVertices[2], ETerrain::Shippable, true);
+        bool v3Shippable = nodeHasTerrainFlag(*map, *mapVertices[3], ETerrain::Shippable, true);
+        if(v0Shippable && v1Shippable && v2Shippable && v3Shippable)
         {
             building = 0x00;
-        } else if((mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_WATER
-                   || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_SWAMP)
-                  || (mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_WATER
-                      || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_SWAMP)
-                  || (mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_WATER
-                      || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_SWAMP)
-                  || (mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_WATER
-                      || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_SWAMP)
-                  || (mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_WATER
-                      || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_SWAMP)
-                  || (mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_WATER
-                      || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_SWAMP))
+        } else if(v0Shippable || v1Shippable || v2Shippable || v3Shippable)
         {
             building = 0x01;
         }
     }
 
-    // test if there is steppe at the vertex or touching the vertex
+    // test if there is non-buildable land at the vertex or touching the vertex
     if(building > 0x01)
     {
-        if(mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_STEPPE
-           || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_STEPPE
-           || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_STEPPE
-           || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_STEPPE
-           || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_STEPPE
-           || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_STEPPE)
+        auto isNonBuildable = [&](const MapNode& node) {
+            const auto* rsu = getTerrainDesc(*map, node.rsuTexture);
+            const auto* usd = getTerrainDesc(*map, node.usdTexture);
+            return (rsu && !rsu->Is(ETerrain::Buildable)) || (usd && !usd->Is(ETerrain::Buildable));
+        };
+        if(isNonBuildable(*mapVertices[0]) || isNonBuildable(*mapVertices[1]) || isNonBuildable(*mapVertices[2])
+           || isNonBuildable(*mapVertices[3]))
         {
             building = 0x01;
         }
@@ -2252,56 +2188,14 @@ void CMap::modifyBuild(Position pos)
     // test if vertex is surrounded by mining-textures
     if(building > 0x01)
     {
-        if((mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MINING1
-            || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MINING2
-            || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MINING3
-            || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MINING4)
-           && (mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MINING1
-               || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MINING2
-               || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MINING3
-               || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MINING4)
-           && (mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MINING1
-               || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MINING2
-               || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MINING3
-               || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MINING4)
-           && (mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MINING1
-               || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MINING2
-               || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MINING3
-               || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MINING4)
-           && (mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MINING1
-               || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MINING2
-               || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MINING3
-               || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MINING4)
-           && (mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MINING1
-               || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MINING2
-               || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MINING3
-               || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MINING4))
+        bool v0Mtn = nodeIsMountain(*map, *mapVertices[0], true);
+        bool v1Mtn = nodeIsMountain(*map, *mapVertices[1], true);
+        bool v2Mtn = nodeIsMountain(*map, *mapVertices[2], true);
+        bool v3Mtn = nodeIsMountain(*map, *mapVertices[3], true);
+        if(v0Mtn && v1Mtn && v2Mtn && v3Mtn)
         {
             building = 0x05;
-        } else if((mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MINING1
-                   || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MINING2
-                   || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MINING3
-                   || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MINING4)
-                  || (mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MINING1
-                      || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MINING2
-                      || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MINING3
-                      || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MINING4)
-                  || (mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MINING1
-                      || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MINING2
-                      || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MINING3
-                      || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MINING4)
-                  || (mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MINING1
-                      || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MINING2
-                      || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MINING3
-                      || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MINING4)
-                  || (mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MINING1
-                      || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MINING2
-                      || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MINING3
-                      || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MINING4)
-                  || (mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MINING1
-                      || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MINING2
-                      || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MINING3
-                      || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MINING4))
+        } else if(v0Mtn || v1Mtn || v2Mtn || v3Mtn)
         {
             building = 0x01;
         }
@@ -2359,147 +2253,41 @@ void CMap::modifyResource(Position pos)
 
     // SPECIAL CASE: test if we should set water only
     // test if vertex is surrounded by meadow and meadow-like textures
-    if((mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1
-        || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1_HARBOUR
-        || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MEADOW1
-        || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MEADOW1_HARBOUR
-        || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MEADOW2
-        || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MEADOW2_HARBOUR
-        || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MEADOW3
-        || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MEADOW3_HARBOUR
-        || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2
-        || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2_HARBOUR
-        || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_FLOWER
-        || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_FLOWER_HARBOUR
-        || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MINING_MEADOW
-        || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MINING_MEADOW_HARBOUR)
-       && (mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1
-           || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1_HARBOUR
-           || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MEADOW1
-           || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MEADOW1_HARBOUR
-           || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MEADOW2
-           || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MEADOW2_HARBOUR
-           || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MEADOW3
-           || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MEADOW3_HARBOUR
-           || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2
-           || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2_HARBOUR
-           || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_FLOWER
-           || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_FLOWER_HARBOUR
-           || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MINING_MEADOW
-           || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MINING_MEADOW_HARBOUR)
-       && (mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1
-           || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1_HARBOUR
-           || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MEADOW1
-           || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MEADOW1_HARBOUR
-           || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MEADOW2
-           || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MEADOW2_HARBOUR
-           || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MEADOW3
-           || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MEADOW3_HARBOUR
-           || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2
-           || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2_HARBOUR
-           || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_FLOWER
-           || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_FLOWER_HARBOUR
-           || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MINING_MEADOW
-           || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MINING_MEADOW_HARBOUR)
-       && (mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1
-           || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1_HARBOUR
-           || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MEADOW1
-           || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MEADOW1_HARBOUR
-           || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MEADOW2
-           || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MEADOW2_HARBOUR
-           || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MEADOW3
-           || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MEADOW3_HARBOUR
-           || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2
-           || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2_HARBOUR
-           || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_FLOWER
-           || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_FLOWER_HARBOUR
-           || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MINING_MEADOW
-           || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MINING_MEADOW_HARBOUR)
-       && (mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1
-           || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1_HARBOUR
-           || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MEADOW1
-           || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MEADOW1_HARBOUR
-           || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MEADOW2
-           || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MEADOW2_HARBOUR
-           || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MEADOW3
-           || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MEADOW3_HARBOUR
-           || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2
-           || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2_HARBOUR
-           || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_FLOWER
-           || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_FLOWER_HARBOUR
-           || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MINING_MEADOW
-           || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MINING_MEADOW_HARBOUR)
-       && (mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1
-           || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1_HARBOUR
-           || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MEADOW1
-           || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MEADOW1_HARBOUR
-           || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MEADOW2
-           || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MEADOW2_HARBOUR
-           || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MEADOW3
-           || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MEADOW3_HARBOUR
-           || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2
-           || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2_HARBOUR
-           || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_FLOWER
-           || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_FLOWER_HARBOUR
-           || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MINING_MEADOW
-           || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MINING_MEADOW_HARBOUR))
+    auto isBuildableLand = [&](const MapNode& node) {
+        const auto* rsu = getTerrainDesc(*map, node.rsuTexture);
+        const auto* usd = getTerrainDesc(*map, node.usdTexture);
+        return rsu && usd && rsu->kind == TerrainKind::Land && rsu->Is(ETerrain::Buildable)
+               && usd->kind == TerrainKind::Land && usd->Is(ETerrain::Buildable);
+    };
+    if(isBuildableLand(*mapVertices[0]) && isBuildableLand(*mapVertices[1]) && isBuildableLand(*mapVertices[2])
+       && isBuildableLand(*mapVertices[3]))
     {
         curVertex.resource = 0x21;
     }
     // SPECIAL CASE: test if we should set fishes only
     // test if vertex is surrounded by water (first section) and at least one non-water texture in the second section
-    else if((mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_WATER)
-            && (mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_WATER)
-            && (mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_WATER)
-            && (mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_WATER)
-            && (mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_WATER)
-            && (mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_WATER)
-            && (mapVertices[2]->usdTexture != TRIANGLE_TEXTURE_WATER
-                || mapVertices[3]->rsuTexture != TRIANGLE_TEXTURE_WATER
-                || mapVertices[4]->rsuTexture != TRIANGLE_TEXTURE_WATER
-                || mapVertices[4]->usdTexture != TRIANGLE_TEXTURE_WATER
-                || mapVertices[5]->rsuTexture != TRIANGLE_TEXTURE_WATER
-                || mapVertices[5]->usdTexture != TRIANGLE_TEXTURE_WATER
-                || mapVertices[6]->rsuTexture != TRIANGLE_TEXTURE_WATER
-                || mapVertices[6]->usdTexture != TRIANGLE_TEXTURE_WATER
-                || map->getVertex(tempVertices[7]).rsuTexture != TRIANGLE_TEXTURE_WATER
-                || map->getVertex(tempVertices[7]).usdTexture != TRIANGLE_TEXTURE_WATER
-                || map->getVertex(tempVertices[8]).rsuTexture != TRIANGLE_TEXTURE_WATER
-                || map->getVertex(tempVertices[8]).usdTexture != TRIANGLE_TEXTURE_WATER
-                || map->getVertex(tempVertices[9]).rsuTexture != TRIANGLE_TEXTURE_WATER
-                || map->getVertex(tempVertices[10]).rsuTexture != TRIANGLE_TEXTURE_WATER
-                || map->getVertex(tempVertices[10]).usdTexture != TRIANGLE_TEXTURE_WATER
-                || map->getVertex(tempVertices[11]).rsuTexture != TRIANGLE_TEXTURE_WATER
-                || map->getVertex(tempVertices[12]).usdTexture != TRIANGLE_TEXTURE_WATER
-                || map->getVertex(tempVertices[14]).usdTexture != TRIANGLE_TEXTURE_WATER))
+    else if(nodeHasTerrainFlag(*map, *mapVertices[0], ETerrain::Shippable, true)
+            && nodeHasTerrainFlag(*map, *mapVertices[1], ETerrain::Shippable, true)
+            && nodeHasTerrainFlag(*map, *mapVertices[2], ETerrain::Shippable, true)
+            && nodeHasTerrainFlag(*map, *mapVertices[3], ETerrain::Shippable, true)
+            && (!nodeHasTerrainFlag(*map, *mapVertices[2], ETerrain::Shippable, false)
+                || !nodeHasTerrainFlag(*map, *mapVertices[3], ETerrain::Shippable, false)
+                || !nodeHasTerrainFlag(*map, *mapVertices[4], ETerrain::Shippable, false)
+                || !nodeHasTerrainFlag(*map, *mapVertices[5], ETerrain::Shippable, false)
+                || !nodeHasTerrainFlag(*map, *mapVertices[6], ETerrain::Shippable, false)
+                || !nodeHasTerrainFlag(*map, map->getVertex(tempVertices[7]), ETerrain::Shippable, false)
+                || !nodeHasTerrainFlag(*map, map->getVertex(tempVertices[8]), ETerrain::Shippable, false)
+                || !nodeHasTerrainFlag(*map, map->getVertex(tempVertices[9]), ETerrain::Shippable, false)
+                || !nodeHasTerrainFlag(*map, map->getVertex(tempVertices[10]), ETerrain::Shippable, false)
+                || !nodeHasTerrainFlag(*map, map->getVertex(tempVertices[11]), ETerrain::Shippable, false)
+                || !nodeHasTerrainFlag(*map, map->getVertex(tempVertices[12]), ETerrain::Shippable, false)
+                || !nodeHasTerrainFlag(*map, map->getVertex(tempVertices[14]), ETerrain::Shippable, false)))
     {
         curVertex.resource = 0x87;
     }
     // test if vertex is surrounded by mining textures
-    else if((mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MINING1
-             || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MINING2
-             || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MINING3
-             || mapVertices[0]->rsuTexture == TRIANGLE_TEXTURE_MINING4)
-            && (mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MINING1
-                || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MINING2
-                || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MINING3
-                || mapVertices[0]->usdTexture == TRIANGLE_TEXTURE_MINING4)
-            && (mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MINING1
-                || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MINING2
-                || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MINING3
-                || mapVertices[1]->rsuTexture == TRIANGLE_TEXTURE_MINING4)
-            && (mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MINING1
-                || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MINING2
-                || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MINING3
-                || mapVertices[1]->usdTexture == TRIANGLE_TEXTURE_MINING4)
-            && (mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MINING1
-                || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MINING2
-                || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MINING3
-                || mapVertices[2]->rsuTexture == TRIANGLE_TEXTURE_MINING4)
-            && (mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MINING1
-                || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MINING2
-                || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MINING3
-                || mapVertices[3]->usdTexture == TRIANGLE_TEXTURE_MINING4))
+    else if(nodeIsMountain(*map, *mapVertices[0], true) && nodeIsMountain(*map, *mapVertices[1], true)
+            && nodeIsMountain(*map, *mapVertices[2], true) && nodeIsMountain(*map, *mapVertices[3], true))
     {
         // check which resource to set
         if(mode == EDITOR_MODE_RESOURCE_RAISE)

@@ -17,6 +17,20 @@
 #include <cmath>
 
 namespace {
+const TerrainDesc* getTerrainDesc(const bobMAP& map, Uint8 rawTextureId)
+{
+    const Uint8 s2Id = rawTextureId & ~0x40;
+    if(s2Id < map.s2IdToTerrain.size())
+    {
+        const auto idx = map.s2IdToTerrain[s2Id];
+        if(idx)
+            return &global::worldDesc.get(idx);
+    }
+    return nullptr;
+}
+} // namespace
+
+namespace {
 SDL_Rect rect2SDL_Rect(const Rect& rect)
 {
     Point<Sint16> origin(rect.getOrigin());
@@ -790,19 +804,21 @@ void CSurface::DrawTriangle(SDL_Surface* display, const DisplayRectangle& displa
     {
         // upper2, ..... are for special use in winterland.
         Point16 upper, left, right, upper2, left2, right2;
-        auto const texture =
-          TriangleTerrainType((isRSU ? P1.rsuTexture : P2.usdTexture) & ~0x40); // Mask out harbor bit
+        auto const rawTex = isRSU ? P1.rsuTexture : P2.usdTexture;
+        auto const texture = TriangleTerrainType(rawTex & ~0x40); // Mask out harbor bit
+        const auto* texDesc = getTerrainDesc(myMap, rawTex);
         GetTerrainTextureCoords(type, texture, isRSU, texture_move, upper, left, right, upper2, left2, right2);
 
         // draw the triangle
         // do not shade water and lava
-        if(texture == TRIANGLE_TEXTURE_WATER || texture == TRIANGLE_TEXTURE_LAVA)
+        if(texDesc && (texDesc->kind == TerrainKind::Water || texDesc->kind == TerrainKind::Lava))
             sge_TexturedTrigon(display, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Surf_Tileset, upper.x, upper.y, left.x,
                                left.y, right.x, right.y);
         else
         {
             // draw special winterland textures with moving water (ice floe textures)
-            if(type == MAP_WINTERLAND && (texture == TRIANGLE_TEXTURE_SNOW || texture == TRIANGLE_TEXTURE_SWAMP))
+            // In winterland, s2Id=2 (ice floe) and s2Id=3 (ice floes) get animated overlay
+            if(type == MAP_WINTERLAND && texDesc && (texDesc->s2Id == 2 || texDesc->s2Id == 3))
             {
                 sge_TexturedTrigon(display, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Surf_Tileset, upper2.x, upper2.y,
                                    left2.x, left2.y, right2.x, right2.y);
@@ -1154,13 +1170,9 @@ void CSurface::DrawTriangle(SDL_Surface* display, const DisplayRectangle& displa
                          (int)(p2.y - global::bmpArray[MAPPIC_HOUSE_MIDDLE].ny));
                     break;
                 case 0x04:
-                    if(P2.rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1_HARBOUR
-                       || P2.rsuTexture == TRIANGLE_TEXTURE_MEADOW1_HARBOUR
-                       || P2.rsuTexture == TRIANGLE_TEXTURE_MEADOW2_HARBOUR
-                       || P2.rsuTexture == TRIANGLE_TEXTURE_MEADOW3_HARBOUR
-                       || P2.rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2_HARBOUR
-                       || P2.rsuTexture == TRIANGLE_TEXTURE_FLOWER_HARBOUR
-                       || P2.rsuTexture == TRIANGLE_TEXTURE_MINING_MEADOW_HARBOUR)
+                    if((P2.rsuTexture & 0x40) && getTerrainDesc(myMap, P2.rsuTexture)
+                       && getTerrainDesc(myMap, P2.rsuTexture)->kind == TerrainKind::Land
+                       && getTerrainDesc(myMap, P2.rsuTexture)->Is(ETerrain::Buildable))
                         Draw(display, global::bmpArray[MAPPIC_HOUSE_HARBOUR].surface,
                              (int)(p2.x - global::bmpArray[MAPPIC_HOUSE_HARBOUR].nx),
                              (int)(p2.y - global::bmpArray[MAPPIC_HOUSE_HARBOUR].ny));
