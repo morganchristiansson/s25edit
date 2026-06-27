@@ -1740,13 +1740,9 @@ void CMap::modifyHeightMakeBigHouse(Position pos)
     }
 
     // remove harbour if there is one
-    if(middleVertex.rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW1_HARBOUR
-       || middleVertex.rsuTexture == TRIANGLE_TEXTURE_MEADOW1_HARBOUR
-       || middleVertex.rsuTexture == TRIANGLE_TEXTURE_MEADOW2_HARBOUR
-       || middleVertex.rsuTexture == TRIANGLE_TEXTURE_MEADOW3_HARBOUR
-       || middleVertex.rsuTexture == TRIANGLE_TEXTURE_STEPPE_MEADOW2_HARBOUR
-       || middleVertex.rsuTexture == TRIANGLE_TEXTURE_FLOWER_HARBOUR
-       || middleVertex.rsuTexture == TRIANGLE_TEXTURE_MINING_MEADOW_HARBOUR)
+    if((middleVertex.rsuTexture & 0x40) && getTerrainDesc(*map, middleVertex.rsuTexture)
+       && getTerrainDesc(*map, middleVertex.rsuTexture)->kind == TerrainKind::Land
+       && getTerrainDesc(*map, middleVertex.rsuTexture)->Is(ETerrain::Buildable))
     {
         middleVertex.rsuTexture &= ~0x40;
     }
@@ -2045,8 +2041,8 @@ void CMap::modifyBuild(Position pos)
 
     // calculate the building using the height of the vertices
     // this building is a mine
-    if(curVertex.rsuTexture == TRIANGLE_TEXTURE_MINING1 || curVertex.rsuTexture == TRIANGLE_TEXTURE_MINING2
-       || curVertex.rsuTexture == TRIANGLE_TEXTURE_MINING3 || curVertex.rsuTexture == TRIANGLE_TEXTURE_MINING4)
+    if(getTerrainDesc(*map, curVertex.rsuTexture)
+       && getTerrainDesc(*map, curVertex.rsuTexture)->kind == TerrainKind::Mountain)
     {
         building = 0x05;
         // test vertex lower right
