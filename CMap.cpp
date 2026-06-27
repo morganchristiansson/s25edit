@@ -79,8 +79,8 @@ CMap::~CMap()
     destructMap();
 }
 
-void CMap::constructMap(const boost::filesystem::path& filepath, int width, int height, MapType type,
-                        TriangleTerrainType texture, int border, int border_texture)
+void CMap::constructMap(const boost::filesystem::path& filepath, int width, int height, MapType type, uint8_t texture,
+                        int border, int border_texture)
 {
     map = nullptr;
     Surf_Map.reset();
@@ -233,7 +233,7 @@ void CMap::destructMap()
     filepath_.clear();
 }
 
-std::unique_ptr<bobMAP> CMap::generateMap(int width, int height, MapType type, TriangleTerrainType texture, int border,
+std::unique_ptr<bobMAP> CMap::generateMap(int width, int height, MapType type, uint8_t texture, int border,
                                           int border_texture)
 {
     auto myMap = std::make_unique<bobMAP>();

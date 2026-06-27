@@ -109,10 +109,10 @@ public:
     CMap(const boost::filesystem::path& filepath);
     ~CMap();
     void constructMap(const boost::filesystem::path& filepath, int width = 32, int height = 32,
-                      MapType type = MAP_GREENLAND, TriangleTerrainType texture = TRIANGLE_TEXTURE_MEADOW1,
-                      int border = 4, int border_texture = TRIANGLE_TEXTURE_WATER);
-    static std::unique_ptr<bobMAP> generateMap(int width, int height, MapType type, TriangleTerrainType texture,
-                                               int border, int border_texture);
+                      MapType type = MAP_GREENLAND, uint8_t texture = S2ID_MEADOW1, int border = 4,
+                      int border_texture = S2ID_WATER);
+    static std::unique_ptr<bobMAP> generateMap(int width, int height, MapType type, uint8_t texture, int border,
+                                               int border_texture);
     void destructMap();
     void loadMapPics();
     static void unloadMapPics();
