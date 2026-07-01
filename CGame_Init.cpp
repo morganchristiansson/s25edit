@@ -38,8 +38,6 @@ bool CGame::CreateWindow()
     SDL_ShowWindow(window_.get());
 
     ApplyWindowChanges();
-    if(!displayTexture_.isValid() || !Surf_Display)
-        return false;
 
     SetAppIcon();
 
@@ -124,9 +122,6 @@ void CGame::UpdateDisplaySize(const Extent& newSize)
     GameResolution = newSize;
     appliedResolution_ = GameResolution;
     appliedFullscreen_ = fullscreen;
-
-    Surf_Display = makeRGBSurface(GameResolution.x, GameResolution.y, true);
-    displayTexture_.createEmpty(GameResolution);
 
     setGLViewport();
     for(auto& menu : Menus)

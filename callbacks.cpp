@@ -10,6 +10,7 @@
 #include "CIO/CFile.h"
 #include "CIO/CFont.h"
 #include "CIO/CMenu.h"
+#include "CIO/CMinimapWindow.h"
 #include "CIO/CPicture.h"
 #include "CIO/CSelectBox.h"
 #include "CIO/CTextfield.h"
@@ -19,6 +20,7 @@
 #include "globals.h"
 #include "helpers/format.hpp"
 #include "s25util/strAlgos.h"
+#include <glad/glad.h>
 #include <boost/filesystem.hpp>
 #include <algorithm>
 #include <cctype>
@@ -51,9 +53,12 @@ void callback::PleaseWait(int Param)
             WNDWait->addText("Please wait ...", Position(10, 10), FontSize::Large);
             // we need to render this window NOW, cause the render loop will do it too late (when the operation
             // is done and we don't need the "Please wait"-window anymore)
-            CSurface::Draw(global::s2->getDisplaySurface(), WNDWait->getSurface(),
-                           global::s2->getDisplaySurface()->w / 2 - 106, global::s2->getDisplaySurface()->h / 2 - 35);
-            global::s2->RenderPresent();
+            {
+                const auto res = global::s2->getRes();
+                glClear(GL_COLOR_BUFFER_BIT);
+                WNDWait->getTexture().Draw(Position(res.x / 2 - 106, res.y / 2 - 35));
+                global::s2->RenderPresent();
+            }
             break;
 
         case CALL_FROM_GAMELOOP: // This window gives a "Please Wait"-string, so it is shown while there is an intensive
@@ -2820,7 +2825,6 @@ void callback::MinimapMenu(int Param)
 {
     static CWindow* WNDMinimap = nullptr;
     static CMap* MapObj = nullptr;
-    static SDL_Surface* WndSurface = nullptr;
     static int scaleNum = 1;
     // only in case INITIALIZING_CALL needed to create the window
     int width;
@@ -2849,20 +2853,14 @@ void callback::MinimapMenu(int Param)
                 height = map->height / scaleNum;
                 //--> 12px is width of left and right window frame and 30px is height of the upper and lower window
                 // frame
-                if((global::s2->getDisplaySurface()->w - 12 < width)
-                   || (global::s2->getDisplaySurface()->h - 30 < height))
+                if((static_cast<int>(global::s2->getRes().x) - 12 < width)
+                   || (static_cast<int>(global::s2->getRes().y) - 30 < height))
                     break;
-                WNDMinimap = global::s2->RegisterWindow(
-                  std::make_unique<CWindow>(MinimapMenu, WINDOWQUIT, WindowPos::Center, Extent(width + 12, height + 30),
-                                            "Overview", WINDOW_NOTHING, WINDOW_CLOSE | WINDOW_MOVE));
+                WNDMinimap = global::s2->RegisterWindow(std::make_unique<CMinimapWindow>(
+                  MinimapMenu, WINDOWQUIT, WindowPos::Center, Extent(width + 12, height + 30), "Overview",
+                  WINDOW_NOTHING, WINDOW_CLOSE | WINDOW_MOVE));
                 global::s2->RegisterCallback(MinimapMenu);
-                WndSurface = WNDMinimap->getSurface();
             }
-            break;
-
-        case CALL_FROM_GAMELOOP:
-            if(MapObj && WndSurface)
-                MapObj->drawMinimap(WndSurface);
             break;
 
         case WINDOW_CLICKED_CALL:
@@ -2894,7 +2892,6 @@ void callback::MinimapMenu(int Param)
                 WNDMinimap = nullptr;
             }
             MapObj = nullptr;
-            WndSurface = nullptr;
             global::s2->UnregisterCallback(MinimapMenu);
             break;
 

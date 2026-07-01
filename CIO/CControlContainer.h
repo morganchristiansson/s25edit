@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "../Texture.h"
 #include "defines.h"
 #include <memory>
 #include <vector>
@@ -45,6 +46,7 @@ private:
 protected:
     SdlSurface surface;
     bool needRender = true;
+    Texture surfaceTex_; ///< Texture for this container's surface (used by CWindow)
 
     void renderElements();
     auto& getTextFields() { return textfields; }
@@ -54,17 +56,20 @@ protected:
 public:
     CControlContainer(int pic_background);
     CControlContainer(int pic_background, Extent borderBeginSize, Extent borderEndSize);
-    ~CControlContainer() noexcept;
+    virtual ~CControlContainer() noexcept;
     // Access
     Extent getBorderSize() const { return borderBeginSize + borderEndSize; }
     void setBackgroundPicture(int pic_background);
     virtual void setMouseData(SDL_MouseMotionEvent motion);
     virtual void setMouseData(SDL_MouseButtonEvent button);
     void setKeyboardData(const SDL_KeyboardEvent& key);
-    SDL_Surface* getSurface()
+    /// Get the texture for this container's rendered content.
+    const Texture& getTexture()
     {
         render();
-        return surface.get();
+        if(surface)
+            surfaceTex_.load(surface.get());
+        return surfaceTex_;
     }
     void setWaste() { waste = true; }
     bool isWaste() const { return waste; }

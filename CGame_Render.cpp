@@ -40,7 +40,6 @@ void CGame::SetAppIcon()
 void CGame::Render()
 {
     glClear(GL_COLOR_BUFFER_BIT);
-    SDL_FillRect(Surf_Display.get(), nullptr, SDL_MapRGBA(Surf_Display->format, 0, 0, 0, 0));
 
     // if the S2 loading screen is shown, render only this until user clicks a mouse button
     if(showLoadScreen)
@@ -53,33 +52,35 @@ void CGame::Render()
     // render the map if active
     if(MapObj && MapObj->isActive())
     {
-        CSurface::Draw(Surf_Display, MapObj->getSurface(), 0, 0);
-        std::array<char, 100> textBuffer;
-        // text for x and y of vertex (shown in upper left corner)
-        std::snprintf(textBuffer.data(), textBuffer.size(), "%d    %d", MapObj->getVertexX(), MapObj->getVertexY());
-        CFont::writeText(Surf_Display, textBuffer.data(), Position(20, 20));
-        // text for MinReduceHeight and MaxRaiseHeight
-        std::snprintf(textBuffer.data(), textBuffer.size(),
-                      "min. height: %#04x/0x3C  max. height: %#04x/0x3C  NormalNull: 0x0A",
-                      MapObj->getMinReduceHeight(), MapObj->getMaxRaiseHeight());
-        CFont::writeText(Surf_Display, textBuffer.data(), Position(100, 20));
-        // text for MovementLocked
-        if(MapObj->isHorizontalMovementLocked() && MapObj->isVerticalMovementLocked())
-            CFont::writeText(Surf_Display, "Movement locked (F9 or F10 to unlock)", Position(20, 40), FontSize::Large,
-                             FontColor::Orange);
-        else if(MapObj->isHorizontalMovementLocked())
-            CFont::writeText(Surf_Display, "Horizontal movement locked (F9 to unlock)", Position(20, 40),
-                             FontSize::Large, FontColor::Orange);
-        else if(MapObj->isVerticalMovementLocked())
-            CFont::writeText(Surf_Display, "Vertical movement locked (F10 to unlock)", Position(20, 40),
-                             FontSize::Large, FontColor::Orange);
+        if(auto* mapSurf = MapObj->getSurface())
+        {
+            std::array<char, 100> textBuffer;
+            std::snprintf(textBuffer.data(), textBuffer.size(), "%d    %d", MapObj->getVertexX(), MapObj->getVertexY());
+            CFont::writeText(mapSurf, textBuffer.data(), 20, 20);
+            std::snprintf(textBuffer.data(), textBuffer.size(),
+                          "min. height: %#04x/0x3C  max. height: %#04x/0x3C  NormalNull: 0x0A",
+                          MapObj->getMinReduceHeight(), MapObj->getMaxRaiseHeight());
+            CFont::writeText(mapSurf, textBuffer.data(), 100, 20);
+            if(MapObj->isHorizontalMovementLocked() && MapObj->isVerticalMovementLocked())
+                CFont::writeText(mapSurf, "Movement locked (F9 or F10 to unlock)", 20, 40, FontSize::Large,
+                                 FontColor::Orange);
+            else if(MapObj->isHorizontalMovementLocked())
+                CFont::writeText(mapSurf, "Horizontal movement locked (F9 to unlock)", 20, 40, FontSize::Large,
+                                 FontColor::Orange);
+            else if(MapObj->isVerticalMovementLocked())
+                CFont::writeText(mapSurf, "Vertical movement locked (F10 to unlock)", 20, 40, FontSize::Large,
+                                 FontColor::Orange);
+
+            mapTex_.load(mapSurf);
+            mapTex_.Draw(Rect(0, 0, GameResolution.x, GameResolution.y));
+        }
     }
 
     // render active menus
     for(auto& Menu : Menus)
     {
         if(Menu->isActive())
-            CSurface::Draw(Surf_Display, Menu->getSurface(), 0, 0);
+            Menu->getTexture().Draw(Rect(0, 0, GameResolution.x, GameResolution.y));
     }
 
     // render windows ordered by priority
@@ -96,7 +97,7 @@ void CGame::Render()
         for(auto& Window : Windows)
         {
             if(Window->getPriority() == actualPriority)
-                CSurface::Draw(Surf_Display, Window->getSurface(), Window->getX(), Window->getY());
+                Window->getTexture().Draw(Position(Window->getX(), Window->getY()));
         }
     }
 
@@ -105,7 +106,6 @@ void CGame::Render()
 #endif
 
     ++framesPassedSinceLastFps;
-
     const auto curTicks = SDL_GetTicks();
     const auto diffTicks = curTicks - lastFpsTick;
     if(diffTicks > 1000)
@@ -114,9 +114,35 @@ void CGame::Render()
         framesPassedSinceLastFps = 0;
         lastFpsTick = curTicks;
     }
-    CSurface::Draw(Surf_Display, lastFps.getSurface(), 0, 0);
+    {
+        if(auto* fpsSurf = lastFps.getSurface())
+        {
+            fpsTex_.load(fpsSurf);
+            glBindTexture(GL_TEXTURE_2D, fpsTex_.getHandle());
+            glBegin(GL_QUADS);
+            glTexCoord2f(0, 0);
+            glVertex2i(0, 0);
+            glTexCoord2f(1, 0);
+            glVertex2i(fpsSurf->w, 0);
+            glTexCoord2f(1, 1);
+            glVertex2i(fpsSurf->w, fpsSurf->h);
+            glTexCoord2f(0, 1);
+            glVertex2i(0, fpsSurf->h);
+            glEnd();
+        }
+    }
 
-    RenderPresent();
+    // ---- 5. Cursor on top of everything ----
+    {
+        const auto& cursorImg = Cursor.clicked ? (Cursor.button.right ? cross_ : cursorClicked_) : cursor_;
+        cursorImg.Draw(Cursor.pos);
+    }
+
+    SDL_GL_SwapWindow(window_.get());
+
+#ifdef _ADMINMODE
+    FrameCounter++;
+#endif
 
     if(msWait)
         SDL_Delay(msWait);

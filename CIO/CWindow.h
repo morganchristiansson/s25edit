@@ -12,7 +12,7 @@ enum class WindowPos
     Center
 };
 
-class CWindow final : public CControlContainer
+class CWindow : public CControlContainer
 {
     friend class CDebug;
 
@@ -43,7 +43,8 @@ private:
     void (*callback_)(int);
     int callbackQuitMessage;
 
-    bool render() final;
+protected:
+    bool render() override;
 
 public:
     CWindow(void callback(int), int callbackQuitMessage, Position pos, Extent size, const char* title = nullptr,
