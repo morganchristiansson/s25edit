@@ -41,6 +41,10 @@ public:
     /// Convenience overload for callers using separate x/y.
     void Draw(int x, int y) const { Draw(Position(x, y)); }
 
+    /// Draw a sub-rectangle of the texture to fill the given destination rect.
+    /// srcRect is in texture-local coordinates (may be clipped).
+    void Draw(const Rect& destRect, const Rect& srcRect) const;
+
     /// Returns the raw GL texture name (for use with glBindTexture).
     unsigned getHandle() const { return texture_; }
 
@@ -60,3 +64,31 @@ private:
     /// Internal: create or recreate texture from raw BGRA pixel data.
     void load(const void* bgraPixels, Extent size, bool filterLinear);
 };
+
+// ---------------------------------------------------------------------------
+//  Free functions for simple GL drawing (rect, line) used by UI components.
+// ---------------------------------------------------------------------------
+
+/// Draw a filled rectangle (disables texturing).
+void DrawRect(const Rect& rect, unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255);
+
+/// Draw a filled rectangle with a 32-bit RGBA colour.
+void DrawRect(const Rect& rect, unsigned color);
+
+/// Draw a 1-pixel-wide axis-aligned line (disables texturing).
+void DrawLine(Position p1, Position p2, unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255);
+
+// ---------------------------------------------------------------------------
+//  Texture-drawing helpers for UI components
+// ---------------------------------------------------------------------------
+
+/// Ensure the OpenGL texture for a bitmap index is loaded from its SDL surface.
+void ensureBmpTex(int idx);
+
+/// Draw a bitmap texture tiled to fill the given rectangle.
+void drawTiledBmp(int bmpIdx, const Rect& destRect);
+
+/// Get or create the cached OpenGL texture for a bitmap index.
+/// The texture is loaded from the SDL surface on first access.
+/// @param filterLinear Whether to use linear filtering (for scaled backgrounds).
+Texture& getBmpTexture(int idx, bool filterLinear = false);

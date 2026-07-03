@@ -3,9 +3,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "Texture.h"
+#include "defines.h"
+#include "globals.h"
 #include <glad/glad.h>
+#include <algorithm>
+#include <memory>
 #include <utility>
 #include <vector>
+
+// ---------------------------------------------------------------------------
+//  Texture
+// ---------------------------------------------------------------------------
 
 Texture::~Texture()
 {
@@ -115,15 +123,19 @@ void Texture::Draw(const Rect& destRect) const
     if(!texture_)
         return;
 
+    const float uScale = 1.0f;
+    const float vScale = 1.0f;
+
+    glColor4f(1, 1, 1, 1);
     glBindTexture(GL_TEXTURE_2D, texture_);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
     glVertex2i(destRect.left, destRect.top);
-    glTexCoord2f(1, 0);
+    glTexCoord2f(uScale, 0);
     glVertex2i(destRect.right, destRect.top);
-    glTexCoord2f(1, 1);
+    glTexCoord2f(uScale, vScale);
     glVertex2i(destRect.right, destRect.bottom);
-    glTexCoord2f(0, 1);
+    glTexCoord2f(0, vScale);
     glVertex2i(destRect.left, destRect.bottom);
     glEnd();
 }
@@ -133,6 +145,7 @@ void Texture::Draw(Position pos) const
     if(!texture_)
         return;
 
+    glColor4f(1, 1, 1, 1);
     glBindTexture(GL_TEXTURE_2D, texture_);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
@@ -143,5 +156,145 @@ void Texture::Draw(Position pos) const
     glVertex2i(pos.x + size_.x, pos.y + size_.y);
     glTexCoord2f(0, 1);
     glVertex2i(pos.x, pos.y + size_.y);
+    glEnd();
+}
+
+void Texture::Draw(const Rect& destRect, const Rect& srcRect) const
+{
+    if(!texture_)
+        return;
+
+    // Clamp source rect to texture bounds
+    int srcL = std::max(0, srcRect.left);
+    int srcT = std::max(0, srcRect.top);
+    int srcR = std::min(static_cast<int>(size_.x), srcRect.right);
+    int srcB = std::min(static_cast<int>(size_.y), srcRect.bottom);
+    if(srcL >= srcR || srcT >= srcB)
+        return;
+
+    const float u0 = float(srcL) / float(size_.x);
+    const float v0 = float(srcT) / float(size_.y);
+    const float u1 = float(srcR) / float(size_.x);
+    const float v1 = float(srcB) / float(size_.y);
+
+    glBindTexture(GL_TEXTURE_2D, texture_);
+    glBegin(GL_QUADS);
+    glTexCoord2f(u0, v0);
+    glVertex2i(destRect.left, destRect.top);
+    glTexCoord2f(u1, v0);
+    glVertex2i(destRect.right, destRect.top);
+    glTexCoord2f(u1, v1);
+    glVertex2i(destRect.right, destRect.bottom);
+    glTexCoord2f(u0, v1);
+    glVertex2i(destRect.left, destRect.bottom);
+    glEnd();
+}
+
+// ---------------------------------------------------------------------------
+//  DrawRect / DrawLine helpers
+// ---------------------------------------------------------------------------
+
+void DrawRect(const Rect& rect, unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+{
+    glDisable(GL_TEXTURE_2D);
+    glColor4ub(r, g, b, a);
+    glBegin(GL_QUADS);
+    glVertex2i(rect.left, rect.top);
+    glVertex2i(rect.right, rect.top);
+    glVertex2i(rect.right, rect.bottom);
+    glVertex2i(rect.left, rect.bottom);
+    glEnd();
+    glEnable(GL_TEXTURE_2D);
+}
+
+void DrawRect(const Rect& rect, unsigned color)
+{
+    DrawRect(rect, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF);
+}
+
+void DrawLine(Position p1, Position p2, unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+{
+    glDisable(GL_TEXTURE_2D);
+    glColor4ub(r, g, b, a);
+    glBegin(GL_LINES);
+    glVertex2i(p1.x, p1.y);
+    glVertex2i(p2.x, p2.y);
+    glEnd();
+    glEnable(GL_TEXTURE_2D);
+}
+
+// ---------------------------------------------------------------------------
+//  Texture-drawing helpers
+// ---------------------------------------------------------------------------
+
+Texture& getBmpTexture(int idx, bool filterLinear)
+{
+    static std::vector<std::unique_ptr<Texture>> cache;
+    static std::vector<bool> linearFlags;
+    if(idx < 0 || idx >= static_cast<int>(global::bmpArray.size()))
+    {
+        static Texture dummy;
+        return dummy;
+    }
+    if(static_cast<int>(cache.size()) <= idx)
+    {
+        cache.resize(idx + 1);
+        linearFlags.resize(idx + 1, false);
+    }
+    if(!cache[idx] || linearFlags[idx] != filterLinear)
+    {
+        if(!cache[idx])
+            cache[idx] = std::make_unique<Texture>();
+        linearFlags[idx] = filterLinear;
+        auto& bmp = global::bmpArray[idx];
+        if(bmp.surface)
+            cache[idx]->load(bmp.surface.get(), filterLinear);
+    }
+    return *cache[idx];
+}
+
+void ensureBmpTex(int idx)
+{
+    if(idx < 0 || idx >= static_cast<int>(global::bmpArray.size()))
+        return;
+    getBmpTexture(idx);
+}
+
+void drawTiledBmp(int bmpIdx, const Rect& destRect)
+{
+    if(bmpIdx < 0 || bmpIdx >= static_cast<int>(global::bmpArray.size()))
+        return;
+    auto& tex = getBmpTexture(bmpIdx);
+    if(!tex.isValid())
+        return;
+
+    const auto& bmp = global::bmpArray[bmpIdx];
+    const unsigned tileW = bmp.w;
+    const unsigned tileH = bmp.h;
+    if(tileW == 0 || tileH == 0)
+        return;
+
+    glColor4f(1, 1, 1, 1);
+    glBindTexture(GL_TEXTURE_2D, tex.getHandle());
+    glBegin(GL_QUADS);
+    for(int y = destRect.top; y < destRect.bottom; y += static_cast<int>(tileH))
+    {
+        const int rowH = std::min(static_cast<int>(tileH), static_cast<int>(destRect.bottom - y));
+        const float v1 = static_cast<float>(rowH) / static_cast<float>(tileH);
+        for(int x = destRect.left; x < destRect.right; x += static_cast<int>(tileW))
+        {
+            const int colW = std::min(static_cast<int>(tileW), static_cast<int>(destRect.right - x));
+            const float u1 = static_cast<float>(colW) / static_cast<float>(tileW);
+
+            glTexCoord2f(0, 0);
+            glVertex2i(x, y);
+            glTexCoord2f(u1, 0);
+            glVertex2i(x + colW, y);
+            glTexCoord2f(u1, v1);
+            glVertex2i(x + colW, y + rowH);
+            glTexCoord2f(0, v1);
+            glVertex2i(x, y + rowH);
+        }
+    }
     glEnd();
 }

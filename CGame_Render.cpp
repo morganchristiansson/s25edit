@@ -9,6 +9,7 @@
 #include "CIO/CWindow.h"
 #include "CMap.h"
 #include "CSurface.h"
+#include "Texture.h"
 #include "globals.h"
 #include <glad/glad.h>
 #ifdef _WIN32
@@ -40,6 +41,8 @@ void CGame::SetAppIcon()
 void CGame::Render()
 {
     glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // if the S2 loading screen is shown, render only this until user clicks a mouse button
     if(showLoadScreen)
@@ -76,11 +79,11 @@ void CGame::Render()
         }
     }
 
-    // render active menus
+    // render active menus — each draws itself with OpenGL
     for(auto& Menu : Menus)
     {
         if(Menu->isActive())
-            Menu->getTexture().Draw(Rect(0, 0, GameResolution.x, GameResolution.y));
+            Menu->Draw(Position(0, 0));
     }
 
     // render windows ordered by priority
@@ -97,7 +100,7 @@ void CGame::Render()
         for(auto& Window : Windows)
         {
             if(Window->getPriority() == actualPriority)
-                Window->getTexture().Draw(Position(Window->getX(), Window->getY()));
+                Window->Draw(Position(0, 0));
         }
     }
 
@@ -114,29 +117,12 @@ void CGame::Render()
         framesPassedSinceLastFps = 0;
         lastFpsTick = curTicks;
     }
-    {
-        if(auto* fpsSurf = lastFps.getSurface())
-        {
-            fpsTex_.load(fpsSurf);
-            glBindTexture(GL_TEXTURE_2D, fpsTex_.getHandle());
-            glBegin(GL_QUADS);
-            glTexCoord2f(0, 0);
-            glVertex2i(0, 0);
-            glTexCoord2f(1, 0);
-            glVertex2i(fpsSurf->w, 0);
-            glTexCoord2f(1, 1);
-            glVertex2i(fpsSurf->w, fpsSurf->h);
-            glTexCoord2f(0, 1);
-            glVertex2i(0, fpsSurf->h);
-            glEnd();
-        }
-    }
+    // Draw FPS counter directly with OpenGL text rendering
+    lastFps.Draw(Position(0, 0));
 
-    // ---- 5. Cursor on top of everything ----
-    {
-        const auto& cursorImg = Cursor.clicked ? (Cursor.button.right ? cross_ : cursorClicked_) : cursor_;
-        cursorImg.Draw(Cursor.pos);
-    }
+    // ---- Cursor on top of everything ----
+    const auto& cursorImg = Cursor.clicked ? (Cursor.button.right ? cross_ : cursorClicked_) : cursor_;
+    cursorImg.Draw(Cursor.pos);
 
     SDL_GL_SwapWindow(window_.get());
 

@@ -54,9 +54,8 @@ void callback::PleaseWait(int Param)
             // we need to render this window NOW, cause the render loop will do it too late (when the operation
             // is done and we don't need the "Please wait"-window anymore)
             {
-                const auto res = global::s2->getRes();
                 glClear(GL_COLOR_BUFFER_BIT);
-                WNDWait->getTexture().Draw(Position(res.x / 2 - 106, res.y / 2 - 35));
+                WNDWait->Draw(Position(0, 0));
                 global::s2->RenderPresent();
             }
             break;

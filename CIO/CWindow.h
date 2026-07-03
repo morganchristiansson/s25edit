@@ -16,13 +16,16 @@ class CWindow : public CControlContainer
 {
     friend class CDebug;
 
-private:
     // if active is false, the window will be render behind the active windows within the game loop
     bool active = true;
+
+protected:
     Sint16 x_;
     Sint16 y_;
     Uint16 w_;
     Uint16 h_;
+
+private:
     const char* title;
     bool marked = true;
     bool clicked = false;
@@ -43,10 +46,10 @@ private:
     void (*callback_)(int);
     int callbackQuitMessage;
 
-protected:
-    bool render() override;
-
 public:
+    /// Draw the window using OpenGL (chrome + children).
+    void Draw(Position parentOrigin) override;
+
     CWindow(void callback(int), int callbackQuitMessage, Position pos, Extent size, const char* title = nullptr,
             int color = WINDOW_GREEN1, Uint8 flags = 0);
     CWindow(void callback(int), int callbackQuitMessage, WindowPos pos, Extent size, const char* title = nullptr,
@@ -68,14 +71,13 @@ public:
     {
         active = true;
         marked = true;
-        needRender = true;
     }
     void setInactive();
     bool isActive() const { return active; }
     bool isMoving() const { return moving; }
     bool isResizing() const { return resizing; }
     bool isMarked() const { return marked; }
-    void setDirty() { needRender = true; }
+    void setDirty() {}
     // we can not trust this information, cause if minimized is false, it is possible, that we still have the old
     // minimized surface bool isMinimized() { return minimized; }; we need an information if a input-element (textfield
     // etc.) is active to not deliver the input to other gui-element in the event system

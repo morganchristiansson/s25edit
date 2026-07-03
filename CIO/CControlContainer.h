@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "../Texture.h"
 #include "defines.h"
 #include <memory>
 #include <vector>
@@ -41,14 +40,14 @@ private:
 
     template<class T, class U>
     bool eraseElement(T& collection, const U* element);
-    virtual bool render() = 0;
 
 protected:
-    SdlSurface surface;
-    bool needRender = true;
-    Texture surfaceTex_; ///< Texture for this container's surface (used by CWindow)
+    /// Draw the container's background and child elements using OpenGL.
+    /// @param parentOrigin  Absolute position of the parent container.
+    virtual void Draw(Position parentOrigin);
+    /// Draw children at the given origin (calls each child's Draw).
+    void DrawChildren(Position origin);
 
-    void renderElements();
     auto& getTextFields() { return textfields; }
     const auto& getTextFields() const { return textfields; }
     int getBackground() const { return pic_background; }
@@ -59,25 +58,14 @@ public:
     virtual ~CControlContainer() noexcept;
     // Access
     Extent getBorderSize() const { return borderBeginSize + borderEndSize; }
+    Extent getBorderBegin() const { return borderBeginSize; }
+    Extent getBorderEnd() const { return borderEndSize; }
     void setBackgroundPicture(int pic_background);
     virtual void setMouseData(SDL_MouseMotionEvent motion);
     virtual void setMouseData(SDL_MouseButtonEvent button);
     void setKeyboardData(const SDL_KeyboardEvent& key);
-    /// Get the texture for this container's rendered content.
-    const Texture& getTexture()
-    {
-        render();
-        if(surface)
-            surfaceTex_.load(surface.get());
-        return surfaceTex_;
-    }
     void setWaste() { waste = true; }
     bool isWaste() const { return waste; }
-    void resetSurface()
-    {
-        surface.reset();
-        needRender = true;
-    }
     // Methods
     CButton* addButton(void callback(int), int clickedParam, Position pos = {0, 0}, Extent size = {20, 20},
                        int color = BUTTON_GREY, const char* text = nullptr, int picture = -1);

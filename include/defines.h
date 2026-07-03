@@ -85,6 +85,8 @@ struct bobBMP
     SdlSurface surface;
 };
 
+class Texture;
+
 // Structure for Bobtype 5 (Palette)
 struct bobPAL
 {

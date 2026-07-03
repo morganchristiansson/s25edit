@@ -7,6 +7,7 @@
 
 #include "defines.h"
 #include <SDL.h>
+#include <memory>
 #include <vector>
 
 class CFont;
@@ -16,9 +17,7 @@ class CTextfield
     friend class CDebug;
 
 private:
-    SdlSurface Surf_Text;
     std::unique_ptr<CFont> textObj;
-    bool needRender;
     Extent size_;
     Uint16 cols;
     Uint16 rows;
@@ -31,6 +30,8 @@ private:
     bool rendered;
     // if true, the textfield looks like a button
     bool button_style;
+    // Cursor blink state
+    bool blinking_chiffre = false;
 
 public:
     // Constructor - Destructor
@@ -51,12 +52,7 @@ public:
     bool hasRendered();
     void setMouseData(SDL_MouseButtonEvent button);
     void setKeyboardData(const SDL_KeyboardEvent& key);
-    bool render();
-    SDL_Surface* getSurface()
-    {
-        render();
-        return Surf_Text.get();
-    }
+    void Draw(Position parentOrigin);
     void setColor(int color);
     void setTextColor(FontColor color);
     std::string getText() const { return text_.data(); }

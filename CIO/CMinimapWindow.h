@@ -4,11 +4,16 @@
 
 #pragma once
 
+#include "../Texture.h"
 #include "CWindow.h"
 
 class CMinimapWindow final : public CWindow
 {
-    bool render() final;
+    /// Temporary SDL surface for minimap terrain overlay (kept until terrain is also OpenGL)
+    SdlSurface minimapSurface_;
+    Texture minimapTex_;
+
+    void Draw(Position parentOrigin) override;
 
 public:
     using CWindow::CWindow;

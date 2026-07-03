@@ -124,12 +124,6 @@ void CGame::UpdateDisplaySize(const Extent& newSize)
     appliedFullscreen_ = fullscreen;
 
     setGLViewport();
-    for(auto& menu : Menus)
-    {
-        menu->resetSurface();
-    }
-    for(auto& wnd : Windows)
-        wnd->resetSurface();
 }
 
 bool CGame::Init()

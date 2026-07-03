@@ -4,10 +4,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "CTextfield.h"
-#include "../CSurface.h"
+#include "../Texture.h"
 #include "../globals.h"
 #include "CFont.h"
 #include "CollisionDetection.h"
+#include <glad/glad.h>
+#include <cmath>
 
 CTextfield::CTextfield(Position pos, Uint16 cols, Uint16 rows, FontSize fontsize, FontColor text_color, int bg_color,
                        bool button_style)
@@ -24,7 +26,6 @@ CTextfield::CTextfield(Position pos, Uint16 cols, Uint16 rows, FontSize fontsize
     // allocate memory for the text: chiffres (cols) + '\n' for each line * rows + blinking chiffre + '\0'
     text_.resize((this->cols + 1) * this->rows + 2);
 
-    needRender = true;
     rendered = false;
     this->button_style = button_style;
     textObj = std::make_unique<CFont>("", pos, fontsize, text_color);
@@ -89,14 +90,11 @@ void CTextfield::setColor(int color)
             pic_background = -1;
             break;
     }
-
-    needRender = true;
 }
 
 void CTextfield::setTextColor(FontColor color)
 {
     textObj->setColor(color);
-    needRender = true;
 }
 
 void CTextfield::setX(int x)
@@ -145,10 +143,9 @@ void CTextfield::setMouseData(SDL_MouseButtonEvent button)
         // if mouse button is pressed ON the textfield, set active=true
         if(button.state == SDL_PRESSED)
         {
-            active = IsPointInRect(Position(button.x, button.y), Rect(Position(getX(), getY()), size_));
+            active = IsPointInRect(button.x, button.y, Rect(Position(getX(), getY()), size_));
         }
     }
-    needRender = true;
 }
 
 void CTextfield::setKeyboardData(const SDL_KeyboardEvent& key)
@@ -239,213 +236,83 @@ void CTextfield::setKeyboardData(const SDL_KeyboardEvent& key)
                 }
                 break;
         }
-        needRender = true;
     }
 }
 
-bool CTextfield::render()
+void CTextfield::Draw(Position parentOrigin)
 {
-    // position in the Surface 'Surf_Text'
-    Position pos{0, 0};
-    // width and height of the picture tile
-    Extent pic{0, 0};
-    // we save the time to let a chiffre blink
-    static Uint32 currentTime;
-    static Uint32 lastTime = SDL_GetTicks();
-    static bool blinking_chiffre = false;
-    // if the textfield is active, we need to render to show the blinking chiffre
+    const Position absPos = parentOrigin + Position(getX(), getY());
+    const Rect area(absPos, size_);
+
+    // Update cursor blink state
+    static Uint32 lastTime = 0; // Shared timer is OK here
     if(active)
     {
-        currentTime = SDL_GetTicks();
+        const Uint32 currentTime = SDL_GetTicks();
+        if(lastTime == 0)
+            lastTime = currentTime;
         if(currentTime - lastTime > 500)
         {
             lastTime = currentTime;
-
             blinking_chiffre = !blinking_chiffre;
         }
-        needRender = true;
-    }
-
-    // if we don't need to render, all is up to date, return true
-    if(!needRender)
-        return true;
-    needRender = false;
-    // if we need a new surface
-    if(!Surf_Text)
+    } else
     {
-        Surf_Text = makeRGBSurface(size_.x, size_.y);
-        if(!Surf_Text)
-            return false;
+        blinking_chiffre = false;
     }
 
-    // draw the pictures for background and foreground or, if not set, fill with black color
+    // Ensure rendered flag is cleared each frame
+    rendered = false;
+
+    // Draw the background / foreground
     if(pic_background >= 0 && pic_foreground >= 0)
     {
-        // in case the textfield should look like a button, we do it, otherwise we use pic_foreground for the background
         const int bmpIdx = button_style ? pic_background : pic_foreground;
+        drawTiledBmp(bmpIdx, area);
 
-        // at first completly fill the background (not the fastest way, but simplier)
-        if(size_.x <= global::bmpArray[bmpIdx].w)
-            pic.x = size_.x;
-        else
-            pic.x = global::bmpArray[bmpIdx].w;
-
-        if(size_.y <= global::bmpArray[bmpIdx].h)
-            pic.y = size_.y;
-        else
-            pic.y = global::bmpArray[bmpIdx].h;
-
-        while(pos.x + pic.x <= static_cast<unsigned>(Surf_Text->w))
-        {
-            while(pos.y + pic.y <= static_cast<unsigned>(Surf_Text->h))
-            {
-                CSurface::Draw(Surf_Text, global::bmpArray[bmpIdx].surface, pos, Position(0, 0), pic);
-                pos.y += pic.y;
-            }
-
-            if(pos.y < Surf_Text->h)
-                CSurface::Draw(Surf_Text, global::bmpArray[bmpIdx].surface, pos.x, pos.y, 0, 0, pic.x,
-                               static_cast<unsigned>(Surf_Text->h - pos.y));
-
-            pos.y = 0;
-            pos.x += pic.x;
-        }
-
-        if(pos.x < Surf_Text->w)
-        {
-            while(pos.y + pic.y <= static_cast<unsigned>(Surf_Text->h))
-            {
-                CSurface::Draw(Surf_Text, global::bmpArray[bmpIdx].surface, pos.x, pos.y, 0, 0,
-                               static_cast<unsigned>(Surf_Text->w - pos.x), pic.y);
-                pos.y += pic.y;
-            }
-
-            if(pos.y < Surf_Text->h)
-                CSurface::Draw(Surf_Text, global::bmpArray[bmpIdx].surface, pos.x, pos.y, 0, 0,
-                               static_cast<unsigned>(Surf_Text->w - pos.x),
-                               static_cast<unsigned>(Surf_Text->h - pos.y));
-        }
-
-        // if not button_style, we are finished, otherwise continue drawing
         if(button_style)
         {
-            // draw partial black frame
+            // Draw black frame (2px) using filled rectangles
+            const int w = area.right - area.left;
+            const int h = area.bottom - area.top;
+
             if(active)
             {
-                // black frame is left and up
-                // draw vertical line
-                for(unsigned y = 0; y < size_.y; y++)
-                    CSurface::DrawPixel_RGB(Surf_Text, Position(0, y), 0, 0, 0);
-
-                // draw vertical line
-                for(unsigned y = 0; y < size_.y - 1; y++)
-                    CSurface::DrawPixel_RGB(Surf_Text, Position(1, y), 0, 0, 0);
-
-                // draw horizontal line
-                for(unsigned x = 0; x < size_.x; x++)
-                    CSurface::DrawPixel_RGB(Surf_Text, Position(x, 0), 0, 0, 0);
-
-                // draw horizontal line
-                for(unsigned x = 0; x < size_.x - 1; x++)
-                    CSurface::DrawPixel_RGB(Surf_Text, Position(x, 1), 0, 0, 0);
+                // Black frame is left and up
+                DrawRect(Rect(area.left, area.top, 2, h), 0, 0, 0);
+                DrawRect(Rect(area.left, area.top, w, 2), 0, 0, 0);
             } else
             {
-                // black frame is right and down
-                // draw vertical line
-                for(unsigned y = 0; y < size_.y; y++)
-                    CSurface::DrawPixel_RGB(Surf_Text, Position(size_.x - 1, y), 0, 0, 0);
-
-                // draw vertical line
-                for(unsigned y = 1; y < size_.y; y++)
-                    CSurface::DrawPixel_RGB(Surf_Text, Position(size_.x - 2, y), 0, 0, 0);
-
-                // draw horizontal line
-                for(unsigned x = 0; x < size_.x; x++)
-                    CSurface::DrawPixel_RGB(Surf_Text, Position(x, size_.y - 1), 0, 0, 0);
-
-                // draw horizontal line
-                for(unsigned x = 1; x < size_.x; x++)
-                    CSurface::DrawPixel_RGB(Surf_Text, Position(x, size_.y - 2), 0, 0, 0);
+                // Black frame is right and down
+                DrawRect(Rect(area.right - 2, area.top, 2, h), 0, 0, 0);
+                DrawRect(Rect(area.left, area.bottom - 2, w, 2), 0, 0, 0);
             }
 
-            // draw the foreground --> at first the color (marked or unmarked) and then the picture or text
-            if(size_.x <= global::bmpArray[pic_foreground].w)
-                pic.x = size_.x;
-            else
-                pic.x = global::bmpArray[pic_foreground].w;
-
-            if(size_.y <= global::bmpArray[pic_foreground].h)
-                pic.y = size_.y;
-            else
-                pic.y = global::bmpArray[pic_foreground].h;
-
-            // beware overdrawing the left and upper frame
-            pos.x = 2;
-            pos.y = 2;
-
-            // '-2' follows a few times, this means: beware overdrawing the right and lower frame
-            while(pos.x + pic.x <= static_cast<unsigned>(Surf_Text->w - 2))
-            {
-                while(pos.y + pic.y <= static_cast<unsigned>(Surf_Text->h - 2))
-                {
-                    CSurface::Draw(Surf_Text, global::bmpArray[pic_foreground].surface, pos.x, pos.y, 0, 0, pic.x,
-                                   pic.y);
-                    pos.y += pic.y;
-                }
-
-                if(pos.y + 2 < Surf_Text->h)
-                    CSurface::Draw(Surf_Text, global::bmpArray[pic_foreground].surface, pos.x, pos.y, 0, 0, pic.x,
-                                   static_cast<unsigned>(Surf_Text->h - 2 - pos.y));
-
-                pos.y = 2;
-                pos.x += pic.x;
-            }
-
-            if(pos.x + 2 < Surf_Text->w)
-            {
-                while(pos.y + pic.y <= static_cast<unsigned>(Surf_Text->h - 2))
-                {
-                    CSurface::Draw(Surf_Text, global::bmpArray[pic_foreground].surface, pos.x, pos.y, 0, 0,
-                                   static_cast<unsigned>(Surf_Text->w - 2 - pos.x), pic.y);
-                    pos.y += pic.y;
-                }
-
-                if(pos.y + 2 < Surf_Text->h)
-                    CSurface::Draw(Surf_Text, global::bmpArray[pic_foreground].surface, pos.x, pos.y, 0, 0,
-                                   static_cast<unsigned>(Surf_Text->w - 2 - pos.x),
-                                   static_cast<unsigned>(Surf_Text->h - 2 - pos.y));
-            }
+            // Draw foreground (inset by 2px)
+            const Rect fgRect(area.getOrigin() + Position(2, 2), size_ - Extent(4, 4));
+            drawTiledBmp(pic_foreground, fgRect);
         }
     } else
-        SDL_FillRect(Surf_Text.get(), nullptr, SDL_MapRGB(Surf_Text->format, 0, 0, 0));
-
-    char* txtPtr = text_.data();
-
-    // go to '\0'
-    while(*txtPtr != '\0')
-        txtPtr++;
-    // add blinking chiffre if necessary
-    if(blinking_chiffre && active)
     {
-        *txtPtr = '>';
-        txtPtr++;
-        *txtPtr = '\0';
+        // Fill with black
+        DrawRect(area, 0, 0, 0, 255);
     }
 
-    // write text
-    textObj->setText(text_.data());
+    // Prepare text with cursor
+    std::string displayText = text_.data();
 
-    // delete blinking chiffre (otherwise it could be written between user input chiffres)
+    // Add blinking cursor if active
     if(blinking_chiffre && active)
     {
-        txtPtr--;
-        *txtPtr = '\0';
+        displayText += '>';
     }
 
-    // blit text surface
-    CSurface::Draw(Surf_Text, textObj->getSurface(), 2, 2);
+    // Draw the text
+    if(!displayText.empty())
+    {
+        textObj->setText(displayText);
+        textObj->Draw(Position(area.left + 2, area.top + 2));
+    }
 
     rendered = true;
-
-    return true;
 }
