@@ -6,11 +6,11 @@
 
 #include "../Texture.h"
 #include "CWindow.h"
+#include <vector>
 
 class CMinimapWindow final : public CWindow
 {
-    /// Temporary SDL surface for minimap terrain overlay (kept until terrain is also OpenGL)
-    SdlSurface minimapSurface_;
+    std::vector<uint32_t> pixels_; ///< Pixel buffer for minimap terrain
     Texture minimapTex_;
 
     void Draw(Position parentOrigin) override;

@@ -7,6 +7,7 @@
 #include "../CMap.h"
 #include "../Texture.h"
 #include "../globals.h"
+#include "CFont.h"
 
 void CMinimapWindow::Draw(Position /*parentOrigin*/)
 {
@@ -24,24 +25,58 @@ void CMinimapWindow::Draw(Position /*parentOrigin*/)
     if(contentW <= 0 || contentH <= 0)
         return;
 
-    // Draw minimap terrain overlay onto a temporary SDL surface, then upload to texture
-    if(auto* map = global::s2->getMapObj())
+    auto* map = global::s2->getMapObj();
+    if(!map)
+        return;
+
+    // Fill pixel buffer with minimap terrain
+    int num_x = 1, num_y = 1;
+    map->drawMinimap(pixels_, contentW, contentH, num_x, num_y);
+
+    // Upload to texture and draw
+    if(!minimapTex_.isValid() || minimapTex_.getWidth() != contentW || minimapTex_.getHeight() != contentH)
+        minimapTex_.createEmpty(Extent(contentW, contentH));
+    minimapTex_.upload(pixels_.data());
+    minimapTex_.Draw(Rect(contentX, contentY, contentW, contentH));
+
+    // Draw player flags and numbers on top
+    for(int i = 0; i < MAXPLAYERS; i++)
     {
-        // Create or resize the minimap surface
-        if(!minimapSurface_ || minimapSurface_->w != contentW || minimapSurface_->h != contentH)
-            minimapSurface_ = makeRGBSurface(static_cast<unsigned>(contentW), static_cast<unsigned>(contentH), true);
+        const auto hqX = map->getPlayerHQx()[i];
+        const auto hqY = map->getPlayerHQy()[i];
+        if(hqX == 0xFFFF || hqY == 0xFFFF)
+            continue;
 
-        if(minimapSurface_)
+        const int flagIdx = FLAG_BLUE_DARK + i % 7;
+        const auto& flagBmp = global::bmpArray[flagIdx];
+        auto& flagTex = getBmpTexture(flagIdx);
+        if(flagTex.isValid())
         {
-            // Clear with transparency
-            SDL_FillRect(minimapSurface_.get(), nullptr, SDL_MapRGBA(minimapSurface_->format, 0, 0, 0, 0));
+            const int fx = contentX + hqX / num_x - static_cast<int>(flagBmp.nx);
+            const int fy = contentY + hqY / num_y - static_cast<int>(flagBmp.ny);
+            flagTex.Draw(Position(fx, fy));
+        }
 
-            // Draw minimap onto the temporary surface
-            map->drawMinimap(minimapSurface_.get());
+        // Player number
+        CFont::Draw(std::to_string(i + 1), Position(contentX + hqX / num_x, contentY + hqY / num_y), FontSize::Small,
+                    FontColor::MintGreen);
+    }
 
-            // Upload to texture and draw
-            minimapTex_.load(minimapSurface_.get());
-            minimapTex_.Draw(Rect(contentX, contentY, contentW, contentH));
+    // Draw the position arrow
+    {
+        const int arrowIdx = MAPPIC_ARROWCROSS_ORANGE;
+        const auto& arrowBmp = global::bmpArray[arrowIdx];
+        auto& arrowTex = getBmpTexture(arrowIdx);
+        if(arrowTex.isValid())
+        {
+            const auto& dispRect = map->getDisplayRect();
+            const int ax = contentX
+                           + (dispRect.left + static_cast<int>(dispRect.getSize().x) / 2) / triangleWidth / num_x
+                           - static_cast<int>(arrowBmp.nx);
+            const int ay = contentY
+                           + (dispRect.top + static_cast<int>(dispRect.getSize().y) / 2) / triangleHeight / num_y
+                           - static_cast<int>(arrowBmp.ny);
+            arrowTex.Draw(Position(ax, ay));
         }
     }
 }
