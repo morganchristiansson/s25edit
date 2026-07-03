@@ -131,7 +131,6 @@ void CGame::UpdateDisplaySize(const Extent& newSize)
     setGLViewport();
     for(auto& menu : Menus)
     {
-        menu->resetBgTexture();
         menu->resetSurface();
     }
     for(auto& wnd : Windows)

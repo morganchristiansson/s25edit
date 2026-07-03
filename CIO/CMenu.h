@@ -19,8 +19,6 @@ class CMenu final : public CControlContainer
     bool render() final;
 
 public:
-    void resetBgTexture() { bgTexture_.reset(); }
-
     CMenu(int pic_background);
     void setActive() { active = true; };
     void setInactive() { active = false; };
