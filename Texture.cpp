@@ -7,7 +7,6 @@
 #include "globals.h"
 #include <glad/glad.h>
 #include <algorithm>
-#include <memory>
 #include <utility>
 #include <vector>
 
@@ -213,7 +212,7 @@ void drawLine(Position p1, Position p2, unsigned char r, unsigned char g, unsign
 
 Texture& getBmpTexture(int idx, bool filterLinear)
 {
-    static std::vector<std::unique_ptr<Texture>> cache;
+    static std::vector<Texture> cache;
     static std::vector<bool> linearFlags;
     if(static_cast<unsigned>(idx) >= global::bmpArray.size())
     {
@@ -225,16 +224,14 @@ Texture& getBmpTexture(int idx, bool filterLinear)
         cache.resize(static_cast<size_t>(idx) + 1);
         linearFlags.resize(static_cast<size_t>(idx) + 1, false);
     }
-    if(!cache[idx] || linearFlags[idx] != filterLinear)
+    if(!cache[idx].isValid() || linearFlags[idx] != filterLinear)
     {
-        if(!cache[idx])
-            cache[idx] = std::make_unique<Texture>();
         linearFlags[idx] = filterLinear;
         auto& bmp = global::bmpArray[idx];
         if(bmp.surface)
-            cache[idx]->load(bmp.surface.get(), filterLinear);
+            cache[idx].load(bmp.surface.get(), filterLinear);
     }
-    return *cache[idx];
+    return cache[idx];
 }
 
 void ensureBmpTex(int idx)
