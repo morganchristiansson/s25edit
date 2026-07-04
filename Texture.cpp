@@ -164,27 +164,25 @@ void Texture::draw(const Rect& destRect, const Rect& srcRect) const
         return;
 
     // Clamp source rect to texture bounds
-    int srcL = std::max(0, srcRect.left);
-    int srcT = std::max(0, srcRect.top);
-    int srcR = std::min(static_cast<int>(size_.x), srcRect.right);
-    int srcB = std::min(static_cast<int>(size_.y), srcRect.bottom);
-    if(srcL >= srcR || srcT >= srcB)
+    const Position clampedOrigin(std::max(0, srcRect.left), std::max(0, srcRect.top));
+    const Position clampedEnd(std::min(static_cast<int>(size_.x), srcRect.right),
+                              std::min(static_cast<int>(size_.y), srcRect.bottom));
+    if(clampedOrigin.x >= clampedEnd.x || clampedOrigin.y >= clampedEnd.y)
         return;
 
-    const float u0 = float(srcL) / float(size_.x);
-    const float v0 = float(srcT) / float(size_.y);
-    const float u1 = float(srcR) / float(size_.x);
-    const float v1 = float(srcB) / float(size_.y);
+    const auto texSize = Position(static_cast<int>(size_.x), static_cast<int>(size_.y));
+    const Point<float> uv0 = Point<float>(clampedOrigin) / Point<float>(texSize);
+    const Point<float> uv1 = Point<float>(clampedEnd) / Point<float>(texSize);
 
     glBindTexture(GL_TEXTURE_2D, texture_);
     glBegin(GL_QUADS);
-    glTexCoord2f(u0, v0);
+    glTexCoord2f(uv0.x, uv0.y);
     glVertex2i(destRect.left, destRect.top);
-    glTexCoord2f(u1, v0);
+    glTexCoord2f(uv1.x, uv0.y);
     glVertex2i(destRect.right, destRect.top);
-    glTexCoord2f(u1, v1);
+    glTexCoord2f(uv1.x, uv1.y);
     glVertex2i(destRect.right, destRect.bottom);
-    glTexCoord2f(u0, v1);
+    glTexCoord2f(uv0.x, uv1.y);
     glVertex2i(destRect.left, destRect.bottom);
     glEnd();
 }
@@ -222,15 +220,15 @@ Texture& getBmpTexture(int idx, bool filterLinear)
 {
     static std::vector<std::unique_ptr<Texture>> cache;
     static std::vector<bool> linearFlags;
-    if(idx < 0 || idx >= static_cast<int>(global::bmpArray.size()))
+    if(static_cast<unsigned>(idx) >= global::bmpArray.size())
     {
         static Texture dummy;
         return dummy;
     }
-    if(static_cast<int>(cache.size()) <= idx)
+    if(static_cast<unsigned>(idx) >= cache.size())
     {
-        cache.resize(idx + 1);
-        linearFlags.resize(idx + 1, false);
+        cache.resize(static_cast<size_t>(idx) + 1);
+        linearFlags.resize(static_cast<size_t>(idx) + 1, false);
     }
     if(!cache[idx] || linearFlags[idx] != filterLinear)
     {
@@ -246,7 +244,7 @@ Texture& getBmpTexture(int idx, bool filterLinear)
 
 void ensureBmpTex(int idx)
 {
-    if(idx < 0 || idx >= static_cast<int>(global::bmpArray.size()))
+    if(static_cast<unsigned>(idx) >= global::bmpArray.size())
         return;
     getBmpTexture(idx);
 }
