@@ -85,6 +85,10 @@ void ensureBmpTex(int idx);
 /// Draw a bitmap texture tiled to fill the given rectangle.
 void drawTiledBmp(int bmpIdx, const Rect& destRect);
 
+/// Draw a 3D-style button box: tiled background, 2px black frame (sunken if pressed, raised otherwise),
+/// and tiled foreground inset by 2px.
+void drawButtonBox(const Rect& area, bool pressed, int baseTex, int faceTex);
+
 /// Get or create the cached OpenGL texture for a bitmap index.
 /// The texture is loaded from the SDL surface on first access.
 /// @param filterLinear Whether to use linear filtering (for scaled backgrounds).

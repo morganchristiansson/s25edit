@@ -257,31 +257,10 @@ void CTextfield::Draw(Position parentOrigin)
     // Draw the background / foreground
     if(pic_background >= 0 && pic_foreground >= 0)
     {
-        const int bmpIdx = button_style ? pic_background : pic_foreground;
-        drawTiledBmp(bmpIdx, area);
-
         if(button_style)
-        {
-            // Draw black frame (2px) using filled rectangles
-            const int w = area.right - area.left;
-            const int h = area.bottom - area.top;
-
-            if(active)
-            {
-                // Black frame is left and up
-                DrawRect(Rect(area.left, area.top, 2, h), 0, 0, 0);
-                DrawRect(Rect(area.left, area.top, w, 2), 0, 0, 0);
-            } else
-            {
-                // Black frame is right and down
-                DrawRect(Rect(area.right - 2, area.top, 2, h), 0, 0, 0);
-                DrawRect(Rect(area.left, area.bottom - 2, w, 2), 0, 0, 0);
-            }
-
-            // Draw foreground (inset by 2px)
-            const Rect fgRect(area.getOrigin() + Position(2, 2), size_ - Extent(4, 4));
-            drawTiledBmp(pic_foreground, fgRect);
-        }
+            drawButtonBox(area, active, pic_background, pic_foreground);
+        else
+            drawTiledBmp(pic_foreground, area);
     } else
     {
         // Fill with black

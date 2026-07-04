@@ -128,28 +128,9 @@ void CButton::Draw(Position parentOrigin) const
 {
     const Position absPos = parentOrigin + pos_;
 
-    // 1. Draw background (tiled)
-    drawTiledBmp(pic_background, Rect(absPos, size_));
-
-    // 2. Draw black frame (2px) using filled rectangles
-    if(clicked)
-    {
-        // Left border (2px wide, full height)
-        DrawRect(Rect(absPos.x, absPos.y, 2, size_.y), 0, 0, 0);
-        // Top border (2px tall, full width)
-        DrawRect(Rect(absPos.x, absPos.y, size_.x, 2), 0, 0, 0);
-    } else
-    {
-        // Right border (2px wide, full height)
-        DrawRect(Rect(absPos.x + static_cast<int>(size_.x) - 2, absPos.y, 2, size_.y), 0, 0, 0);
-        // Bottom border (2px tall, full width)
-        DrawRect(Rect(absPos.x, absPos.y + static_cast<int>(size_.y) - 2, size_.x, 2), 0, 0, 0);
-    }
-
-    // 3. Draw foreground (tiled, inset by 2px for the black frame)
+    // Draw 3D button box
     const int foreground = (marked && !clicked) ? pic_marked : pic_normal;
-    const Rect fgRect(absPos + Position(2, 2), size_ - Extent(4, 4));
-    drawTiledBmp(foreground, fgRect);
+    drawButtonBox(Rect(absPos, size_), clicked, pic_background, foreground);
 
     // 4. Draw picture or text centered inside the button
     if(button_picture >= 0)

@@ -286,3 +286,26 @@ void drawTiledBmp(int bmpIdx, const Rect& destRect)
     }
     glEnd();
 }
+
+void drawButtonBox(const Rect& area, bool pressed, int baseTex, int faceTex)
+{
+    drawTiledBmp(baseTex, area);
+
+    const int w = area.right - area.left;
+    const int h = area.bottom - area.top;
+
+    // 2px black frame: left+top if pressed, right+bottom otherwise
+    if(pressed)
+    {
+        DrawRect(Rect(area.left, area.top, 2, h), 0, 0, 0);
+        DrawRect(Rect(area.left, area.top, w, 2), 0, 0, 0);
+    } else
+    {
+        DrawRect(Rect(area.right - 2, area.top, 2, h), 0, 0, 0);
+        DrawRect(Rect(area.left, area.bottom - 2, w, 2), 0, 0, 0);
+    }
+
+    // Foreground inset by 2px
+    const Rect fgRect(area.getOrigin() + Position(2, 2), Extent(w - 4, h - 4));
+    drawTiledBmp(faceTex, fgRect);
+}
