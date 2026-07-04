@@ -34,8 +34,7 @@ static Position makePos(WindowPos pos, Extent size)
 {
     if(pos == WindowPos::Center)
     {
-        const auto res = global::s2->getRes();
-        return Position(res.x / 2, res.y / 2) - size / 2;
+        return (global::s2->getRes() - size) / 2;
     } else
         return {};
 }
