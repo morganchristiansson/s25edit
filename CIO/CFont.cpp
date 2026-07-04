@@ -34,6 +34,8 @@ void CFont::setColor(FontColor color)
 
 void CFont::setText(std::string text)
 {
+    if(text == string_)
+        return;
     this->string_ = std::move(text);
     size_ = Extent(getTextWidth(string_, fontsize_), getLineHeight(fontsize_));
 }
