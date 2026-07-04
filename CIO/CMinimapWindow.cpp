@@ -28,8 +28,8 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
         return;
 
     // Fill pixel buffer with minimap terrain
-    int num_x = 1, num_y = 1;
-    map->drawMinimap(pixels_, cw, ch, num_x, num_y);
+    int scale = 1;
+    map->drawMinimap(pixels_, cw, ch, scale);
 
     // Upload to texture and draw
     if(!minimapTex_.isValid() || minimapTex_.getWidth() != cw || minimapTex_.getHeight() != ch)
@@ -46,7 +46,7 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
             continue;
 
         const int flagIdx = FLAG_BLUE_DARK + i % 7;
-        const Position hqPos(hqX / num_x, hqY / num_y);
+        const Position hqPos(hqX / scale, hqY / scale);
         getBmpTexture(flagIdx).draw(
           contentPos + hqPos
           - Position(static_cast<int>(global::bmpArray[flagIdx].nx), static_cast<int>(global::bmpArray[flagIdx].ny)));
@@ -61,8 +61,8 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
         const auto& dispRect = map->getDisplayRect();
         const Position arrowPos =
           contentPos
-          + Position((dispRect.left + static_cast<int>(dispRect.getSize().x) / 2) / triangleWidth / num_x,
-                     (dispRect.top + static_cast<int>(dispRect.getSize().y) / 2) / triangleHeight / num_y)
+          + Position((dispRect.left + static_cast<int>(dispRect.getSize().x) / 2) / triangleWidth / scale,
+                     (dispRect.top + static_cast<int>(dispRect.getSize().y) / 2) / triangleHeight / scale)
           - Position(static_cast<int>(global::bmpArray[arrowIdx].nx), static_cast<int>(global::bmpArray[arrowIdx].ny));
         getBmpTexture(arrowIdx).draw(arrowPos);
     }

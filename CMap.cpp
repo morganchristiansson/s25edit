@@ -1328,34 +1328,33 @@ static void getTriangleColor(const bobMAP& map, Uint8 rawTextureId, Sint16& r, S
     b = 128;
 }
 
-void CMap::drawMinimap(std::vector<uint32_t>& pixels, int w, int h, int& num_x, int& num_y)
+void CMap::drawMinimap(std::vector<uint32_t>& pixels, int w, int h, int& scale)
 {
-    // Scale factors to keep minimap within a reasonable size
-    num_x = (map->width > 256 ? map->width / 256 : 1);
-    num_y = (map->height > 256 ? map->height / 256 : 1);
+    // Scale factor to keep minimap within a reasonable size
+    int sx = (map->width > 256 ? map->width / 256 : 1);
+    int sy = (map->height > 256 ? map->height / 256 : 1);
 
     // Keep aspect ratio uniform
-    num_x = (num_x > num_y ? num_x : num_y);
-    num_y = num_x;
+    scale = (sx > sy ? sx : sy);
 
     // Ensure pixel buffer is the right size
     pixels.assign(static_cast<size_t>(w) * h, 0);
 
     for(int y = 0; y < map->height; y++)
     {
-        if(y % num_y != 0)
+        if(y % scale != 0)
             continue;
 
         for(int x = 0; x < map->width; x++)
         {
-            if(x % num_x != 0)
+            if(x % scale != 0)
                 continue;
 
             Sint16 r, g, b;
             getTriangleColor(*map, map->getVertex(x, y).rsuTexture, r, g, b);
 
-            const int py = y / num_y;
-            const int px = x / num_x;
+            const int py = y / scale;
+            const int px = x / scale;
             if(py >= h || px >= w)
                 continue;
 

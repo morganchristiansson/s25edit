@@ -165,7 +165,7 @@ public:
     /// @param pixels  BGRA pixel buffer (w * h entries, 0xAARRGGBB layout).
     /// @param w,h     Dimensions of the pixel buffer.
     /// @param num_x,num_y  Output: scaling factors (map coords → pixel coords).
-    void drawMinimap(std::vector<uint32_t>& pixels, int w, int h, int& num_x, int& num_y);
+    void drawMinimap(std::vector<uint32_t>& pixels, int w, int h, int& scale);
     void render();
     // get and set some variables necessary for cursor behavior
     void setHexagonMode(bool HexagonMode)
