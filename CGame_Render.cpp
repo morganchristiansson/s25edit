@@ -79,7 +79,7 @@ void CGame::Render()
         }
     }
 
-    // render active menus — each draws itself with OpenGL
+    // render active menus
     for(auto& Menu : Menus)
     {
         if(Menu->isActive())
@@ -117,10 +117,10 @@ void CGame::Render()
         framesPassedSinceLastFps = 0;
         lastFpsTick = curTicks;
     }
-    // Draw FPS counter directly with OpenGL text rendering
+    // Draw FPS counter
     lastFps.Draw(Position(0, 0));
 
-    // ---- Cursor on top of everything ----
+    // Cursor on top of everything
     const auto& cursorImg = Cursor.clicked ? (Cursor.button.right ? cross_ : cursorClicked_) : cursor_;
     cursorImg.Draw(Cursor.pos);
 

@@ -157,9 +157,7 @@ void CButton::Draw(Position parentOrigin) const
         auto& picTex = getBmpTexture(button_picture);
         if(picTex.isValid())
         {
-            const auto& picBmp = global::bmpArray[button_picture];
-            const Position picPos =
-              absPos + Position(size_) / 2 - Position(static_cast<int>(picBmp.w), static_cast<int>(picBmp.h)) / 2;
+            const Position picPos = absPos + size_ / 2 - Position(picTex.getWidth(), picTex.getHeight()) / 2;
             picTex.Draw(picPos);
         }
     } else if(button_text)

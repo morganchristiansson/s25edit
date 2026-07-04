@@ -86,11 +86,10 @@ void CWindow::setMouseData(SDL_MouseMotionEvent motion)
             x_ = 0;
         {
             const auto res = global::s2->getRes();
-            const int resW = res.x, resH = res.y;
-            if(x_ + w_ >= resW) //-V807
-                x_ = resW - w_ - 1;
-            if(y_ + h_ >= resH)
-                y_ = resH - h_ - 1;
+            if(x_ + w_ >= static_cast<int>(res.x)) //-V807
+                x_ = static_cast<int>(res.x) - w_ - 1;
+            if(y_ + h_ >= static_cast<int>(res.y))
+                y_ = static_cast<int>(res.y) - h_ - 1;
         }
     }
 
@@ -279,7 +278,7 @@ void CWindow::Draw(Position /*parentOrigin*/)
         }
     }
 
-    // 3. Upper frame (state depends on marked/clicked)
+    // 3. Upper frame
     int upperframe;
     if(clicked)
         upperframe = WINDOW_UPPER_FRAME_CLICKED;
@@ -290,63 +289,55 @@ void CWindow::Draw(Position /*parentOrigin*/)
 
     // Draw upper frame tile across the top of the window
     {
-        const auto& bmp = global::bmpArray[upperframe];
-        const Rect upperFrameRect(origin, Extent(w_, bmp.h));
+        const Rect upperFrameRect(origin, Extent(w_, getBmpTexture(upperframe).getHeight()));
         drawTiledBmp(upperframe, upperFrameRect);
     }
 
     // 4. Title text
     if(title)
     {
-        const int titleY = origin.y + (static_cast<int>(global::bmpArray[WINDOW_UPPER_FRAME].h) - 9) / 2;
+        const int titleY = origin.y + (getBmpTexture(WINDOW_UPPER_FRAME).getHeight() - 9) / 2;
         CFont::Draw(title, Position(origin.x + static_cast<int>(w_) / 2, titleY), FontSize::Small, FontColor::Yellow,
                     FontAlign::Middle);
     }
 
     // 5. Lower frame (tiled across bottom)
     {
-        const auto& bmp = global::bmpArray[WINDOW_LOWER_FRAME];
-        const Rect lowerFrameRect(Position(origin.x, origin.y + static_cast<int>(h_) - static_cast<int>(bmp.h)),
-                                  Extent(w_, bmp.h));
+        const int lowerH = getBmpTexture(WINDOW_LOWER_FRAME).getHeight();
+        const Rect lowerFrameRect(Position(origin.x, origin.y + static_cast<int>(h_) - lowerH),
+                                  Extent(w_, lowerH));
         drawTiledBmp(WINDOW_LOWER_FRAME, lowerFrameRect);
     }
 
     // 6. Left frame (tiled down left side)
     {
-        const auto& bmp = global::bmpArray[WINDOW_LEFT_FRAME];
-        const Rect leftFrameRect(origin, Extent(bmp.w, h_));
+        const Rect leftFrameRect(origin, Extent(getBmpTexture(WINDOW_LEFT_FRAME).getWidth(), h_));
         drawTiledBmp(WINDOW_LEFT_FRAME, leftFrameRect);
     }
 
     // 7. Right frame (tiled down right side)
     {
-        const auto& bmp = global::bmpArray[WINDOW_RIGHT_FRAME];
-        const Rect rightFrameRect(Position(origin.x + static_cast<int>(w_) - static_cast<int>(bmp.w), origin.y),
-                                  Extent(bmp.w, h_));
+        const int rightW = getBmpTexture(WINDOW_RIGHT_FRAME).getWidth();
+        const Rect rightFrameRect(Position(origin.x + static_cast<int>(w_) - rightW, origin.y),
+                                  Extent(rightW, h_));
         drawTiledBmp(WINDOW_RIGHT_FRAME, rightFrameRect);
     }
 
     // 8. Corners
     {
-        auto& texLU = getBmpTexture(WINDOW_LEFT_UPPER_CORNER);
-        if(texLU.isValid())
-            texLU.Draw(origin);
+        getBmpTexture(WINDOW_LEFT_UPPER_CORNER).Draw(origin);
 
-        auto& texRU = getBmpTexture(WINDOW_RIGHT_UPPER_CORNER);
-        if(texRU.isValid())
-        {
-            const auto& ruBmp = global::bmpArray[WINDOW_RIGHT_UPPER_CORNER];
-            texRU.Draw(Position(origin.x + static_cast<int>(w_) - static_cast<int>(ruBmp.w), origin.y));
-        }
+        const int ruW = getBmpTexture(WINDOW_RIGHT_UPPER_CORNER).getWidth();
+        getBmpTexture(WINDOW_RIGHT_UPPER_CORNER)
+          .Draw(Position(origin.x + static_cast<int>(w_) - ruW, origin.y));
 
-        auto& texCR = getBmpTexture(WINDOW_CORNER_RECTANGLE);
-        if(texCR.isValid())
-        {
-            const auto& crBmp = global::bmpArray[WINDOW_CORNER_RECTANGLE];
-            texCR.Draw(Position(origin.x, origin.y + static_cast<int>(h_) - static_cast<int>(crBmp.h)));
-            texCR.Draw(Position(origin.x + static_cast<int>(w_) - static_cast<int>(crBmp.w),
-                                origin.y + static_cast<int>(h_) - static_cast<int>(crBmp.h)));
-        }
+        const int crW = getBmpTexture(WINDOW_CORNER_RECTANGLE).getWidth();
+        const int crH = getBmpTexture(WINDOW_CORNER_RECTANGLE).getHeight();
+        getBmpTexture(WINDOW_CORNER_RECTANGLE)
+          .Draw(Position(origin.x, origin.y + static_cast<int>(h_) - crH));
+        getBmpTexture(WINDOW_CORNER_RECTANGLE)
+          .Draw(Position(origin.x + static_cast<int>(w_) - crW,
+                         origin.y + static_cast<int>(h_) - crH));
     }
 
     // 9. Close button
@@ -359,9 +350,7 @@ void CWindow::Draw(Position /*parentOrigin*/)
             closebutton = WINDOW_BUTTON_CLOSE_MARKED;
         else
             closebutton = WINDOW_BUTTON_CLOSE;
-        auto& tex = getBmpTexture(closebutton);
-        if(tex.isValid())
-            tex.Draw(origin);
+        getBmpTexture(closebutton).Draw(origin);
     }
 
     // 10. Minimize button
@@ -374,12 +363,8 @@ void CWindow::Draw(Position /*parentOrigin*/)
             minimizebutton = WINDOW_BUTTON_MINIMIZE_MARKED;
         else
             minimizebutton = WINDOW_BUTTON_MINIMIZE;
-        auto& tex = getBmpTexture(minimizebutton);
-        if(tex.isValid())
-        {
-            const auto& bmp = global::bmpArray[minimizebutton];
-            tex.Draw(Position(origin.x + static_cast<int>(w_) - static_cast<int>(bmp.w), origin.y));
-        }
+        getBmpTexture(minimizebutton)
+          .Draw(Position(origin.x + static_cast<int>(w_) - getBmpTexture(minimizebutton).getWidth(), origin.y));
     }
 
     // 11. Resize button
@@ -392,12 +377,8 @@ void CWindow::Draw(Position /*parentOrigin*/)
             resizebutton = WINDOW_BUTTON_RESIZE_MARKED;
         else
             resizebutton = WINDOW_BUTTON_RESIZE;
-        auto& tex = getBmpTexture(resizebutton);
-        if(tex.isValid())
-        {
-            const auto& bmp = global::bmpArray[resizebutton];
-            tex.Draw(Position(origin + Position(w_, h_)) - Position(static_cast<int>(bmp.w), static_cast<int>(bmp.h)));
-        }
+        getBmpTexture(resizebutton)
+          .Draw(Position(origin + Position(w_, h_)) - Position(getBmpTexture(resizebutton).getWidth(), getBmpTexture(resizebutton).getHeight()));
     }
 }
 

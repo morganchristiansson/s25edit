@@ -53,11 +53,9 @@ void callback::PleaseWait(int Param)
             WNDWait->addText("Please wait ...", Position(10, 10), FontSize::Large);
             // we need to render this window NOW, cause the render loop will do it too late (when the operation
             // is done and we don't need the "Please wait"-window anymore)
-            {
-                glClear(GL_COLOR_BUFFER_BIT);
-                WNDWait->Draw(Position(0, 0));
-                global::s2->RenderPresent();
-            }
+            glClear(GL_COLOR_BUFFER_BIT);
+            WNDWait->Draw(Position(0, 0));
+            global::s2->RenderPresent();
             break;
 
         case CALL_FROM_GAMELOOP: // This window gives a "Please Wait"-string, so it is shown while there is an intensive
@@ -3101,8 +3099,7 @@ void callback::submenu1(int Param)
                                "Create window");
             picObject = SubMenu->addPicture(submenu1, PICOBJECT, Position(200, 30), MIS0BOBS_SHIP);
             picObject->setMotionParams(PICOBJECTENTRY, PICOBJECTLEAVE);
-            // text block with \n
-            SubMenu->addText("\nTextblock:\n\nNeue Zeile\nNoch eine neue Zeile", Position(400, 200), FontSize::Large);
+            SubMenu->addText("Textblock", Position(400, 200), FontSize::Large);
             testTextfield = SubMenu->addTextfield(Position(400, 300), 10, 3);
             testSelectBox = SubMenu->addSelectBox(Position(500, 500), Extent(300, 200));
             testSelectBox->addOption("Erste Option", submenu1, SELECTBOX_OPTION1);

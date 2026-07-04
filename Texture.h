@@ -38,9 +38,6 @@ public:
     /// Draw the texture at native size at the given position.
     void Draw(Position pos) const;
 
-    /// Convenience overload for callers using separate x/y.
-    void Draw(int x, int y) const { Draw(Position(x, y)); }
-
     /// Draw a sub-rectangle of the texture to fill the given destination rect.
     /// srcRect is in texture-local coordinates (may be clipped).
     void Draw(const Rect& destRect, const Rect& srcRect) const;
@@ -69,13 +66,13 @@ private:
 //  Free functions for simple GL drawing (rect, line) used by UI components.
 // ---------------------------------------------------------------------------
 
-/// Draw a filled rectangle (disables texturing).
+/// Draw a filled rectangle.
 void DrawRect(const Rect& rect, unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255);
 
-/// Draw a filled rectangle with a 32-bit RGBA colour.
+/// Draw a filled rectangle with a 32-bit ARGB colour.
 void DrawRect(const Rect& rect, unsigned color);
 
-/// Draw a 1-pixel-wide axis-aligned line (disables texturing).
+/// Draw a 1-pixel-wide line.
 void DrawLine(Position p1, Position p2, unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255);
 
 // ---------------------------------------------------------------------------

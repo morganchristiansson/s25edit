@@ -11,10 +11,6 @@
 #include <utility>
 #include <vector>
 
-// ---------------------------------------------------------------------------
-//  Texture
-// ---------------------------------------------------------------------------
-
 Texture::~Texture()
 {
     if(texture_)
@@ -123,19 +119,16 @@ void Texture::Draw(const Rect& destRect) const
     if(!texture_)
         return;
 
-    const float uScale = 1.0f;
-    const float vScale = 1.0f;
-
     glColor4f(1, 1, 1, 1);
     glBindTexture(GL_TEXTURE_2D, texture_);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
     glVertex2i(destRect.left, destRect.top);
-    glTexCoord2f(uScale, 0);
+    glTexCoord2f(1, 0);
     glVertex2i(destRect.right, destRect.top);
-    glTexCoord2f(uScale, vScale);
+    glTexCoord2f(1, 1);
     glVertex2i(destRect.right, destRect.bottom);
-    glTexCoord2f(0, vScale);
+    glTexCoord2f(0, 1);
     glVertex2i(destRect.left, destRect.bottom);
     glEnd();
 }
@@ -190,10 +183,6 @@ void Texture::Draw(const Rect& destRect, const Rect& srcRect) const
     glEnd();
 }
 
-// ---------------------------------------------------------------------------
-//  DrawRect / DrawLine helpers
-// ---------------------------------------------------------------------------
-
 void DrawRect(const Rect& rect, unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
     glDisable(GL_TEXTURE_2D);
@@ -222,10 +211,6 @@ void DrawLine(Position p1, Position p2, unsigned char r, unsigned char g, unsign
     glEnd();
     glEnable(GL_TEXTURE_2D);
 }
-
-// ---------------------------------------------------------------------------
-//  Texture-drawing helpers
-// ---------------------------------------------------------------------------
 
 Texture& getBmpTexture(int idx, bool filterLinear)
 {
@@ -262,15 +247,12 @@ void ensureBmpTex(int idx)
 
 void drawTiledBmp(int bmpIdx, const Rect& destRect)
 {
-    if(bmpIdx < 0 || bmpIdx >= static_cast<int>(global::bmpArray.size()))
-        return;
     auto& tex = getBmpTexture(bmpIdx);
     if(!tex.isValid())
         return;
 
-    const auto& bmp = global::bmpArray[bmpIdx];
-    const unsigned tileW = bmp.w;
-    const unsigned tileH = bmp.h;
+    const unsigned tileW = static_cast<unsigned>(tex.getWidth());
+    const unsigned tileH = static_cast<unsigned>(tex.getHeight());
     if(tileW == 0 || tileH == 0)
         return;
 

@@ -209,14 +209,9 @@ void CFont::Draw(const std::string& string, Position pos, FontSize fontsize, Fon
         return;
 
     // Measure text width for alignment
-    const unsigned lineHeight = getLineHeight(fontsize);
     unsigned totalWidth = 0;
     for(unsigned char c : string)
-    {
-        if(c == '\n')
-            break;
         totalWidth += getCharWidth(c, fontsize, color);
-    }
 
     // Apply alignment
     switch(align)
@@ -230,13 +225,6 @@ void CFont::Draw(const std::string& string, Position pos, FontSize fontsize, Fon
     Position curPos = pos;
     for(unsigned char c : string)
     {
-        if(c == '\n')
-        {
-            curPos.x = pos.x;
-            curPos.y += lineHeight;
-            continue;
-        }
-
         const unsigned idx = getIndexForChar(c, fontsize, color);
         if(idx >= global::bmpArray.size())
             continue;
@@ -249,9 +237,8 @@ void CFont::Draw(const std::string& string, Position pos, FontSize fontsize, Fon
         }
 
         const auto& bmp = global::bmpArray[idx];
-        const unsigned charW = bmp.w;
-        tex.Draw(Rect(curPos.x, curPos.y, charW, bmp.h));
-        curPos.x += charW;
+        tex.Draw(Rect(curPos.x, curPos.y, bmp.w, bmp.h));
+        curPos.x += bmp.w;
     }
 }
 
@@ -339,10 +326,7 @@ unsigned CFont::getTextWidth(const std::string& string, FontSize fontsize)
 {
     unsigned w = 0;
     for(unsigned char c : string)
-    {
-        if(c == '\n')
-            break;
         w += getCharWidth(c, fontsize, FontColor::Yellow); // width is same for all colors
-    }
+
     return w;
 }

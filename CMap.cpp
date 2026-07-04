@@ -1368,7 +1368,6 @@ void CMap::drawMinimap(std::vector<uint32_t>& pixels, int w, int h, int& num_x, 
             const auto r8 = (Uint8)(r > 255 ? 255 : (r < 0 ? 0 : r));
             const auto g8 = (Uint8)(g > 255 ? 255 : (g < 0 ? 0 : g));
             const auto b8 = (Uint8)(b > 255 ? 255 : (b < 0 ? 0 : b));
-            // BGRA format: A<<24 | R<<16 | G<<8 | B
             pixel = (0xFFu << 24) | (r8 << 16) | (g8 << 8) | b8;
         }
     }

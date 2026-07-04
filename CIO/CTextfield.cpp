@@ -299,7 +299,7 @@ void CTextfield::Draw(Position parentOrigin)
     }
 
     // Prepare text with cursor
-    std::string displayText = text_.data();
+    std::string displayText = getText();
 
     // Add blinking cursor if active
     if(blinking_chiffre && active)
