@@ -280,7 +280,7 @@ void CTextfield::draw(Position parentOrigin)
     if(!displayText.empty())
     {
         textObj->setText(displayText);
-        textObj->draw(Position(area.left + 2, area.top + 2));
+        textObj->draw(Position(parentOrigin.x + 2, parentOrigin.y + 4));
     }
 
     rendered = true;

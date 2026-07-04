@@ -931,10 +931,10 @@ void callback::EditorSaveMenu(int Param)
                 TXTF_Filename = WNDSave->addTextfield(Position(10, 13), 21, 1);
                 const bfs::path filePath = MapObj->getFilepath().empty() ? "MyMap" : MapObj->getFilepath();
                 TXTF_Filename->setText(filePath.filename().string());
-                WNDSave->addText("Mapname", Position(98, 38), FontSize::Small);
+                WNDSave->addText("Mapname", Position(100, 38), FontSize::Small);
                 TXTF_Mapname = WNDSave->addTextfield(Position(10, 50), 21, 1);
                 TXTF_Mapname->setText(MapObj->getMapname());
-                WNDSave->addText("Author", Position(110, 75), FontSize::Medium);
+                WNDSave->addText("Author", Position(100, 75), FontSize::Small);
                 TXTF_Author = WNDSave->addTextfield(Position(10, 87), 21, 1);
                 TXTF_Author->setText(MapObj->getAuthor());
                 WNDSave->addButton(EditorSaveMenu, SAVEMAP, Position(170, 120), Extent(90, 20), BUTTON_GREY, "Save");

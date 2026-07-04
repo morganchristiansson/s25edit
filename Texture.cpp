@@ -197,6 +197,7 @@ void drawRect(const Rect& rect, unsigned color)
     glVertex2i(rect.left, rect.bottom);
     glEnd();
     glEnable(GL_TEXTURE_2D);
+    glColor4f(1, 1, 1, 1);
 }
 
 void drawLine(Position p1, Position p2, unsigned char r, unsigned char g, unsigned char b, unsigned char a)
