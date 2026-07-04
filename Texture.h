@@ -45,6 +45,9 @@ public:
     /// Returns the raw GL texture name (for use with glBindTexture).
     unsigned getHandle() const { return texture_; }
 
+    /// Size in pixels.
+    Extent getSize() const { return size_; }
+
     /// Width in pixels.
     int getWidth() const { return size_.x; }
 

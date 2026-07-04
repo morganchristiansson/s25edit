@@ -170,7 +170,7 @@ void Texture::draw(const Rect& destRect, const Rect& srcRect) const
     if(clampedOrigin.x >= clampedEnd.x || clampedOrigin.y >= clampedEnd.y)
         return;
 
-    const auto texSize = Position(static_cast<int>(size_.x), static_cast<int>(size_.y));
+    const auto texSize = Position(getSize());
     const Point<float> uv0 = Point<float>(clampedOrigin) / Point<float>(texSize);
     const Point<float> uv1 = Point<float>(clampedEnd) / Point<float>(texSize);
 
@@ -255,22 +255,21 @@ void drawTiledBmp(int bmpIdx, const Rect& destRect)
     if(!tex.isValid())
         return;
 
-    const unsigned tileW = static_cast<unsigned>(tex.getWidth());
-    const unsigned tileH = static_cast<unsigned>(tex.getHeight());
-    if(tileW == 0 || tileH == 0)
+    const Position tileSize(tex.getSize());
+    if(tileSize.x <= 0 || tileSize.y <= 0)
         return;
 
     glColor4f(1, 1, 1, 1);
     glBindTexture(GL_TEXTURE_2D, tex.getHandle());
     glBegin(GL_QUADS);
-    for(int y = destRect.top; y < destRect.bottom; y += static_cast<int>(tileH))
+    for(int y = destRect.top; y < destRect.bottom; y += tileSize.y)
     {
-        const int rowH = std::min(static_cast<int>(tileH), static_cast<int>(destRect.bottom - y));
-        const float v1 = static_cast<float>(rowH) / static_cast<float>(tileH);
-        for(int x = destRect.left; x < destRect.right; x += static_cast<int>(tileW))
+        const int rowH = std::min(tileSize.y, destRect.bottom - y);
+        const float v1 = float(rowH) / float(tileSize.y);
+        for(int x = destRect.left; x < destRect.right; x += tileSize.x)
         {
-            const int colW = std::min(static_cast<int>(tileW), static_cast<int>(destRect.right - x));
-            const float u1 = static_cast<float>(colW) / static_cast<float>(tileW);
+            const int colW = std::min(tileSize.x, destRect.right - x);
+            const float u1 = float(colW) / float(tileSize.x);
 
             glTexCoord2f(0, 0);
             glVertex2i(x, y);

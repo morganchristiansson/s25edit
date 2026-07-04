@@ -138,7 +138,7 @@ void CButton::draw(Position parentOrigin) const
         auto& picTex = getBmpTexture(button_picture);
         if(picTex.isValid())
         {
-            const Position picPos = absPos + size_ / 2 - Position(picTex.getWidth(), picTex.getHeight()) / 2;
+            const Position picPos = absPos + size_ / 2 - Position(picTex.getSize()) / 2;
             picTex.draw(picPos);
         }
     } else if(button_text)

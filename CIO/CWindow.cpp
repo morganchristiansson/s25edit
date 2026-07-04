@@ -381,7 +381,7 @@ void CWindow::draw(Position /*parentOrigin*/)
             resizebutton = WINDOW_BUTTON_RESIZE;
         getBmpTexture(resizebutton)
           .draw(Position(origin + Position(static_cast<int>(size_.x), static_cast<int>(size_.y)))
-                - Position(getBmpTexture(resizebutton).getWidth(), getBmpTexture(resizebutton).getHeight()));
+                - Position(getBmpTexture(resizebutton).getSize()));
     }
 }
 
