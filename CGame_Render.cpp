@@ -47,7 +47,7 @@ void CGame::Render()
     // if the S2 loading screen is shown, render only this until user clicks a mouse button
     if(showLoadScreen)
     {
-        splashBg_.Draw(Rect(0, 0, GameResolution.x, GameResolution.y));
+        splashBg_.draw(Rect(0, 0, GameResolution.x, GameResolution.y));
         SDL_GL_SwapWindow(window_.get());
         return;
     }
@@ -75,7 +75,7 @@ void CGame::Render()
                                  FontColor::Orange);
 
             mapTex_.load(mapSurf);
-            mapTex_.Draw(Rect(0, 0, GameResolution.x, GameResolution.y));
+            mapTex_.draw(Rect(0, 0, GameResolution.x, GameResolution.y));
         }
     }
 
@@ -83,7 +83,7 @@ void CGame::Render()
     for(auto& Menu : Menus)
     {
         if(Menu->isActive())
-            Menu->Draw(Position(0, 0));
+            Menu->draw(Position(0, 0));
     }
 
     // render windows ordered by priority
@@ -100,7 +100,7 @@ void CGame::Render()
         for(auto& Window : Windows)
         {
             if(Window->getPriority() == actualPriority)
-                Window->Draw(Position(0, 0));
+                Window->draw(Position(0, 0));
         }
     }
 
@@ -118,11 +118,11 @@ void CGame::Render()
         lastFpsTick = curTicks;
     }
     // Draw FPS counter
-    lastFps.Draw(Position(0, 0));
+    lastFps.draw(Position(0, 0));
 
     // Cursor on top of everything
     const auto& cursorImg = Cursor.clicked ? (Cursor.button.right ? cross_ : cursorClicked_) : cursor_;
-    cursorImg.Draw(Cursor.pos);
+    cursorImg.draw(Cursor.pos);
 
     SDL_GL_SwapWindow(window_.get());
 

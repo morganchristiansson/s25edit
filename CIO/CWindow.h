@@ -46,7 +46,7 @@ private:
 
 public:
     /// Draw the window using OpenGL (frame and children).
-    void Draw(Position parentOrigin) override;
+    void draw(Position parentOrigin) override;
 
     CWindow(void callback(int), int callbackQuitMessage, Position pos, Extent size, const char* title = nullptr,
             int color = WINDOW_GREEN1, Uint8 flags = 0);

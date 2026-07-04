@@ -38,7 +38,7 @@ public:
     bool hasRendered();
     void setMouseData(SDL_MouseButtonEvent button);
     void setMouseData(SDL_MouseMotionEvent motion);
-    void Draw(Position parentOrigin);
+    void draw(Position parentOrigin);
     void setColor(int color);
     void setTextColor(FontColor color) { text_color = color; }
     void addOption(const std::string& string, std::function<void(int)> callback = nullptr, int param = 0);

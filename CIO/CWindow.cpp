@@ -256,7 +256,7 @@ void CWindow::setMouseData(SDL_MouseButtonEvent button)
 //  Draw — OpenGL version of the old render()
 // ---------------------------------------------------------------------------
 
-void CWindow::Draw(Position /*parentOrigin*/)
+void CWindow::draw(Position /*parentOrigin*/)
 {
     const Position origin = pos_;
     const Rect winRect(origin, size_);
@@ -278,7 +278,7 @@ void CWindow::Draw(Position /*parentOrigin*/)
         {
             glEnable(GL_SCISSOR_TEST);
             glScissor(contentX, viewH - (contentY + contentH), contentW, contentH);
-            DrawChildren(origin);
+            drawChildren(origin);
             glDisable(GL_SCISSOR_TEST);
         }
     }
@@ -302,7 +302,7 @@ void CWindow::Draw(Position /*parentOrigin*/)
     if(title)
     {
         const int titleY = origin.y + (getBmpTexture(WINDOW_UPPER_FRAME).getHeight() - 9) / 2;
-        CFont::Draw(title, Position(origin.x + static_cast<int>(size_.x) / 2, titleY), FontSize::Small,
+        CFont::draw(title, Position(origin.x + static_cast<int>(size_.x) / 2, titleY), FontSize::Small,
                     FontColor::Yellow, FontAlign::Middle);
     }
 
@@ -330,16 +330,16 @@ void CWindow::Draw(Position /*parentOrigin*/)
 
     // 8. Corners
     {
-        getBmpTexture(WINDOW_LEFT_UPPER_CORNER).Draw(origin);
+        getBmpTexture(WINDOW_LEFT_UPPER_CORNER).draw(origin);
 
         const int ruW = getBmpTexture(WINDOW_RIGHT_UPPER_CORNER).getWidth();
-        getBmpTexture(WINDOW_RIGHT_UPPER_CORNER).Draw(Position(origin.x + static_cast<int>(size_.x) - ruW, origin.y));
+        getBmpTexture(WINDOW_RIGHT_UPPER_CORNER).draw(Position(origin.x + static_cast<int>(size_.x) - ruW, origin.y));
 
         const int crW = getBmpTexture(WINDOW_CORNER_RECTANGLE).getWidth();
         const int crH = getBmpTexture(WINDOW_CORNER_RECTANGLE).getHeight();
-        getBmpTexture(WINDOW_CORNER_RECTANGLE).Draw(Position(origin.x, origin.y + static_cast<int>(size_.y) - crH));
+        getBmpTexture(WINDOW_CORNER_RECTANGLE).draw(Position(origin.x, origin.y + static_cast<int>(size_.y) - crH));
         getBmpTexture(WINDOW_CORNER_RECTANGLE)
-          .Draw(Position(origin.x + static_cast<int>(size_.x) - crW, origin.y + static_cast<int>(size_.y) - crH));
+          .draw(Position(origin.x + static_cast<int>(size_.x) - crW, origin.y + static_cast<int>(size_.y) - crH));
     }
 
     // 9. Close button
@@ -352,7 +352,7 @@ void CWindow::Draw(Position /*parentOrigin*/)
             closebutton = WINDOW_BUTTON_CLOSE_MARKED;
         else
             closebutton = WINDOW_BUTTON_CLOSE;
-        getBmpTexture(closebutton).Draw(origin);
+        getBmpTexture(closebutton).draw(origin);
     }
 
     // 10. Minimize button
@@ -366,7 +366,7 @@ void CWindow::Draw(Position /*parentOrigin*/)
         else
             minimizebutton = WINDOW_BUTTON_MINIMIZE;
         getBmpTexture(minimizebutton)
-          .Draw(Position(origin.x + static_cast<int>(size_.x) - getBmpTexture(minimizebutton).getWidth(), origin.y));
+          .draw(Position(origin.x + static_cast<int>(size_.x) - getBmpTexture(minimizebutton).getWidth(), origin.y));
     }
 
     // 11. Resize button
@@ -380,7 +380,7 @@ void CWindow::Draw(Position /*parentOrigin*/)
         else
             resizebutton = WINDOW_BUTTON_RESIZE;
         getBmpTexture(resizebutton)
-          .Draw(Position(origin + Position(static_cast<int>(size_.x), static_cast<int>(size_.y)))
+          .draw(Position(origin + Position(static_cast<int>(size_.x), static_cast<int>(size_.y)))
                 - Position(getBmpTexture(resizebutton).getWidth(), getBmpTexture(resizebutton).getHeight()));
     }
 }

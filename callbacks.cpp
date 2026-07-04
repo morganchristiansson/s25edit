@@ -55,7 +55,7 @@ void callback::PleaseWait(int Param)
             // we need to render this window NOW, cause the render loop will do it too late (when the operation
             // is done and we don't need the "Please wait"-window anymore)
             glClear(GL_COLOR_BUFFER_BIT);
-            WNDWait->Draw(Position(0, 0));
+            WNDWait->draw(Position(0, 0));
             global::s2->RenderPresent();
             break;
 

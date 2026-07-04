@@ -18,5 +18,5 @@ public:
     void setInactive() { active = false; }
     bool isActive() const { return active; }
 
-    void Draw(Position parentOrigin) override;
+    void draw(Position parentOrigin) override;
 };

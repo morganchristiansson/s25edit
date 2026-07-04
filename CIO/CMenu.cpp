@@ -10,7 +10,7 @@
 
 CMenu::CMenu(int pic_background) : CControlContainer(pic_background) {}
 
-void CMenu::Draw(Position /*parentOrigin*/)
+void CMenu::draw(Position /*parentOrigin*/)
 {
     // Draw full-screen background texture
     const int picIdx = getBackground();
@@ -20,10 +20,10 @@ void CMenu::Draw(Position /*parentOrigin*/)
         if(tex.isValid())
         {
             const auto res = global::s2->getRes();
-            tex.Draw(Rect(0, 0, res.x, res.y));
+            tex.draw(Rect(0, 0, res.x, res.y));
         }
     }
 
     // Draw children
-    DrawChildren(Position(0, 0));
+    drawChildren(Position(0, 0));
 }

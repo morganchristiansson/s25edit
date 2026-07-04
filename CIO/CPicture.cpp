@@ -64,10 +64,10 @@ void CPicture::setMouseData(const SDL_MouseButtonEvent& button)
     }
 }
 
-void CPicture::Draw(Position parentOrigin) const
+void CPicture::draw(Position parentOrigin) const
 {
     auto& tex = getBmpTexture(picture_);
     if(!tex.isValid())
         return;
-    tex.Draw(parentOrigin + pos_);
+    tex.draw(parentOrigin + pos_);
 }

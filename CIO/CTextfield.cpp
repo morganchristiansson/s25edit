@@ -229,7 +229,7 @@ void CTextfield::setKeyboardData(const SDL_KeyboardEvent& key)
     }
 }
 
-void CTextfield::Draw(Position parentOrigin)
+void CTextfield::draw(Position parentOrigin)
 {
     const Position absPos = parentOrigin + getPos();
     const Rect area(absPos, size_);
@@ -264,7 +264,7 @@ void CTextfield::Draw(Position parentOrigin)
     } else
     {
         // Fill with black
-        DrawRect(area, 0, 0, 0, 255);
+        drawRect(area, 0, 0, 0, 255);
     }
 
     // Prepare text with cursor
@@ -280,7 +280,7 @@ void CTextfield::Draw(Position parentOrigin)
     if(!displayText.empty())
     {
         textObj->setText(displayText);
-        textObj->Draw(Position(area.left + 2, area.top + 2));
+        textObj->draw(Position(area.left + 2, area.top + 2));
     }
 
     rendered = true;

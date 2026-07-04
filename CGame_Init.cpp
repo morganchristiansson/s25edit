@@ -171,7 +171,7 @@ bool CGame::Init()
     // std::cout << "\nShow loading screen...";
     showLoadScreen = true;
     glClear(GL_COLOR_BUFFER_BIT);
-    splashBg_.Draw(Rect(0, 0, GameResolution.x, GameResolution.y));
+    splashBg_.draw(Rect(0, 0, GameResolution.x, GameResolution.y));
     SDL_GL_SwapWindow(window_.get());
 
     GameDataLoader gdLoader(global::worldDesc);

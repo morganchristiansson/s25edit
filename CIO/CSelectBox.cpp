@@ -215,7 +215,7 @@ void CSelectBox::setPos(Position pos)
     pos_ = pos;
 }
 
-void CSelectBox::Draw(Position parentOrigin)
+void CSelectBox::draw(Position parentOrigin)
 {
     const Position absPos = parentOrigin + pos_;
     const Rect area(absPos, size_);
@@ -227,7 +227,7 @@ void CSelectBox::Draw(Position parentOrigin)
     } else
     {
         // Fill with black
-        DrawRect(area, 0, 0, 0, 255);
+        drawRect(area, 0, 0, 0, 255);
     }
 
     // Clip entries to the select box area
@@ -239,14 +239,14 @@ void CSelectBox::Draw(Position parentOrigin)
     // Draw entries
     for(const auto& entry : Entries)
     {
-        entry->Draw(absPos);
+        entry->draw(absPos);
     }
 
     glDisable(GL_SCISSOR_TEST);
 
     // Draw scroll buttons (on top, within the select box)
-    ScrollUpButton->Draw(absPos);
-    ScrollDownButton->Draw(absPos);
+    ScrollUpButton->draw(absPos);
+    ScrollDownButton->draw(absPos);
 
     rendered = true;
 }

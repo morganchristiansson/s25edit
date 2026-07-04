@@ -33,14 +33,14 @@ public:
     void upload(const void* bgraPixels);
 
     /// Draw the texture stretched to fill the given rect.
-    void Draw(const Rect& destRect) const;
+    void draw(const Rect& destRect) const;
 
     /// Draw the texture at native size at the given position.
-    void Draw(Position pos) const;
+    void draw(Position pos) const;
 
     /// Draw a sub-rectangle of the texture to fill the given destination rect.
     /// srcRect is in texture-local coordinates (may be clipped).
-    void Draw(const Rect& destRect, const Rect& srcRect) const;
+    void draw(const Rect& destRect, const Rect& srcRect) const;
 
     /// Returns the raw GL texture name (for use with glBindTexture).
     unsigned getHandle() const { return texture_; }
@@ -67,13 +67,13 @@ private:
 // ---------------------------------------------------------------------------
 
 /// Draw a filled rectangle.
-void DrawRect(const Rect& rect, unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255);
+void drawRect(const Rect& rect, unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255);
 
 /// Draw a filled rectangle with a 32-bit ARGB colour.
-void DrawRect(const Rect& rect, unsigned color);
+void drawRect(const Rect& rect, unsigned color);
 
 /// Draw a 1-pixel-wide line.
-void DrawLine(Position p1, Position p2, unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255);
+void drawLine(Position p1, Position p2, unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255);
 
 // ---------------------------------------------------------------------------
 //  Texture-drawing helpers for UI components

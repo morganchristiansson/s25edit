@@ -50,7 +50,7 @@ public:
     bool hasRendered();
     void setMouseData(SDL_MouseButtonEvent button);
     void setKeyboardData(const SDL_KeyboardEvent& key);
-    void Draw(Position parentOrigin);
+    void draw(Position parentOrigin);
     void setColor(int color);
     void setTextColor(FontColor color);
     std::string getText() const { return text_.data(); }

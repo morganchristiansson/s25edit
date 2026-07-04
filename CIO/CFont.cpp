@@ -196,14 +196,14 @@ unsigned getCharWidth(uint8_t c, FontSize fontsize, FontColor color)
 //  OpenGL Draw methods
 // ---------------------------------------------------------------------------
 
-void CFont::Draw(Position parentOrigin) const
+void CFont::draw(Position parentOrigin) const
 {
     if(string_.empty())
         return;
-    Draw(string_, parentOrigin + pos_, fontsize_, color_, FontAlign::Left);
+    draw(string_, parentOrigin + pos_, fontsize_, color_, FontAlign::Left);
 }
 
-void CFont::Draw(const std::string& string, Position pos, FontSize fontsize, FontColor color, FontAlign align)
+void CFont::draw(const std::string& string, Position pos, FontSize fontsize, FontColor color, FontAlign align)
 {
     if(string.empty())
         return;
@@ -237,7 +237,7 @@ void CFont::Draw(const std::string& string, Position pos, FontSize fontsize, Fon
         }
 
         const auto& bmp = global::bmpArray[idx];
-        tex.Draw(Rect(curPos.x, curPos.y, bmp.w, bmp.h));
+        tex.draw(Rect(curPos.x, curPos.y, bmp.w, bmp.h));
         curPos.x += bmp.w;
     }
 }

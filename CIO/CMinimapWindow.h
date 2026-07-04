@@ -13,7 +13,7 @@ class CMinimapWindow final : public CWindow
     std::vector<uint32_t> pixels_; ///< Pixel buffer for minimap terrain
     Texture minimapTex_;
 
-    void Draw(Position parentOrigin) override;
+    void draw(Position parentOrigin) override;
 
 public:
     using CWindow::CWindow;

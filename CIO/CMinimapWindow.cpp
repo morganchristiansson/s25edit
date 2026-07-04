@@ -9,10 +9,10 @@
 #include "../globals.h"
 #include "CFont.h"
 
-void CMinimapWindow::Draw(Position /*parentOrigin*/)
+void CMinimapWindow::draw(Position /*parentOrigin*/)
 {
     // Draw window chrome (frame, title, close button, background, child elements)
-    CWindow::Draw(pos_);
+    CWindow::draw(pos_);
 
     // Compute content area (inside the frames)
     const auto& b = getBorder();
@@ -35,7 +35,7 @@ void CMinimapWindow::Draw(Position /*parentOrigin*/)
     if(!minimapTex_.isValid() || minimapTex_.getWidth() != cw || minimapTex_.getHeight() != ch)
         minimapTex_.createEmpty(contentSize);
     minimapTex_.upload(pixels_.data());
-    minimapTex_.Draw(Rect(contentPos, contentSize));
+    minimapTex_.draw(Rect(contentPos, contentSize));
 
     // Draw player flags and numbers on top
     for(int i = 0; i < MAXPLAYERS; i++)
@@ -47,12 +47,12 @@ void CMinimapWindow::Draw(Position /*parentOrigin*/)
 
         const int flagIdx = FLAG_BLUE_DARK + i % 7;
         const Position hqPos(hqX / num_x, hqY / num_y);
-        getBmpTexture(flagIdx).Draw(
+        getBmpTexture(flagIdx).draw(
           contentPos + hqPos
           - Position(static_cast<int>(global::bmpArray[flagIdx].nx), static_cast<int>(global::bmpArray[flagIdx].ny)));
 
         // Player number
-        CFont::Draw(std::to_string(i + 1), contentPos + hqPos, FontSize::Small, FontColor::MintGreen);
+        CFont::draw(std::to_string(i + 1), contentPos + hqPos, FontSize::Small, FontColor::MintGreen);
     }
 
     // Draw the position arrow
@@ -64,6 +64,6 @@ void CMinimapWindow::Draw(Position /*parentOrigin*/)
           + Position((dispRect.left + static_cast<int>(dispRect.getSize().x) / 2) / triangleWidth / num_x,
                      (dispRect.top + static_cast<int>(dispRect.getSize().y) / 2) / triangleHeight / num_y)
           - Position(static_cast<int>(global::bmpArray[arrowIdx].nx), static_cast<int>(global::bmpArray[arrowIdx].ny));
-        getBmpTexture(arrowIdx).Draw(arrowPos);
+        getBmpTexture(arrowIdx).draw(arrowPos);
     }
 }

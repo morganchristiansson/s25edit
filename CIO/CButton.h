@@ -41,7 +41,7 @@ public:
     void setButtonText(const char* text);
     void setMouseData(const SDL_MouseMotionEvent& motion);
     void setMouseData(const SDL_MouseButtonEvent& button);
-    void Draw(Position parentOrigin) const;
+    void draw(Position parentOrigin) const;
     void setColor(int color);
     void setTextColor(FontColor color) { button_text_color = color; };
     void setMotionParams(int entry, int leave)

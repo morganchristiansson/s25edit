@@ -122,7 +122,7 @@ bool Texture::load(SDL_Surface* surface, bool filterLinear)
     return true;
 }
 
-void Texture::Draw(const Rect& destRect) const
+void Texture::draw(const Rect& destRect) const
 {
     if(!texture_)
         return;
@@ -140,7 +140,7 @@ void Texture::Draw(const Rect& destRect) const
     glEnd();
 }
 
-void Texture::Draw(Position pos) const
+void Texture::draw(Position pos) const
 {
     if(!texture_)
         return;
@@ -158,7 +158,7 @@ void Texture::Draw(Position pos) const
     glEnd();
 }
 
-void Texture::Draw(const Rect& destRect, const Rect& srcRect) const
+void Texture::draw(const Rect& destRect, const Rect& srcRect) const
 {
     if(!texture_)
         return;
@@ -189,7 +189,7 @@ void Texture::Draw(const Rect& destRect, const Rect& srcRect) const
     glEnd();
 }
 
-void DrawRect(const Rect& rect, unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+void drawRect(const Rect& rect, unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
     glDisable(GL_TEXTURE_2D);
     glColor4ub(r, g, b, a);
@@ -202,12 +202,12 @@ void DrawRect(const Rect& rect, unsigned char r, unsigned char g, unsigned char 
     glEnable(GL_TEXTURE_2D);
 }
 
-void DrawRect(const Rect& rect, unsigned color)
+void drawRect(const Rect& rect, unsigned color)
 {
-    DrawRect(rect, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF);
+    drawRect(rect, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF);
 }
 
-void DrawLine(Position p1, Position p2, unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+void drawLine(Position p1, Position p2, unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
     glDisable(GL_TEXTURE_2D);
     glColor4ub(r, g, b, a);
@@ -297,12 +297,12 @@ void drawButtonBox(const Rect& area, bool pressed, int baseTex, int faceTex)
     // 2px black frame: left+top if pressed, right+bottom otherwise
     if(pressed)
     {
-        DrawRect(Rect(area.left, area.top, 2, h), 0, 0, 0);
-        DrawRect(Rect(area.left, area.top, w, 2), 0, 0, 0);
+        drawRect(Rect(area.left, area.top, 2, h), 0, 0, 0);
+        drawRect(Rect(area.left, area.top, w, 2), 0, 0, 0);
     } else
     {
-        DrawRect(Rect(area.right - 2, area.top, 2, h), 0, 0, 0);
-        DrawRect(Rect(area.left, area.bottom - 2, w, 2), 0, 0, 0);
+        drawRect(Rect(area.right - 2, area.top, 2, h), 0, 0, 0);
+        drawRect(Rect(area.left, area.bottom - 2, w, 2), 0, 0, 0);
     }
 
     // Foreground inset by 2px

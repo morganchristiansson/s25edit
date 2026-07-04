@@ -34,7 +34,7 @@ public:
     void setY(int y) { pos_.y = y; };
     void setMouseData(const SDL_MouseMotionEvent& motion);
     void setMouseData(const SDL_MouseButtonEvent& button);
-    void Draw(Position parentOrigin) const;
+    void draw(Position parentOrigin) const;
     void setMotionParams(int entry, int leave)
     {
         motionEntryParam = entry;

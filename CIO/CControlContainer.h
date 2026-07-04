@@ -53,9 +53,9 @@ private:
 protected:
     /// Draw the container's background and child elements using OpenGL.
     /// @param parentOrigin  Absolute position of the parent container.
-    virtual void Draw(Position parentOrigin);
+    virtual void draw(Position parentOrigin);
     /// Draw children at the given origin (calls each child's Draw).
-    void DrawChildren(Position origin);
+    void drawChildren(Position origin);
 
     auto& getTextFields() { return textfields; }
     const auto& getTextFields() const { return textfields; }

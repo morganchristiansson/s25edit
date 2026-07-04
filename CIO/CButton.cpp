@@ -124,7 +124,7 @@ void CButton::setMouseData(const SDL_MouseButtonEvent& button)
     }
 }
 
-void CButton::Draw(Position parentOrigin) const
+void CButton::draw(Position parentOrigin) const
 {
     const Position absPos = parentOrigin + pos_;
 
@@ -139,7 +139,7 @@ void CButton::Draw(Position parentOrigin) const
         if(picTex.isValid())
         {
             const Position picPos = absPos + size_ / 2 - Position(picTex.getWidth(), picTex.getHeight()) / 2;
-            picTex.Draw(picPos);
+            picTex.draw(picPos);
         }
     } else if(button_text)
     {
@@ -148,6 +148,6 @@ void CButton::Draw(Position parentOrigin) const
         const unsigned textH = static_cast<unsigned>(FontSize::Medium);
         const Position textPos =
           absPos + Position(static_cast<int>(size_.x / 2 - textW / 2), static_cast<int>((size_.y - textH) / 2));
-        CFont::Draw(button_text, textPos, FontSize::Medium, button_text_color, FontAlign::Left);
+        CFont::draw(button_text, textPos, FontSize::Medium, button_text_color, FontAlign::Left);
     }
 }

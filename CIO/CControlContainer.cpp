@@ -179,27 +179,27 @@ bool CControlContainer::delSelectBox(CSelectBox* SelectBoxToDelete)
 //  Draw & DrawChildren
 // ---------------------------------------------------------------------------
 
-void CControlContainer::Draw(Position parentOrigin)
+void CControlContainer::draw(Position parentOrigin)
 {
-    DrawChildren(parentOrigin);
+    drawChildren(parentOrigin);
 }
 
-void CControlContainer::DrawChildren(Position origin)
+void CControlContainer::drawChildren(Position origin)
 {
     for(const auto& picture : pictures)
-        picture->Draw(origin);
+        picture->draw(origin);
     for(const auto& text : texts)
-        text->Draw(origin);
+        text->draw(origin);
     for(const auto& textfield : textfields)
-        textfield->Draw(origin);
+        textfield->draw(origin);
     for(const auto& selectbox : selectboxes)
-        selectbox->Draw(origin);
+        selectbox->draw(origin);
     for(const auto& button : buttons)
-        button->Draw(origin);
+        button->draw(origin);
     for(const auto& static_picture : static_pictures)
     {
         auto& tex = getBmpTexture(static_picture.pic);
         if(tex.isValid())
-            tex.Draw(origin + static_picture.pos);
+            tex.draw(origin + static_picture.pos);
     }
 }
