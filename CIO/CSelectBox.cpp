@@ -227,7 +227,7 @@ void CSelectBox::draw(Position parentOrigin)
     } else
     {
         // Fill with black
-        drawRect(area, 0, 0, 0, 255);
+        drawRect(area, 0xFF000000);
     }
 
     // Clip entries to the select box area

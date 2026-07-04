@@ -69,9 +69,6 @@ private:
 //  Free functions for simple GL drawing (rect, line) used by UI components.
 // ---------------------------------------------------------------------------
 
-/// Draw a filled rectangle.
-void drawRect(const Rect& rect, unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255);
-
 /// Draw a filled rectangle with a 32-bit ARGB colour.
 void drawRect(const Rect& rect, unsigned color);
 

@@ -264,7 +264,7 @@ void CTextfield::draw(Position parentOrigin)
     } else
     {
         // Fill with black
-        drawRect(area, 0, 0, 0, 255);
+        drawRect(area, 0xFF000000);
     }
 
     // Prepare text with cursor

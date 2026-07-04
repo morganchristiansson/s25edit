@@ -187,10 +187,10 @@ void Texture::draw(const Rect& destRect, const Rect& srcRect) const
     glEnd();
 }
 
-void drawRect(const Rect& rect, unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+void drawRect(const Rect& rect, unsigned color)
 {
     glDisable(GL_TEXTURE_2D);
-    glColor4ub(r, g, b, a);
+    glColor4ub((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF);
     glBegin(GL_QUADS);
     glVertex2i(rect.left, rect.top);
     glVertex2i(rect.right, rect.top);
@@ -198,11 +198,6 @@ void drawRect(const Rect& rect, unsigned char r, unsigned char g, unsigned char 
     glVertex2i(rect.left, rect.bottom);
     glEnd();
     glEnable(GL_TEXTURE_2D);
-}
-
-void drawRect(const Rect& rect, unsigned color)
-{
-    drawRect(rect, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF);
 }
 
 void drawLine(Position p1, Position p2, unsigned char r, unsigned char g, unsigned char b, unsigned char a)
@@ -294,12 +289,12 @@ void drawButtonBox(const Rect& area, bool pressed, int baseTex, int faceTex)
     // 2px black frame: left+top if pressed, right+bottom otherwise
     if(pressed)
     {
-        drawRect(Rect(area.left, area.top, 2, h), 0, 0, 0);
-        drawRect(Rect(area.left, area.top, w, 2), 0, 0, 0);
+        drawRect(Rect(area.left, area.top, 2, h), 0xFF000000);
+        drawRect(Rect(area.left, area.top, w, 2), 0xFF000000);
     } else
     {
-        drawRect(Rect(area.right - 2, area.top, 2, h), 0, 0, 0);
-        drawRect(Rect(area.left, area.bottom - 2, w, 2), 0, 0, 0);
+        drawRect(Rect(area.right - 2, area.top, 2, h), 0xFF000000);
+        drawRect(Rect(area.left, area.bottom - 2, w, 2), 0xFF000000);
     }
 
     // Foreground inset by 2px
