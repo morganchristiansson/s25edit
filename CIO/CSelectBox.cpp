@@ -223,7 +223,7 @@ void CSelectBox::draw(Position parentOrigin)
     // Draw background
     if(pic_background >= 0 && pic_foreground >= 0)
     {
-        drawTiledBmp(pic_foreground, area);
+        getBmpTexture(pic_foreground).drawTiled(area);
     } else
     {
         // Fill with black

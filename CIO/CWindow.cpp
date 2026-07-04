@@ -263,7 +263,7 @@ void CWindow::draw(Position /*parentOrigin*/)
 
     // 1. Background fill (tiled)
     if(getBackground() != WINDOW_NOTHING)
-        drawTiledBmp(getBackground(), winRect);
+        getBmpTexture(getBackground()).drawTiled(winRect);
 
     // 2. Content (if not minimized) — clipped to the area inside frames
     if(!minimized)
@@ -295,7 +295,7 @@ void CWindow::draw(Position /*parentOrigin*/)
     // Draw upper frame tile across the top of the window
     {
         const Rect upperFrameRect(origin, Extent(size_.x, getBmpTexture(upperframe).getHeight()));
-        drawTiledBmp(upperframe, upperFrameRect);
+        getBmpTexture(upperframe).drawTiled(upperFrameRect);
     }
 
     // 4. Title text
@@ -311,13 +311,13 @@ void CWindow::draw(Position /*parentOrigin*/)
         const int lowerH = getBmpTexture(WINDOW_LOWER_FRAME).getHeight();
         const Rect lowerFrameRect(Position(origin.x, origin.y + static_cast<int>(size_.y) - lowerH),
                                   Extent(size_.x, lowerH));
-        drawTiledBmp(WINDOW_LOWER_FRAME, lowerFrameRect);
+        getBmpTexture(WINDOW_LOWER_FRAME).drawTiled(lowerFrameRect);
     }
 
     // 6. Left frame (tiled down left side)
     {
         const Rect leftFrameRect(origin, Extent(getBmpTexture(WINDOW_LEFT_FRAME).getWidth(), size_.y));
-        drawTiledBmp(WINDOW_LEFT_FRAME, leftFrameRect);
+        getBmpTexture(WINDOW_LEFT_FRAME).drawTiled(leftFrameRect);
     }
 
     // 7. Right frame (tiled down right side)
@@ -325,7 +325,7 @@ void CWindow::draw(Position /*parentOrigin*/)
         const int rightW = getBmpTexture(WINDOW_RIGHT_FRAME).getWidth();
         const Rect rightFrameRect(Position(origin.x + static_cast<int>(size_.x) - rightW, origin.y),
                                   Extent(rightW, size_.y));
-        drawTiledBmp(WINDOW_RIGHT_FRAME, rightFrameRect);
+        getBmpTexture(WINDOW_RIGHT_FRAME).drawTiled(rightFrameRect);
     }
 
     // 8. Corners

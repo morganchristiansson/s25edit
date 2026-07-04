@@ -244,27 +244,27 @@ void ensureBmpTex(int idx)
     getBmpTexture(idx);
 }
 
-void drawTiledBmp(int bmpIdx, const Rect& destRect)
+void Texture::drawTiled(const Rect& destRect) const
 {
-    auto& tex = getBmpTexture(bmpIdx);
-    if(!tex.isValid())
+    if(!texture_)
         return;
 
-    const Position tileSize(tex.getSize());
-    if(tileSize.x <= 0 || tileSize.y <= 0)
+    const int tileW = getWidth();
+    const int tileH = getHeight();
+    if(tileW <= 0 || tileH <= 0)
         return;
 
     glColor4f(1, 1, 1, 1);
-    glBindTexture(GL_TEXTURE_2D, tex.getHandle());
+    glBindTexture(GL_TEXTURE_2D, texture_);
     glBegin(GL_QUADS);
-    for(int y = destRect.top; y < destRect.bottom; y += tileSize.y)
+    for(int y = destRect.top; y < destRect.bottom; y += tileH)
     {
-        const int rowH = std::min(tileSize.y, destRect.bottom - y);
-        const float v1 = float(rowH) / float(tileSize.y);
-        for(int x = destRect.left; x < destRect.right; x += tileSize.x)
+        const int rowH = std::min(tileH, destRect.bottom - y);
+        const float v1 = float(rowH) / float(tileH);
+        for(int x = destRect.left; x < destRect.right; x += tileW)
         {
-            const int colW = std::min(tileSize.x, destRect.right - x);
-            const float u1 = float(colW) / float(tileSize.x);
+            const int colW = std::min(tileW, destRect.right - x);
+            const float u1 = float(colW) / float(tileW);
 
             glTexCoord2f(0, 0);
             glVertex2i(x, y);
@@ -281,7 +281,7 @@ void drawTiledBmp(int bmpIdx, const Rect& destRect)
 
 void drawButtonBox(const Rect& area, bool pressed, int baseTex, int faceTex)
 {
-    drawTiledBmp(baseTex, area);
+    getBmpTexture(baseTex).drawTiled(area);
 
     const int w = area.right - area.left;
     const int h = area.bottom - area.top;
@@ -299,5 +299,5 @@ void drawButtonBox(const Rect& area, bool pressed, int baseTex, int faceTex)
 
     // Foreground inset by 2px
     const Rect fgRect(area.getOrigin() + Position(2, 2), Extent(w - 4, h - 4));
-    drawTiledBmp(faceTex, fgRect);
+    getBmpTexture(faceTex).drawTiled(fgRect);
 }

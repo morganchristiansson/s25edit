@@ -260,7 +260,7 @@ void CTextfield::draw(Position parentOrigin)
         if(button_style)
             drawButtonBox(area, active, pic_background, pic_foreground);
         else
-            drawTiledBmp(pic_foreground, area);
+            getBmpTexture(pic_foreground).drawTiled(area);
     } else
     {
         // Fill with black

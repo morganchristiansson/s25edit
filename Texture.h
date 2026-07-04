@@ -42,6 +42,9 @@ public:
     /// srcRect is in texture-local coordinates (may be clipped).
     void draw(const Rect& destRect, const Rect& srcRect) const;
 
+    /// Tile the texture to fill the given rectangle.
+    void drawTiled(const Rect& destRect) const;
+
     /// Returns the raw GL texture name (for use with glBindTexture).
     unsigned getHandle() const { return texture_; }
 
@@ -81,9 +84,6 @@ void drawLine(Position p1, Position p2, unsigned char r, unsigned char g, unsign
 
 /// Ensure the OpenGL texture for a bitmap index is loaded from its SDL surface.
 void ensureBmpTex(int idx);
-
-/// Draw a bitmap texture tiled to fill the given rectangle.
-void drawTiledBmp(int bmpIdx, const Rect& destRect);
 
 /// Draw a 3D-style button box: tiled background, 2px black frame (sunken if pressed, raised otherwise),
 /// and tiled foreground inset by 2px.
