@@ -20,10 +20,8 @@ class CWindow : public CControlContainer
     bool active = true;
 
 protected:
-    Sint16 x_;
-    Sint16 y_;
-    Uint16 w_;
-    Uint16 h_;
+    Position pos_;
+    Extent size_;
 
 private:
     const char* title;
@@ -55,13 +53,9 @@ public:
     CWindow(void callback(int), int callbackQuitMessage, WindowPos pos, Extent size, const char* title = nullptr,
             int color = WINDOW_GREEN1, Uint8 flags = 0);
     // Access
-    Position getPos() const { return {x_, y_}; }
-    Extent getSize() const { return {w_, h_}; }
-    int getX() const { return x_; };
-    int getY() const { return y_; };
-    int getW() const { return w_; };
-    int getH() const { return h_; };
-    Rect getRect() const { return Rect(x_, y_, w_, h_); }
+    const Position& getPos() const { return pos_; }
+    const Extent& getSize() const { return size_; }
+    Rect getRect() const { return Rect(pos_, size_); }
     int getPriority() const { return priority; }
     void setPriority(int priority) { this->priority = priority; }
     void setTitle(const char* title);

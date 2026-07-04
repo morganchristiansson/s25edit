@@ -67,7 +67,10 @@ public:
     virtual ~CControlContainer() noexcept;
     // Access
     const FrameInsets& getBorder() const { return border; }
-    Extent getBorderSize() const { return {static_cast<unsigned>(border.left + border.right), static_cast<unsigned>(border.top + border.bottom)}; }
+    Extent getBorderSize() const
+    {
+        return {static_cast<unsigned>(border.left + border.right), static_cast<unsigned>(border.top + border.bottom)};
+    }
     void setBackgroundPicture(int pic_background);
     virtual void setMouseData(SDL_MouseMotionEvent motion);
     virtual void setMouseData(SDL_MouseButtonEvent button);

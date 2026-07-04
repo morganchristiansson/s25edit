@@ -17,6 +17,7 @@
 #include "CIO/CWindow.h"
 #include "CMap.h"
 #include "CSurface.h"
+#include "CollisionDetection.h"
 #include "globals.h"
 #include "helpers/format.hpp"
 #include "s25util/strAlgos.h"
@@ -815,8 +816,8 @@ void callback::EditorLoadMenu(int Param)
             int borderT = global::bmpArray[WINDOW_UPPER_FRAME].h;
             int borderB = global::bmpArray[WINDOW_LOWER_FRAME].h;
 
-            int window_w = WNDLoad->getW();
-            int window_h = WNDLoad->getH();
+            int window_w = static_cast<int>(WNDLoad->getSize().x);
+            int window_h = static_cast<int>(WNDLoad->getSize().y);
             int client_w = window_w - borderL - borderR;
             int client_h = window_h - borderT - borderB;
 
@@ -2866,9 +2867,8 @@ void callback::MinimapMenu(int Param)
                 Position mouse;
                 if(SDL_GetMouseState(&mouse.x, &mouse.y) & SDL_BUTTON(1))
                 {
-                    if(mouse.x > (WNDMinimap->getX() + 6) && mouse.x < (WNDMinimap->getX() + WNDMinimap->getW() - 6)
-                       && mouse.y > (WNDMinimap->getY() + 20)
-                       && mouse.y < (WNDMinimap->getY() + WNDMinimap->getH() - 10))
+                    if(IsPointInRect(
+                         mouse, Rect(WNDMinimap->getPos() + Position(6, 20), WNDMinimap->getSize() - Extent(12, 30))))
                     {
                         DisplayRectangle displayRect = MapObj->getDisplayRect();
                         displayRect.setOrigin((mouse - WNDMinimap->getRect().getOrigin() - Position(6, 20)

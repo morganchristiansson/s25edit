@@ -12,13 +12,13 @@
 void CMinimapWindow::Draw(Position /*parentOrigin*/)
 {
     // Draw window chrome (frame, title, close button, background, child elements)
-    CWindow::Draw(Position(x_, y_));
+    CWindow::Draw(pos_);
 
     // Compute content area (inside the frames)
     const auto& b = getBorder();
-    const Position contentPos(x_ + b.left, y_ + b.top);
-    const int cw = static_cast<int>(w_) - b.left - b.right;
-    const int ch = static_cast<int>(h_) - b.top - b.bottom;
+    const Position contentPos(pos_.x + b.left, pos_.y + b.top);
+    const int cw = static_cast<int>(size_.x) - b.left - b.right;
+    const int ch = static_cast<int>(size_.y) - b.top - b.bottom;
     if(cw <= 0 || ch <= 0)
         return;
     const Extent contentSize(cw, ch);
@@ -47,23 +47,23 @@ void CMinimapWindow::Draw(Position /*parentOrigin*/)
 
         const int flagIdx = FLAG_BLUE_DARK + i % 7;
         const Position hqPos(hqX / num_x, hqY / num_y);
-        getBmpTexture(flagIdx).Draw(contentPos + hqPos - Position(static_cast<int>(global::bmpArray[flagIdx].nx),
-                                                                  static_cast<int>(global::bmpArray[flagIdx].ny)));
+        getBmpTexture(flagIdx).Draw(
+          contentPos + hqPos
+          - Position(static_cast<int>(global::bmpArray[flagIdx].nx), static_cast<int>(global::bmpArray[flagIdx].ny)));
 
         // Player number
-        CFont::Draw(std::to_string(i + 1), contentPos + hqPos, FontSize::Small,
-                    FontColor::MintGreen);
+        CFont::Draw(std::to_string(i + 1), contentPos + hqPos, FontSize::Small, FontColor::MintGreen);
     }
 
     // Draw the position arrow
     {
         const int arrowIdx = MAPPIC_ARROWCROSS_ORANGE;
         const auto& dispRect = map->getDisplayRect();
-        const Position arrowPos = contentPos
+        const Position arrowPos =
+          contentPos
           + Position((dispRect.left + static_cast<int>(dispRect.getSize().x) / 2) / triangleWidth / num_x,
                      (dispRect.top + static_cast<int>(dispRect.getSize().y) / 2) / triangleHeight / num_y)
-          - Position(static_cast<int>(global::bmpArray[arrowIdx].nx),
-                     static_cast<int>(global::bmpArray[arrowIdx].ny));
+          - Position(static_cast<int>(global::bmpArray[arrowIdx].nx), static_cast<int>(global::bmpArray[arrowIdx].ny));
         getBmpTexture(arrowIdx).Draw(arrowPos);
     }
 }

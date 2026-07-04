@@ -13,9 +13,7 @@
 #include "CTextfield.h"
 #include "helpers/containerUtils.h"
 
-CControlContainer::CControlContainer(int pic_background)
-    : CControlContainer(pic_background, FrameInsets{})
-{}
+CControlContainer::CControlContainer(int pic_background) : CControlContainer(pic_background, FrameInsets{}) {}
 CControlContainer::CControlContainer(int pic_background, FrameInsets border)
     : border(border), pic_background(pic_background)
 {}
