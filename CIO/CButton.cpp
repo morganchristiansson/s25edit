@@ -144,10 +144,8 @@ void CButton::draw(Position parentOrigin) const
     } else if(button_text)
     {
         // Draw text centered (using native-size texture drawing for each character)
-        const unsigned textW = CFont::getTextWidth(button_text, FontSize::Medium);
-        const unsigned textH = static_cast<unsigned>(FontSize::Medium);
-        const Position textPos =
-          absPos + Position(static_cast<int>(size_.x / 2 - textW / 2), static_cast<int>((size_.y - textH) / 2));
+        const Extent textSize(CFont::getTextWidth(button_text, FontSize::Medium), static_cast<unsigned>(FontSize::Medium));
+        const Position textPos = absPos + (Position(size_) - textSize) / 2;
         CFont::draw(button_text, textPos, FontSize::Medium, button_text_color, FontAlign::Left);
     }
 }
