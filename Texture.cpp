@@ -102,12 +102,20 @@ bool Texture::load(SDL_Surface* surface, bool filterLinear)
         return true;
     }
 
-    // 32-bit surface: convert to destination format (BGRA).
-    // SDL_ConvertSurfaceFormat preserves color keys and alpha, so
-    // transparent pixels keep alpha=0 and text anti-aliasing is retained.
+    // 32-bit surface: convert to destination format (BGRA), preserving colorkey transparency
     SDL_Surface* converted = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ARGB8888, 0);
     if(!converted)
         return false;
+
+    // Force alpha to opaque (some source images may have wrong alpha=0)
+    SDL_LockSurface(converted);
+    for(int y = 0; y < converted->h; y++)
+    {
+        auto* row = (Uint32*)((Uint8*)converted->pixels + y * converted->pitch);
+        for(int x = 0; x < converted->w; x++)
+            row[x] |= 0xFF000000u;
+    }
+    SDL_UnlockSurface(converted);
 
     load(converted->pixels, Extent(converted->w, converted->h), filterLinear);
     SDL_FreeSurface(converted);
@@ -119,7 +127,6 @@ void Texture::Draw(const Rect& destRect) const
     if(!texture_)
         return;
 
-    glColor4f(1, 1, 1, 1);
     glBindTexture(GL_TEXTURE_2D, texture_);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
@@ -138,7 +145,6 @@ void Texture::Draw(Position pos) const
     if(!texture_)
         return;
 
-    glColor4f(1, 1, 1, 1);
     glBindTexture(GL_TEXTURE_2D, texture_);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
