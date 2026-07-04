@@ -19,8 +19,8 @@
 
 CWindow::CWindow(void callback(int), int callbackQuitMessage, Position pos, Extent size, const char* title, int color,
                  Uint8 flags)
-    : CControlContainer(color, {global::bmpArray[WINDOW_LEFT_FRAME].w, global::bmpArray[WINDOW_UPPER_FRAME].h},
-                        {global::bmpArray[WINDOW_RIGHT_FRAME].w, global::bmpArray[WINDOW_LOWER_FRAME].h}),
+    : CControlContainer(color, {global::bmpArray[WINDOW_LEFT_FRAME].w, global::bmpArray[WINDOW_UPPER_FRAME].h,
+                                global::bmpArray[WINDOW_RIGHT_FRAME].w, global::bmpArray[WINDOW_LOWER_FRAME].h}),
       x_(pos.x), y_(pos.y), w_(size.x), h_(size.y), title(title), callback_(callback),
       callbackQuitMessage(callbackQuitMessage)
 {
@@ -263,12 +263,11 @@ void CWindow::Draw(Position /*parentOrigin*/)
     if(!minimized)
     {
         const auto viewH = global::s2->getRes().y;
-        const auto contentX = origin.x + static_cast<int>(getBorderBegin().x);
-        const auto contentY = origin.y + static_cast<int>(getBorderBegin().y);
-        const auto contentW =
-          static_cast<int>(w_) - static_cast<int>(getBorderBegin().x) - static_cast<int>(getBorderEnd().x);
-        const auto contentH =
-          static_cast<int>(h_) - static_cast<int>(getBorderBegin().y) - static_cast<int>(getBorderEnd().y);
+        const auto& b = getBorder();
+        const auto contentX = origin.x + b.left;
+        const auto contentY = origin.y + b.top;
+        const auto contentW = static_cast<int>(w_) - b.left - b.right;
+        const auto contentH = static_cast<int>(h_) - b.top - b.bottom;
         if(contentW > 0 && contentH > 0)
         {
             glEnable(GL_SCISSOR_TEST);

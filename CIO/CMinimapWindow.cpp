@@ -15,12 +15,11 @@ void CMinimapWindow::Draw(Position /*parentOrigin*/)
     CWindow::Draw(Position(x_, y_));
 
     // Compute content area (inside the frames)
-    const auto borderBegin = getBorderBegin();
-    const auto borderEnd = getBorderEnd();
-    const int contentX = x_ + static_cast<int>(borderBegin.x);
-    const int contentY = y_ + static_cast<int>(borderBegin.y);
-    const int contentW = static_cast<int>(w_) - static_cast<int>(borderBegin.x) - static_cast<int>(borderEnd.x);
-    const int contentH = static_cast<int>(h_) - static_cast<int>(borderBegin.y) - static_cast<int>(borderEnd.y);
+    const auto& b = getBorder();
+    const int contentX = x_ + b.left;
+    const int contentY = y_ + b.top;
+    const int contentW = static_cast<int>(w_) - b.left - b.right;
+    const int contentH = static_cast<int>(h_) - b.top - b.bottom;
 
     if(contentW <= 0 || contentH <= 0)
         return;

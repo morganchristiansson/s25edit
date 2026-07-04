@@ -15,6 +15,15 @@ class CPicture;
 class CTextfield;
 class CSelectBox;
 
+/// Pixel thickness of a window's frame border on each edge.
+struct FrameInsets
+{
+    int left = 0;
+    int top = 0;
+    int right = 0;
+    int bottom = 0;
+};
+
 class CControlContainer
 {
     friend class CDebug;
@@ -28,7 +37,7 @@ private:
     };
 
     // if waste is true, the menu will be delete within the game loop
-    Extent borderBeginSize, borderEndSize; // Width and height of border at left/top and right/bottom
+    FrameInsets border;
     bool waste = false;
     int pic_background;
     std::vector<std::unique_ptr<CButton>> buttons;
@@ -54,12 +63,11 @@ protected:
 
 public:
     CControlContainer(int pic_background);
-    CControlContainer(int pic_background, Extent borderBeginSize, Extent borderEndSize);
+    CControlContainer(int pic_background, FrameInsets border);
     virtual ~CControlContainer() noexcept;
     // Access
-    Extent getBorderSize() const { return borderBeginSize + borderEndSize; }
-    Extent getBorderBegin() const { return borderBeginSize; }
-    Extent getBorderEnd() const { return borderEndSize; }
+    const FrameInsets& getBorder() const { return border; }
+    Extent getBorderSize() const { return {static_cast<unsigned>(border.left + border.right), static_cast<unsigned>(border.top + border.bottom)}; }
     void setBackgroundPicture(int pic_background);
     virtual void setMouseData(SDL_MouseMotionEvent motion);
     virtual void setMouseData(SDL_MouseButtonEvent button);

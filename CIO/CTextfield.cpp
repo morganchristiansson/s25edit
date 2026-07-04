@@ -31,14 +31,14 @@ CTextfield::CTextfield(Position pos, Uint16 cols, Uint16 rows, FontSize fontsize
     textObj = std::make_unique<CFont>("", pos, fontsize, text_color);
 }
 
-int CTextfield::getX() const
+Position CTextfield::getPos() const
 {
-    return textObj->getX();
+    return textObj->getPos();
 }
 
-int CTextfield::getY() const
+void CTextfield::setPos(Position pos)
 {
-    return textObj->getY();
+    textObj->setPos(pos);
 }
 
 bool CTextfield::hasRendered()
@@ -97,16 +97,6 @@ void CTextfield::setTextColor(FontColor color)
     textObj->setColor(color);
 }
 
-void CTextfield::setX(int x)
-{
-    textObj->setPos(Position(x, getY()));
-}
-
-void CTextfield::setY(int y)
-{
-    textObj->setPos(Position(getX(), y));
-}
-
 void CTextfield::setText(const std::string& text)
 {
     char* txtPtr = this->text_.data();
@@ -143,7 +133,7 @@ void CTextfield::setMouseData(SDL_MouseButtonEvent button)
         // if mouse button is pressed ON the textfield, set active=true
         if(button.state == SDL_PRESSED)
         {
-            active = IsPointInRect(button.x, button.y, Rect(Position(getX(), getY()), size_));
+            active = IsPointInRect(button.x, button.y, Rect(getPos(), size_));
         }
     }
 }
@@ -241,7 +231,7 @@ void CTextfield::setKeyboardData(const SDL_KeyboardEvent& key)
 
 void CTextfield::Draw(Position parentOrigin)
 {
-    const Position absPos = parentOrigin + Position(getX(), getY());
+    const Position absPos = parentOrigin + getPos();
     const Rect area(absPos, size_);
 
     // Update cursor blink state

@@ -146,11 +146,11 @@ void CSelectBox::setMouseData(SDL_MouseButtonEvent button)
                     if((button.x > pos_.x + static_cast<int>(size_.x) - 20) && (button.y < pos_.y + 20))
                     {
                         // test if first entry is on the most upper position
-                        if(!Entries.empty() && Entries.front()->getY() < 10)
+                        if(!Entries.empty() && Entries.front()->getPos().y < 10)
                         {
                             for(auto& entry : Entries)
                             {
-                                entry->setPos(Position(entry->getX(), entry->getY() + 10));
+                                entry->setPos(Position(entry->getPos().x, entry->getPos().y + 10));
                             }
                         }
                     }
@@ -162,11 +162,11 @@ void CSelectBox::setMouseData(SDL_MouseButtonEvent button)
                        && (button.y > pos_.y + static_cast<int>(size_.y) - 20))
                     {
                         // test if last entry is on the most lower position
-                        if(!Entries.empty() && Entries.back()->getY() > static_cast<int>(size_.y) - 10)
+                        if(!Entries.empty() && Entries.back()->getPos().y > static_cast<int>(size_.y) - 10)
                         {
                             for(auto& entry : Entries)
                             {
-                                entry->setPos(Position(entry->getX(), entry->getY() - 10));
+                                entry->setPos(Position(entry->getPos().x, entry->getPos().y - 10));
                             }
                         }
                     }
