@@ -225,20 +225,9 @@ void CFont::draw(const std::string& string, Position pos, FontSize fontsize, Fon
     Position curPos = pos;
     for(unsigned char c : string)
     {
-        const unsigned idx = getIndexForChar(c, fontsize, color);
-        if(idx >= global::bmpArray.size())
-            continue;
-
-        auto& tex = getBmpTexture(idx);
-        if(!tex.isValid())
-        {
-            curPos.x += getCharWidth(c, fontsize, color);
-            continue;
-        }
-
-        const auto& bmp = global::bmpArray[idx];
-        tex.draw(Rect(curPos.x, curPos.y, bmp.w, bmp.h));
-        curPos.x += bmp.w;
+        auto& tex = getBmpTexture(getIndexForChar(c, fontsize, color));
+        tex.draw(Rect(curPos.x, curPos.y, tex.getWidth(), tex.getHeight()));
+        curPos.x += tex.getWidth();
     }
 }
 
