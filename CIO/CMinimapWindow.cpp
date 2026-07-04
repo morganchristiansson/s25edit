@@ -16,13 +16,12 @@ void CMinimapWindow::Draw(Position /*parentOrigin*/)
 
     // Compute content area (inside the frames)
     const auto& b = getBorder();
-    const int contentX = x_ + b.left;
-    const int contentY = y_ + b.top;
-    const int contentW = static_cast<int>(w_) - b.left - b.right;
-    const int contentH = static_cast<int>(h_) - b.top - b.bottom;
-
-    if(contentW <= 0 || contentH <= 0)
+    const Position contentPos(x_ + b.left, y_ + b.top);
+    const int cw = static_cast<int>(w_) - b.left - b.right;
+    const int ch = static_cast<int>(h_) - b.top - b.bottom;
+    if(cw <= 0 || ch <= 0)
         return;
+    const Extent contentSize(cw, ch);
 
     auto* map = global::s2->getMapObj();
     if(!map)
@@ -30,13 +29,13 @@ void CMinimapWindow::Draw(Position /*parentOrigin*/)
 
     // Fill pixel buffer with minimap terrain
     int num_x = 1, num_y = 1;
-    map->drawMinimap(pixels_, contentW, contentH, num_x, num_y);
+    map->drawMinimap(pixels_, cw, ch, num_x, num_y);
 
     // Upload to texture and draw
-    if(!minimapTex_.isValid() || minimapTex_.getWidth() != contentW || minimapTex_.getHeight() != contentH)
-        minimapTex_.createEmpty(Extent(contentW, contentH));
+    if(!minimapTex_.isValid() || minimapTex_.getWidth() != cw || minimapTex_.getHeight() != ch)
+        minimapTex_.createEmpty(contentSize);
     minimapTex_.upload(pixels_.data());
-    minimapTex_.Draw(Rect(contentX, contentY, contentW, contentH));
+    minimapTex_.Draw(Rect(contentPos, contentSize));
 
     // Draw player flags and numbers on top
     for(int i = 0; i < MAXPLAYERS; i++)
@@ -47,35 +46,24 @@ void CMinimapWindow::Draw(Position /*parentOrigin*/)
             continue;
 
         const int flagIdx = FLAG_BLUE_DARK + i % 7;
-        const auto& flagBmp = global::bmpArray[flagIdx];
-        auto& flagTex = getBmpTexture(flagIdx);
-        if(flagTex.isValid())
-        {
-            const int fx = contentX + hqX / num_x - static_cast<int>(flagBmp.nx);
-            const int fy = contentY + hqY / num_y - static_cast<int>(flagBmp.ny);
-            flagTex.Draw(Position(fx, fy));
-        }
+        const Position hqPos(hqX / num_x, hqY / num_y);
+        getBmpTexture(flagIdx).Draw(contentPos + hqPos - Position(static_cast<int>(global::bmpArray[flagIdx].nx),
+                                                                  static_cast<int>(global::bmpArray[flagIdx].ny)));
 
         // Player number
-        CFont::Draw(std::to_string(i + 1), Position(contentX + hqX / num_x, contentY + hqY / num_y), FontSize::Small,
+        CFont::Draw(std::to_string(i + 1), contentPos + hqPos, FontSize::Small,
                     FontColor::MintGreen);
     }
 
     // Draw the position arrow
     {
         const int arrowIdx = MAPPIC_ARROWCROSS_ORANGE;
-        const auto& arrowBmp = global::bmpArray[arrowIdx];
-        auto& arrowTex = getBmpTexture(arrowIdx);
-        if(arrowTex.isValid())
-        {
-            const auto& dispRect = map->getDisplayRect();
-            const int ax = contentX
-                           + (dispRect.left + static_cast<int>(dispRect.getSize().x) / 2) / triangleWidth / num_x
-                           - static_cast<int>(arrowBmp.nx);
-            const int ay = contentY
-                           + (dispRect.top + static_cast<int>(dispRect.getSize().y) / 2) / triangleHeight / num_y
-                           - static_cast<int>(arrowBmp.ny);
-            arrowTex.Draw(Position(ax, ay));
-        }
+        const auto& dispRect = map->getDisplayRect();
+        const Position arrowPos = contentPos
+          + Position((dispRect.left + static_cast<int>(dispRect.getSize().x) / 2) / triangleWidth / num_x,
+                     (dispRect.top + static_cast<int>(dispRect.getSize().y) / 2) / triangleHeight / num_y)
+          - Position(static_cast<int>(global::bmpArray[arrowIdx].nx),
+                     static_cast<int>(global::bmpArray[arrowIdx].ny));
+        getBmpTexture(arrowIdx).Draw(arrowPos);
     }
 }
