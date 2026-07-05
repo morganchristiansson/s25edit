@@ -157,6 +157,40 @@ void Texture::draw(Position pos) const
     glEnd();
 }
 
+void Texture::drawTiled(const Rect& destRect) const
+{
+    if(!texture_)
+        return;
+
+    const Extent tileSize = getSize();
+    if(static_cast<int>(tileSize.x) <= 0 || static_cast<int>(tileSize.y) <= 0)
+        return;
+
+    glColor4f(1, 1, 1, 1);
+    glBindTexture(GL_TEXTURE_2D, texture_);
+    glBegin(GL_QUADS);
+    for(int y = destRect.top; y < destRect.bottom; y += static_cast<int>(tileSize.y))
+    {
+        const int rowH = std::min(static_cast<int>(tileSize.y), destRect.bottom - y);
+        const float v1 = float(rowH) / float(tileSize.y);
+        for(int x = destRect.left; x < destRect.right; x += static_cast<int>(tileSize.x))
+        {
+            const int colW = std::min(static_cast<int>(tileSize.x), destRect.right - x);
+            const float u1 = float(colW) / float(tileSize.x);
+
+            glTexCoord2f(0, 0);
+            glVertex2i(x, y);
+            glTexCoord2f(u1, 0);
+            glVertex2i(x + colW, y);
+            glTexCoord2f(u1, v1);
+            glVertex2i(x + colW, y + rowH);
+            glTexCoord2f(0, v1);
+            glVertex2i(x, y + rowH);
+        }
+    }
+    glEnd();
+}
+
 void drawRect(const Rect& rect, unsigned color)
 {
     glDisable(GL_TEXTURE_2D);
@@ -202,59 +236,24 @@ void ensureBmpTex(int idx)
     getBmpTexture(idx);
 }
 
-void Texture::drawTiled(const Rect& destRect) const
-{
-    if(!texture_)
-        return;
-
-    const Extent tileSize = getSize();
-    if(static_cast<int>(tileSize.x) <= 0 || static_cast<int>(tileSize.y) <= 0)
-        return;
-
-    glColor4f(1, 1, 1, 1);
-    glBindTexture(GL_TEXTURE_2D, texture_);
-    glBegin(GL_QUADS);
-    for(int y = destRect.top; y < destRect.bottom; y += static_cast<int>(tileSize.y))
-    {
-        const int rowH = std::min(static_cast<int>(tileSize.y), destRect.bottom - y);
-        const float v1 = float(rowH) / float(tileSize.y);
-        for(int x = destRect.left; x < destRect.right; x += static_cast<int>(tileSize.x))
-        {
-            const int colW = std::min(static_cast<int>(tileSize.x), destRect.right - x);
-            const float u1 = float(colW) / float(tileSize.x);
-
-            glTexCoord2f(0, 0);
-            glVertex2i(x, y);
-            glTexCoord2f(u1, 0);
-            glVertex2i(x + colW, y);
-            glTexCoord2f(u1, v1);
-            glVertex2i(x + colW, y + rowH);
-            glTexCoord2f(0, v1);
-            glVertex2i(x, y + rowH);
-        }
-    }
-    glEnd();
-}
-
 void drawButtonBox(const Rect& area, bool pressed, int baseTex, int faceTex)
 {
     getBmpTexture(baseTex).drawTiled(area);
 
-    const int w = area.right - area.left;
-    const int h = area.bottom - area.top;
+    const auto sz = area.getSize();
 
     // 2px black frame: left+top if pressed, right+bottom otherwise
     if(pressed)
     {
-        drawRect(Rect(area.left, area.top, 2, h), 0xFF000000);
-        drawRect(Rect(area.left, area.top, w, 2), 0xFF000000);
+        drawRect(Rect(area.getOrigin(), 2, sz.y), 0xFF000000);
+        drawRect(Rect(area.getOrigin(), sz.x, 2), 0xFF000000);
     } else
     {
-        drawRect(Rect(area.right - 2, area.top, 2, h), 0xFF000000);
-        drawRect(Rect(area.left, area.bottom - 2, w, 2), 0xFF000000);
+        drawRect(Rect(area.right - 2, area.top, 2, sz.y), 0xFF000000);
+        drawRect(Rect(area.left, area.bottom - 2, sz.x, 2), 0xFF000000);
     }
 
     // Foreground inset by 2px
-    const Rect fgRect(area.getOrigin() + Position(2, 2), Extent(w - 4, h - 4));
+    const Rect fgRect(area.getOrigin() + Position(2, 2), sz - Extent(4, 4));
     getBmpTexture(faceTex).drawTiled(fgRect);
 }
