@@ -8,7 +8,6 @@
 #include "../globals.h"
 #include "CFont.h"
 #include "CollisionDetection.h"
-#include <glad/glad.h>
 
 CButton::CButton(void callback(int), int clickedParam, Position pos, Extent size, int color, const char* text,
                  int button_picture)

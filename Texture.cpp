@@ -101,12 +101,12 @@ bool Texture::load(SDL_Surface* surface, bool filterLinear)
         return true;
     }
 
-    // 32-bit surface: convert to destination format (BGRA), preserving colorkey transparency
+    // 32-bit surface: convert to destination format (BGRA), force full opacity
     SDL_Surface* converted = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ARGB8888, 0);
     if(!converted)
         return false;
 
-    // Force alpha to opaque (some source images may have wrong alpha=0)
+    // Force alpha to opaque (LBM palette entries often have alpha=0)
     SDL_LockSurface(converted);
     for(int y = 0; y < converted->h; y++)
     {
@@ -157,35 +157,6 @@ void Texture::draw(Position pos) const
     glEnd();
 }
 
-void Texture::draw(const Rect& destRect, const Rect& srcRect) const
-{
-    if(!texture_)
-        return;
-
-    // Clamp source rect to texture bounds
-    const Position clampedOrigin(std::max(0, srcRect.left), std::max(0, srcRect.top));
-    const Position clampedEnd(std::min(static_cast<int>(size_.x), srcRect.right),
-                              std::min(static_cast<int>(size_.y), srcRect.bottom));
-    if(clampedOrigin.x >= clampedEnd.x || clampedOrigin.y >= clampedEnd.y)
-        return;
-
-    const auto texSize = Position(getSize());
-    const Point<float> uv0 = Point<float>(clampedOrigin) / Point<float>(texSize);
-    const Point<float> uv1 = Point<float>(clampedEnd) / Point<float>(texSize);
-
-    glBindTexture(GL_TEXTURE_2D, texture_);
-    glBegin(GL_QUADS);
-    glTexCoord2f(uv0.x, uv0.y);
-    glVertex2i(destRect.left, destRect.top);
-    glTexCoord2f(uv1.x, uv0.y);
-    glVertex2i(destRect.right, destRect.top);
-    glTexCoord2f(uv1.x, uv1.y);
-    glVertex2i(destRect.right, destRect.bottom);
-    glTexCoord2f(uv0.x, uv1.y);
-    glVertex2i(destRect.left, destRect.bottom);
-    glEnd();
-}
-
 void drawRect(const Rect& rect, unsigned color)
 {
     glDisable(GL_TEXTURE_2D);
@@ -198,17 +169,6 @@ void drawRect(const Rect& rect, unsigned color)
     glEnd();
     glEnable(GL_TEXTURE_2D);
     glColor4f(1, 1, 1, 1);
-}
-
-void drawLine(Position p1, Position p2, unsigned char r, unsigned char g, unsigned char b, unsigned char a)
-{
-    glDisable(GL_TEXTURE_2D);
-    glColor4ub(r, g, b, a);
-    glBegin(GL_LINES);
-    glVertex2i(p1.x, p1.y);
-    glVertex2i(p2.x, p2.y);
-    glEnd();
-    glEnable(GL_TEXTURE_2D);
 }
 
 Texture& getBmpTexture(int idx, bool filterLinear)
@@ -247,22 +207,21 @@ void Texture::drawTiled(const Rect& destRect) const
     if(!texture_)
         return;
 
-    const int tileW = getWidth();
-    const int tileH = getHeight();
-    if(tileW <= 0 || tileH <= 0)
+    const Extent tileSize = getSize();
+    if(static_cast<int>(tileSize.x) <= 0 || static_cast<int>(tileSize.y) <= 0)
         return;
 
     glColor4f(1, 1, 1, 1);
     glBindTexture(GL_TEXTURE_2D, texture_);
     glBegin(GL_QUADS);
-    for(int y = destRect.top; y < destRect.bottom; y += tileH)
+    for(int y = destRect.top; y < destRect.bottom; y += static_cast<int>(tileSize.y))
     {
-        const int rowH = std::min(tileH, destRect.bottom - y);
-        const float v1 = float(rowH) / float(tileH);
-        for(int x = destRect.left; x < destRect.right; x += tileW)
+        const int rowH = std::min(static_cast<int>(tileSize.y), destRect.bottom - y);
+        const float v1 = float(rowH) / float(tileSize.y);
+        for(int x = destRect.left; x < destRect.right; x += static_cast<int>(tileSize.x))
         {
-            const int colW = std::min(tileW, destRect.right - x);
-            const float u1 = float(colW) / float(tileW);
+            const int colW = std::min(static_cast<int>(tileSize.x), destRect.right - x);
+            const float u1 = float(colW) / float(tileSize.x);
 
             glTexCoord2f(0, 0);
             glVertex2i(x, y);

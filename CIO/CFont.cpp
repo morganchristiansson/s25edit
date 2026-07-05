@@ -64,10 +64,6 @@ void CFont::setMouseData(SDL_MouseButtonEvent button)
     }
 }
 
-// ---------------------------------------------------------------------------
-//  Character-index helpers (shared by SDL and GL paths)
-// ---------------------------------------------------------------------------
-
 namespace {
 unsigned getIndexForChar(uint8_t c)
 {
@@ -194,10 +190,6 @@ unsigned getCharWidth(uint8_t c, FontSize fontsize, FontColor color)
 }
 } // namespace
 
-// ---------------------------------------------------------------------------
-//  OpenGL Draw methods
-// ---------------------------------------------------------------------------
-
 void CFont::draw(Position parentOrigin) const
 {
     if(string_.empty())
@@ -228,14 +220,10 @@ void CFont::draw(const std::string& string, Position pos, FontSize fontsize, Fon
     for(unsigned char c : string)
     {
         auto& tex = getBmpTexture(getIndexForChar(c, fontsize, color));
-        tex.draw(Rect(curPos.x, curPos.y, tex.getWidth(), tex.getHeight()));
-        curPos.x += tex.getWidth();
+        tex.draw(Rect(curPos, tex.getSize()));
+        curPos.x += tex.getSize().x;
     }
 }
-
-// ---------------------------------------------------------------------------
-//  SDL surface writeText (for terrain / minimap rendering)
-// ---------------------------------------------------------------------------
 
 bool CFont::writeText(SDL_Surface* Surf_Dest, const std::string& string, unsigned x, unsigned y, FontSize fontsize,
                       FontColor color, FontAlign align)
@@ -308,10 +296,6 @@ bool CFont::writeText(SDL_Surface* Surf_Dest, const std::string& string, unsigne
 
     return true;
 }
-
-// ---------------------------------------------------------------------------
-//  getTextWidth
-// ---------------------------------------------------------------------------
 
 unsigned CFont::getTextWidth(const std::string& string, FontSize fontsize)
 {

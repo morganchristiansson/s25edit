@@ -28,14 +28,12 @@ private:
     std::unique_ptr<CButton> ScrollUpButton;
     std::unique_ptr<CButton> ScrollDownButton;
     Uint16 last_text_pos_y = 10;
-    bool rendered = false;
 
 public:
     CSelectBox(Position pos, Extent size, FontSize fontsize = FontSize::Large, FontColor text_color = FontColor::Yellow,
                int bg_color = -1);
     const Position& getPos() const { return pos_; }
     const Extent& getSize() const { return size_; }
-    bool hasRendered();
     void setMouseData(SDL_MouseButtonEvent button);
     void setMouseData(SDL_MouseMotionEvent motion);
     void draw(Position parentOrigin);

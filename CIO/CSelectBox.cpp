@@ -35,16 +35,6 @@ void CSelectBox::addOption(const std::string& string, std::function<void(int)> c
     last_text_pos_y += row_height;
 }
 
-bool CSelectBox::hasRendered()
-{
-    if(rendered)
-    {
-        rendered = false;
-        return true;
-    } else
-        return false;
-}
-
 void CSelectBox::setColor(int color)
 {
     switch(color)
@@ -248,5 +238,4 @@ void CSelectBox::draw(Position parentOrigin)
     ScrollUpButton->draw(absPos);
     ScrollDownButton->draw(absPos);
 
-    rendered = true;
 }

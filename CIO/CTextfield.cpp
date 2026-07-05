@@ -26,7 +26,6 @@ CTextfield::CTextfield(Position pos, Uint16 cols, Uint16 rows, FontSize fontsize
     // allocate memory for the text: chiffres (cols) + '\n' for each line * rows + blinking chiffre + '\0'
     text_.resize((this->cols + 1) * this->rows + 2);
 
-    rendered = false;
     this->button_style = button_style;
     textObj = std::make_unique<CFont>("", pos, fontsize, text_color);
 }
@@ -39,16 +38,6 @@ Position CTextfield::getPos() const
 void CTextfield::setPos(Position pos)
 {
     textObj->setPos(pos);
-}
-
-bool CTextfield::hasRendered()
-{
-    if(rendered)
-    {
-        rendered = false;
-        return true;
-    } else
-        return false;
 }
 
 void CTextfield::setColor(int color)
@@ -251,9 +240,6 @@ void CTextfield::draw(Position parentOrigin)
         blinking_chiffre = false;
     }
 
-    // Ensure rendered flag is cleared each frame
-    rendered = false;
-
     // Draw the background / foreground
     if(pic_background >= 0 && pic_foreground >= 0)
     {
@@ -283,5 +269,4 @@ void CTextfield::draw(Position parentOrigin)
         textObj->draw(Position(parentOrigin.x + 2, parentOrigin.y + 4));
     }
 
-    rendered = true;
 }

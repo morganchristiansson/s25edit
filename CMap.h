@@ -161,10 +161,6 @@ public:
     std::string getAuthor() const { return map->getAuthor(); }
     void setAuthor(const std::string& author) { map->setAuthor(author); }
 
-    /// Fill a pixel buffer with the minimap terrain view.
-    /// @param pixels  BGRA pixel buffer (w * h entries, 0xAARRGGBB layout).
-    /// @param w,h     Dimensions of the pixel buffer.
-    /// @param num_x,num_y  Output: scaling factors (map coords → pixel coords).
     void drawMinimap(std::vector<uint32_t>& pixels, int w, int h, int& scale);
     void render();
     // get and set some variables necessary for cursor behavior

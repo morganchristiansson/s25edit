@@ -45,7 +45,7 @@ private:
     int callbackQuitMessage;
 
 public:
-    /// Draw the window using OpenGL (frame and children).
+    /// Draw the window (frame and children).
     void draw(Position parentOrigin) override;
 
     CWindow(void callback(int), int callbackQuitMessage, Position pos, Extent size, const char* title = nullptr,

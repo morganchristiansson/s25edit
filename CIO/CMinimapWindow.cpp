@@ -15,7 +15,7 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
     CWindow::draw(pos_);
 
     // Compute content area (inside the frames)
-    const auto& b = getBorder();
+    const auto& b = getBorderSizes();
     const Position contentPos(pos_.x + b.left, pos_.y + b.top);
     const int cw = static_cast<int>(size_.x) - b.left - b.right;
     const int ch = static_cast<int>(size_.y) - b.top - b.bottom;
@@ -32,7 +32,7 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
     map->drawMinimap(pixels_, cw, ch, scale);
 
     // Upload to texture and draw
-    if(!minimapTex_.isValid() || minimapTex_.getWidth() != cw || minimapTex_.getHeight() != ch)
+    if(!minimapTex_.isValid() || minimapTex_.getSize() != contentSize)
         minimapTex_.createEmpty(contentSize);
     minimapTex_.upload(pixels_.data());
     minimapTex_.draw(Rect(contentPos, contentSize));

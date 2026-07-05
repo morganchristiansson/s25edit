@@ -26,8 +26,6 @@ private:
     std::vector<char> text_;
     // if active, keyboard data will be delivered and the cursor is blinking
     bool active;
-    // we need this to say the window if it needs to render, otherwise no blinking cursor and no chiffres are shown
-    bool rendered;
     // if true, the textfield looks like a button
     bool button_style;
     // Cursor blink state
@@ -47,7 +45,6 @@ public:
     void setActive() { active = true; }
     void setInactive() { active = false; }
     bool isActive() const { return active; }
-    bool hasRendered();
     void setMouseData(SDL_MouseButtonEvent button);
     void setKeyboardData(const SDL_KeyboardEvent& key);
     void draw(Position parentOrigin);

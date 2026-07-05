@@ -251,10 +251,6 @@ void CWindow::setMouseData(SDL_MouseButtonEvent button)
     callback_(WINDOW_CLICKED_CALL);
 }
 
-// ---------------------------------------------------------------------------
-//  Draw — OpenGL version of the old render()
-// ---------------------------------------------------------------------------
-
 void CWindow::draw(Position /*parentOrigin*/)
 {
     const Position origin = pos_;
@@ -268,7 +264,7 @@ void CWindow::draw(Position /*parentOrigin*/)
     if(!minimized)
     {
         const auto viewH = global::s2->getRes().y;
-        const auto& b = getBorder();
+        const auto& b = getBorderSizes();
         const auto contentX = origin.x + b.left;
         const auto contentY = origin.y + b.top;
         const auto contentW = static_cast<int>(size_.x) - b.left - b.right;
@@ -293,21 +289,21 @@ void CWindow::draw(Position /*parentOrigin*/)
 
     // Draw upper frame tile across the top of the window
     {
-        const Rect upperFrameRect(origin, Extent(size_.x, getBmpTexture(upperframe).getHeight()));
+        const Rect upperFrameRect(origin, Extent(size_.x, getBmpTexture(upperframe).getSize().y));
         getBmpTexture(upperframe).drawTiled(upperFrameRect);
     }
 
     // 4. Title text
     if(title)
     {
-        const int titleY = origin.y + (getBmpTexture(WINDOW_UPPER_FRAME).getHeight() - 9) / 2;
+        const int titleY = origin.y + (getBmpTexture(WINDOW_UPPER_FRAME).getSize().y - 9) / 2;
         CFont::draw(title, Position(origin.x + static_cast<int>(size_.x) / 2, titleY), FontSize::Small,
                     FontColor::Yellow, FontAlign::Middle);
     }
 
     // 5. Lower frame (tiled across bottom)
     {
-        const int lowerH = getBmpTexture(WINDOW_LOWER_FRAME).getHeight();
+        const int lowerH = getBmpTexture(WINDOW_LOWER_FRAME).getSize().y;
         const Rect lowerFrameRect(Position(origin.x, origin.y + static_cast<int>(size_.y) - lowerH),
                                   Extent(size_.x, lowerH));
         getBmpTexture(WINDOW_LOWER_FRAME).drawTiled(lowerFrameRect);
@@ -315,13 +311,13 @@ void CWindow::draw(Position /*parentOrigin*/)
 
     // 6. Left frame (tiled down left side)
     {
-        const Rect leftFrameRect(origin, Extent(getBmpTexture(WINDOW_LEFT_FRAME).getWidth(), size_.y));
+        const Rect leftFrameRect(origin, Extent(getBmpTexture(WINDOW_LEFT_FRAME).getSize().x, size_.y));
         getBmpTexture(WINDOW_LEFT_FRAME).drawTiled(leftFrameRect);
     }
 
     // 7. Right frame (tiled down right side)
     {
-        const int rightW = getBmpTexture(WINDOW_RIGHT_FRAME).getWidth();
+        const int rightW = getBmpTexture(WINDOW_RIGHT_FRAME).getSize().x;
         const Rect rightFrameRect(Position(origin.x + static_cast<int>(size_.x) - rightW, origin.y),
                                   Extent(rightW, size_.y));
         getBmpTexture(WINDOW_RIGHT_FRAME).drawTiled(rightFrameRect);
@@ -331,11 +327,11 @@ void CWindow::draw(Position /*parentOrigin*/)
     {
         getBmpTexture(WINDOW_LEFT_UPPER_CORNER).draw(origin);
 
-        const int ruW = getBmpTexture(WINDOW_RIGHT_UPPER_CORNER).getWidth();
+        const int ruW = getBmpTexture(WINDOW_RIGHT_UPPER_CORNER).getSize().x;
         getBmpTexture(WINDOW_RIGHT_UPPER_CORNER).draw(Position(origin.x + static_cast<int>(size_.x) - ruW, origin.y));
 
-        const int crW = getBmpTexture(WINDOW_CORNER_RECTANGLE).getWidth();
-        const int crH = getBmpTexture(WINDOW_CORNER_RECTANGLE).getHeight();
+        const int crW = getBmpTexture(WINDOW_CORNER_RECTANGLE).getSize().x;
+        const int crH = getBmpTexture(WINDOW_CORNER_RECTANGLE).getSize().y;
         getBmpTexture(WINDOW_CORNER_RECTANGLE).draw(Position(origin.x, origin.y + static_cast<int>(size_.y) - crH));
         getBmpTexture(WINDOW_CORNER_RECTANGLE)
           .draw(Position(origin.x + static_cast<int>(size_.x) - crW, origin.y + static_cast<int>(size_.y) - crH));
@@ -365,7 +361,7 @@ void CWindow::draw(Position /*parentOrigin*/)
         else
             minimizebutton = WINDOW_BUTTON_MINIMIZE;
         getBmpTexture(minimizebutton)
-          .draw(Position(origin.x + static_cast<int>(size_.x) - getBmpTexture(minimizebutton).getWidth(), origin.y));
+          .draw(Position(origin.x + static_cast<int>(size_.x) - getBmpTexture(minimizebutton).getSize().x, origin.y));
     }
 
     // 11. Resize button

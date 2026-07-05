@@ -15,8 +15,7 @@ class CPicture;
 class CTextfield;
 class CSelectBox;
 
-/// Pixel thickness of a window's frame border on each edge.
-struct FrameInsets
+struct BorderSizes
 {
     int left = 0;
     int top = 0;
@@ -37,7 +36,7 @@ private:
     };
 
     // if waste is true, the menu will be delete within the game loop
-    FrameInsets border;
+    BorderSizes border;
     bool waste = false;
     int pic_background;
     std::vector<std::unique_ptr<CButton>> buttons;
@@ -51,10 +50,7 @@ private:
     bool eraseElement(T& collection, const U* element);
 
 protected:
-    /// Draw the container's background and child elements using OpenGL.
-    /// @param parentOrigin  Absolute position of the parent container.
     virtual void draw(Position parentOrigin);
-    /// Draw children at the given origin (calls each child's Draw).
     void drawChildren(Position origin);
 
     auto& getTextFields() { return textfields; }
@@ -63,10 +59,10 @@ protected:
 
 public:
     CControlContainer(int pic_background);
-    CControlContainer(int pic_background, FrameInsets border);
+    CControlContainer(int pic_background, BorderSizes border);
     virtual ~CControlContainer() noexcept;
     // Access
-    const FrameInsets& getBorder() const { return border; }
+    const BorderSizes& getBorderSizes() const { return border; }
     Extent getBorderSize() const
     {
         return {static_cast<unsigned>(border.left + border.right), static_cast<unsigned>(border.top + border.bottom)};

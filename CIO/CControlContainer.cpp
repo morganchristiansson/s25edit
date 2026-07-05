@@ -13,8 +13,8 @@
 #include "CTextfield.h"
 #include "helpers/containerUtils.h"
 
-CControlContainer::CControlContainer(int pic_background) : CControlContainer(pic_background, FrameInsets{}) {}
-CControlContainer::CControlContainer(int pic_background, FrameInsets border)
+CControlContainer::CControlContainer(int pic_background) : CControlContainer(pic_background, BorderSizes{}) {}
+CControlContainer::CControlContainer(int pic_background, BorderSizes border)
     : border(border), pic_background(pic_background)
 {}
 
@@ -174,10 +174,6 @@ bool CControlContainer::delSelectBox(CSelectBox* SelectBoxToDelete)
 {
     return eraseElement(selectboxes, SelectBoxToDelete);
 }
-
-// ---------------------------------------------------------------------------
-//  Draw & DrawChildren
-// ---------------------------------------------------------------------------
 
 void CControlContainer::draw(Position parentOrigin)
 {
