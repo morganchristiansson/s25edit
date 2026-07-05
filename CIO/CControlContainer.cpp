@@ -189,8 +189,6 @@ void CControlContainer::drawChildren(Position origin)
         button->draw(origin);
     for(const auto& static_picture : static_pictures)
     {
-        auto& tex = getBmpTexture(static_picture.pic);
-        if(tex.isValid())
-            tex.draw(origin + static_picture.pos);
+        getBmpTexture(static_picture.pic).draw(origin + static_picture.pos);
     }
 }

@@ -66,8 +66,5 @@ void CPicture::setMouseData(const SDL_MouseButtonEvent& button)
 
 void CPicture::draw(Position parentOrigin) const
 {
-    auto& tex = getBmpTexture(picture_);
-    if(!tex.isValid())
-        return;
-    tex.draw(parentOrigin + pos_);
+    getBmpTexture(picture_).draw(parentOrigin + pos_);
 }

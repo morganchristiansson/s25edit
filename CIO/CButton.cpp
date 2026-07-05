@@ -135,11 +135,8 @@ void CButton::draw(Position parentOrigin) const
     if(button_picture >= 0)
     {
         auto& picTex = getBmpTexture(button_picture);
-        if(picTex.isValid())
-        {
-            const Position picPos = absPos + size_ / 2 - Position(picTex.getSize()) / 2;
-            picTex.draw(picPos);
-        }
+        const Position picPos = absPos + size_ / 2 - Position(picTex.getSize()) / 2;
+        picTex.draw(picPos);
     } else if(button_text)
     {
         // Draw text centered (using native-size texture drawing for each character)
