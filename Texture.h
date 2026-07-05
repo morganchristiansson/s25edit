@@ -48,6 +48,6 @@ private:
 
 void drawRect(const Rect& rect, unsigned color);
 
-void drawButtonBox(const Rect& area, bool pressed, int baseTex, int faceTex);
+void drawButtonBox(const Rect& area, bool pressed, unsigned baseTex, unsigned faceTex);
 
-Texture& getBmpTexture(int idx, bool filterLinear = false);
+Texture& getBmpTexture(unsigned idx, bool filterLinear = false);

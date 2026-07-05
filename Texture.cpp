@@ -204,16 +204,16 @@ void drawRect(const Rect& rect, unsigned color)
     glColor4f(1, 1, 1, 1);
 }
 
-Texture& getBmpTexture(int idx, bool filterLinear)
+Texture& getBmpTexture(unsigned idx, bool filterLinear)
 {
     static std::vector<Texture> cache;
     static std::vector<bool> linearFlags;
-    if(static_cast<unsigned>(idx) >= global::bmpArray.size())
+    if(idx >= global::bmpArray.size())
     {
         static Texture dummy;
         return dummy;
     }
-    if(static_cast<unsigned>(idx) >= cache.size())
+    if(idx >= cache.size())
     {
         cache.resize(static_cast<size_t>(idx) + 1);
         linearFlags.resize(static_cast<size_t>(idx) + 1, false);
@@ -228,7 +228,7 @@ Texture& getBmpTexture(int idx, bool filterLinear)
     return cache[idx];
 }
 
-void drawButtonBox(const Rect& area, bool pressed, int baseTex, int faceTex)
+void drawButtonBox(const Rect& area, bool pressed, unsigned baseTex, unsigned faceTex)
 {
     getBmpTexture(baseTex).drawTiled(area);
 
