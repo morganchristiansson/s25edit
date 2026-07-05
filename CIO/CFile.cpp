@@ -352,6 +352,9 @@ bool CFile::read_lbm(FILE* fp, const boost::filesystem::path& filepath)
 
     // chunk-identifier (4 Bytes)
     // search for the "CMAP" and skip other chunk-types
+    const Uint16 tilesetSlot = static_cast<Uint16>(bmpArray - global::bmpArray.data());
+    int chunkIdx = 0;
+
     while(!feof(fp))
     {
         CHECK_READ(libendian::read(chunk_identifier.data(), 4, fp));
@@ -392,7 +395,45 @@ bool CFile::read_lbm(FILE* fp, const boost::filesystem::path& filepath)
 
         if(strcmp(chunk_identifier.data(), "BODY") == 0)
             break;
-        else
+        else if(strcmp(chunk_identifier.data(), "CRNG") == 0)
+        {
+            Uint32 chunkLen;
+            CHECK_READ(libendian::be_read_ui(&chunkLen, fp));
+            if(chunkLen >= 8)
+            {
+                PaletteAnimation anim;
+                uint16_t padding, rate, flags;
+                CHECK_READ(libendian::be_read_us(&padding, fp));
+                CHECK_READ(libendian::be_read_us(&rate, fp));
+                CHECK_READ(libendian::be_read_us(&flags, fp));
+                uint8_t firstClr, lastClr;
+                CHECK_READ(libendian::read(&firstClr, 1, fp));
+                CHECK_READ(libendian::read(&lastClr, 1, fp));
+                anim.isActive = (flags & 1) != 0;
+                anim.moveUp = (flags & 2) != 0;
+                if(rate)
+                    anim.isActive = anim.moveUp = true;
+                anim.rate = rate;
+                anim.firstClr = firstClr;
+                anim.lastClr = lastClr;
+                anim.currentOffset = 0;
+                anim.lastUpdateTime = SDL_GetTicks();
+                global::paletteAnimations[tilesetSlot][chunkIdx] = anim;
+                if(chunkLen > 8)
+                {
+                    uint32_t remaining = chunkLen - 8;
+                    if(remaining & 1)
+                        remaining++;
+                    fseek(fp, remaining, SEEK_CUR);
+                } else if(chunkLen & 1)
+                    fseek(fp, 1, SEEK_CUR);
+            } else
+            {
+                if(chunkLen & 1)
+                    chunkLen++;
+                fseek(fp, chunkLen, SEEK_CUR);
+            }
+        } else
         {
             Uint32 chunkLen;
             CHECK_READ(libendian::be_read_ui(&chunkLen, fp));
@@ -400,6 +441,7 @@ bool CFile::read_lbm(FILE* fp, const boost::filesystem::path& filepath)
                 chunkLen++;
             fseek(fp, chunkLen, SEEK_CUR);
         }
+        chunkIdx++;
     }
     if(feof(fp))
         return false;
