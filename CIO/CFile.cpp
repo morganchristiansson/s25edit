@@ -348,13 +348,13 @@ bool CFile::read_lbm(FILE* fp, const boost::filesystem::path& filepath)
     // skip unknown data (length - 20 x 1 Byte)
     // fseek(fp, length-20, SEEK_CUR);
 
+    const Uint16 tilesetSlot = static_cast<Uint16>(bmpArray - global::bmpArray.data());
+    int chunkIdx = 0;
+
     /* READ SECOND CHUNK "CMAP" */
 
     // chunk-identifier (4 Bytes)
     // search for the "CMAP" and skip other chunk-types
-    const Uint16 tilesetSlot = static_cast<Uint16>(bmpArray - global::bmpArray.data());
-    int chunkIdx = 0;
-
     while(!feof(fp))
     {
         CHECK_READ(libendian::read(chunk_identifier.data(), 4, fp));
@@ -401,7 +401,6 @@ bool CFile::read_lbm(FILE* fp, const boost::filesystem::path& filepath)
             CHECK_READ(libendian::be_read_ui(&chunkLen, fp));
             if(chunkLen >= 8)
             {
-                PaletteAnimation anim;
                 uint16_t padding, rate, flags;
                 CHECK_READ(libendian::be_read_us(&padding, fp));
                 CHECK_READ(libendian::be_read_us(&rate, fp));
@@ -409,16 +408,21 @@ bool CFile::read_lbm(FILE* fp, const boost::filesystem::path& filepath)
                 uint8_t firstClr, lastClr;
                 CHECK_READ(libendian::read(&firstClr, 1, fp));
                 CHECK_READ(libendian::read(&lastClr, 1, fp));
-                anim.isActive = (flags & 1) != 0;
-                anim.moveUp = (flags & 2) != 0;
-                if(rate)
-                    anim.isActive = anim.moveUp = true;
-                anim.rate = rate;
-                anim.firstClr = firstClr;
-                anim.lastClr = lastClr;
-                anim.currentOffset = 0;
-                anim.lastUpdateTime = SDL_GetTicks();
-                global::paletteAnimations[tilesetSlot][chunkIdx] = anim;
+                // Only register valid animations: at least 2 colors and non-zero rate
+                if(rate > 0 && lastClr > firstClr)
+                {
+                    PaletteAnimation anim;
+                    anim.moveUp = (flags & 2) != 0;
+                    if(rate)
+                        anim.moveUp = true;
+                    anim.rate = rate;
+                    anim.firstClr = firstClr;
+                    anim.lastClr = lastClr;
+                    anim.currentOffset = 0;
+                    anim.lastAppliedOffset = 0;
+                    anim.lastUpdateTime = SDL_GetTicks();
+                    global::paletteAnimations[tilesetSlot][chunkIdx] = anim;
+                }
                 if(chunkLen > 8)
                 {
                     uint32_t remaining = chunkLen - 8;

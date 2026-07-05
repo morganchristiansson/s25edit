@@ -24,8 +24,7 @@ extern std::vector<bobBMP> bmpArray;
 extern std::vector<bobSHADOW> shadowArray;
 // array for all palettes
 extern std::vector<bobPAL> palArray;
-// Palette animation entries keyed by the bmpArray slot of the 8-bit tileset surface.
-// Inner map keyed by the CRNG chunk's index in the tileset LBM file.
+// Palette animations keyed by (bmpArray slot of 8-bit tileset) -> (CRNG chunk index).
 extern std::map<Uint16, std::map<int, PaletteAnimation>> paletteAnimations;
 // the game object
 extern CGame* s2;

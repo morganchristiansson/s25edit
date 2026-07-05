@@ -12,7 +12,7 @@ std::vector<bobBMP> global::bmpArray(MAXBOBBMP);
 std::vector<bobSHADOW> global::shadowArray(MAXBOBSHADOW);
 // array for all palettes
 std::vector<bobPAL> global::palArray(MAXBOBPAL);
-// Palette animation entries keyed by the bmpArray slot of the 8-bit tileset surface.
+// Palette animations keyed by (bmpArray slot of 8-bit tileset) -> (CRNG chunk index).
 std::map<Uint16, std::map<int, PaletteAnimation>> global::paletteAnimations;
 // the game object
 CGame* global::s2;

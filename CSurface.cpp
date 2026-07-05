@@ -22,7 +22,7 @@
 // locking. Was originally called in CGame::Init().
 static bool sgeLockOff = (sge_Lock_OFF(), true);
 
-static Uint16 tilesetIdxForMapType(MapType mapType, bool want32bit);
+static unsigned tilesetIdxForMapType(MapType mapType, bool want32bit);
 
 namespace {
 const TerrainDesc* getTerrainDesc(const bobMAP& map, Uint8 rawTextureId)
@@ -1512,7 +1512,7 @@ float CSurface::absf(float a)
 }
 
 /// Map a MapType to the 8-bit or 32-bit tileset bmpArray slot
-static Uint16 tilesetIdxForMapType(MapType mapType, bool want32bit)
+static unsigned tilesetIdxForMapType(MapType mapType, bool want32bit)
 {
     switch(mapType)
     {
@@ -1538,8 +1538,8 @@ static void rotatePaletteRange(SDL_Palette* pal, uint8_t firstClr, int colorCoun
 
 void CSurface::UpdatePaletteAnimations(MapType mapType)
 {
-    const Uint16 tilesetIdx8 = tilesetIdxForMapType(mapType, false);
-    auto animIt = global::paletteAnimations.find(tilesetIdx8);
+    const auto tilesetIdx8 = tilesetIdxForMapType(mapType, false);
+    auto animIt = global::paletteAnimations.find(static_cast<Uint16>(tilesetIdx8));
     if(animIt == global::paletteAnimations.end() || animIt->second.empty())
         return;
 
@@ -1552,15 +1552,15 @@ void CSurface::UpdatePaletteAnimations(MapType mapType)
       (global::s2 && global::s2->getMapObj()) ? global::s2->getMapObj()->getSurfacePalette() : nullptr;
 
     // 32-bit tileset surface for blitting after palette updates
-    const Uint16 tilesetIdx32 = tilesetIdxForMapType(mapType, true);
-    auto* surf32 = global::bmpArray[tilesetIdx32].surface.get();
+    const auto tilesetIdx32 = tilesetIdxForMapType(mapType, true);
+    auto& surf32 = *global::bmpArray[tilesetIdx32].surface;
 
-    const Uint32 now = SDL_GetTicks();
+    const unsigned now = SDL_GetTicks();
     bool anyUpdate = false;
 
     for(auto& [palAnimIdx, anim] : animMap)
     {
-        if(!anim.isActive || anim.rate == 0)
+        if(anim.rate == 0)
             continue;
 
         const int colorCount = anim.lastClr - anim.firstClr + 1;
@@ -1570,12 +1570,12 @@ void CSurface::UpdatePaletteAnimations(MapType mapType)
         // Time per step: (8192/30) / rate seconds, converted to ms
         const float intervalMs = (8192.0f / 30.0f) * 1000.0f / anim.rate;
 
-        const uint32_t elapsed = now - anim.lastUpdateTime;
-        if(elapsed < static_cast<uint32_t>(intervalMs))
+        const unsigned elapsed = now - anim.lastUpdateTime;
+        if(elapsed < static_cast<unsigned>(intervalMs))
             continue;
 
         int steps = static_cast<int>(elapsed / intervalMs);
-        anim.lastUpdateTime += static_cast<uint32_t>(steps * intervalMs);
+        anim.lastUpdateTime += static_cast<unsigned>(steps * intervalMs);
 
         int newOffset = anim.moveUp ? (anim.currentOffset + steps) % colorCount :
                                       (anim.currentOffset - steps + colorCount * steps) % colorCount;
@@ -1595,16 +1595,13 @@ void CSurface::UpdatePaletteAnimations(MapType mapType)
         return;
 
     // Blit 8-bit tileset to 32-bit so the rotated palette takes effect in 32bpp mode
-    if(surf32 && surf8)
-    {
-        if(SDL_MUSTLOCK(surf32))
-            SDL_LockSurface(surf32);
-        if(SDL_MUSTLOCK(surf8))
-            SDL_LockSurface(surf8);
-        SDL_BlitSurface(surf8, nullptr, surf32, nullptr);
-        if(SDL_MUSTLOCK(surf8))
-            SDL_UnlockSurface(surf8);
-        if(SDL_MUSTLOCK(surf32))
-            SDL_UnlockSurface(surf32);
-    }
+    if(SDL_MUSTLOCK(&surf32))
+        SDL_LockSurface(&surf32);
+    if(SDL_MUSTLOCK(surf8))
+        SDL_LockSurface(surf8);
+    SDL_BlitSurface(surf8, nullptr, &surf32, nullptr);
+    if(SDL_MUSTLOCK(surf8))
+        SDL_UnlockSurface(surf8);
+    if(SDL_MUSTLOCK(&surf32))
+        SDL_UnlockSurface(&surf32);
 }

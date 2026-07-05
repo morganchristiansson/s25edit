@@ -94,14 +94,13 @@ struct bobPAL
 // Palette animation parsed from a CRNG chunk in an LBM file
 struct PaletteAnimation
 {
-    bool isActive = false;
-    bool moveUp = true;
-    uint16_t rate = 16384;
-    uint8_t firstClr = 0;
-    uint8_t lastClr = 0;
-    int currentOffset = 0;
-    int lastAppliedOffset = 0;
-    uint32_t lastUpdateTime = 0;
+    bool moveUp;
+    uint16_t rate;
+    uint8_t firstClr;
+    uint8_t lastClr;
+    int currentOffset;
+    int lastAppliedOffset;
+    unsigned lastUpdateTime;
 };
 
 // Structure for Bobtype 7 (Shadow-Bitmaps)
