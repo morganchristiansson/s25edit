@@ -17,11 +17,9 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
     // Compute content area (inside the frames)
     const auto& b = getBorderSizes();
     const Position contentPos = pos_ + Position(b.left, b.top);
-    const int cw = static_cast<int>(size_.x) - b.left - b.right;
-    const int ch = static_cast<int>(size_.y) - b.top - b.bottom;
-    if(cw <= 0 || ch <= 0)
+    const auto contentSize = getSize() - getBorderSize();
+    if(static_cast<int>(contentSize.x) <= 0 || static_cast<int>(contentSize.y) <= 0)
         return;
-    const Extent contentSize(cw, ch);
 
     auto* map = global::s2->getMapObj();
     if(!map)
@@ -29,7 +27,7 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
 
     // Fill pixel buffer with minimap terrain
     int scale = 1;
-    map->drawMinimap(pixels_, cw, ch, scale);
+    map->drawMinimap(pixels_, static_cast<int>(contentSize.x), static_cast<int>(contentSize.y), scale);
 
     // Upload to texture and draw
     if(!minimapTex_.isValid() || minimapTex_.getSize() != contentSize)
@@ -59,8 +57,10 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
     {
         const int arrowIdx = MAPPIC_ARROWCROSS_ORANGE;
         const auto& dispRect = map->getDisplayRect();
-        const Position arrowCenter = dispRect.getOrigin() + Position(dispRect.getSize().x / 2, dispRect.getSize().y / 2);
-        const Position arrowPos = contentPos + arrowCenter / Position(triangleWidth, triangleHeight) / scale
+        const Position arrowCenter =
+          dispRect.getOrigin() + Position(dispRect.getSize().x / 2, dispRect.getSize().y / 2);
+        const Position arrowPos =
+          contentPos + arrowCenter / Position(triangleWidth, triangleHeight) / scale
           - Position(static_cast<int>(global::bmpArray[arrowIdx].nx), static_cast<int>(global::bmpArray[arrowIdx].ny));
         getBmpTexture(arrowIdx).draw(arrowPos);
     }

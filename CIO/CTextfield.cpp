@@ -268,5 +268,4 @@ void CTextfield::draw(Position parentOrigin)
         textObj->setText(displayText);
         textObj->draw(Position(parentOrigin.x + 2, parentOrigin.y + 4));
     }
-
 }

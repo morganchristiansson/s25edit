@@ -53,8 +53,8 @@ public:
     CWindow(void callback(int), int callbackQuitMessage, WindowPos pos, Extent size, const char* title = nullptr,
             int color = WINDOW_GREEN1, Uint8 flags = 0);
     // Access
-    const Position& getPos() const { return pos_; }
-    const Extent& getSize() const { return size_; }
+    Position getPos() const { return pos_; }
+    Extent getSize() const { return size_; }
     Rect getRect() const { return Rect(pos_, size_); }
     int getPriority() const { return priority; }
     void setPriority(int priority) { this->priority = priority; }

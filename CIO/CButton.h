@@ -33,8 +33,8 @@ public:
     // Access
     int getX() const { return pos_.x; };
     int getY() const { return pos_.y; };
-    const Position& getPos() const { return pos_; }
-    const Extent& getSize() const { return size_; };
+    Position getPos() const { return pos_; }
+    Extent getSize() const { return size_; };
     void setX(int x) { pos_.x = x; };
     void setY(int y) { pos_.y = y; };
     void setButtonPicture(int picture);

@@ -38,7 +38,7 @@ public:
     // Access
     Position getPos() const;
     void setPos(Position pos);
-    const Extent& getSize() const { return size_; };
+    Extent getSize() const { return size_; };
     int getCols() const { return cols; }
     int getRows() const { return rows; }
     void setText(const std::string& text);

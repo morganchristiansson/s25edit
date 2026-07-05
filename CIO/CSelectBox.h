@@ -32,8 +32,8 @@ private:
 public:
     CSelectBox(Position pos, Extent size, FontSize fontsize = FontSize::Large, FontColor text_color = FontColor::Yellow,
                int bg_color = -1);
-    const Position& getPos() const { return pos_; }
-    const Extent& getSize() const { return size_; }
+    Position getPos() const { return pos_; }
+    Extent getSize() const { return size_; }
     void setMouseData(SDL_MouseButtonEvent button);
     void setMouseData(SDL_MouseMotionEvent motion);
     void draw(Position parentOrigin);

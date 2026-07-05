@@ -237,5 +237,4 @@ void CSelectBox::draw(Position parentOrigin)
     // Draw scroll buttons (on top, within the select box)
     ScrollUpButton->draw(absPos);
     ScrollDownButton->draw(absPos);
-
 }

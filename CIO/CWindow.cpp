@@ -260,12 +260,12 @@ void CWindow::draw(Position /*parentOrigin*/)
         const auto viewH = global::s2->getRes().y;
         const auto& b = getBorderSizes();
         const auto contentOrigin = origin + Position(b.left, b.top);
-        const auto contentW = static_cast<int>(size_.x) - b.left - b.right;
-        const auto contentH = static_cast<int>(size_.y) - b.top - b.bottom;
-        if(contentW > 0 && contentH > 0)
+        const auto contentSize = getSize() - getBorderSize();
+        if(static_cast<int>(contentSize.x) > 0 && static_cast<int>(contentSize.y) > 0)
         {
             glEnable(GL_SCISSOR_TEST);
-            glScissor(contentOrigin.x, viewH - (contentOrigin.y + contentH), contentW, contentH);
+            glScissor(contentOrigin.x, viewH - (contentOrigin.y + static_cast<int>(contentSize.y)),
+                      static_cast<int>(contentSize.x), static_cast<int>(contentSize.y));
             drawChildren(origin);
             glDisable(GL_SCISSOR_TEST);
         }

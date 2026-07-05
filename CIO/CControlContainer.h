@@ -62,7 +62,7 @@ public:
     CControlContainer(int pic_background, BorderSizes border);
     virtual ~CControlContainer() noexcept;
     // Access
-    const BorderSizes& getBorderSizes() const { return border; }
+    BorderSizes getBorderSizes() const { return border; }
     Extent getBorderSize() const
     {
         return {static_cast<unsigned>(border.left + border.right), static_cast<unsigned>(border.top + border.bottom)};
