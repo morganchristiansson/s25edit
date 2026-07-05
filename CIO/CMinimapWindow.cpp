@@ -57,9 +57,8 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
         const int arrowIdx = MAPPIC_ARROWCROSS_ORANGE;
         const auto& dispRect = map->getDisplayRect();
         const Position arrowCenter = dispRect.getOrigin() + dispRect.getSize() / 2u;
-        const Position arrowPos =
-          contentPos + arrowCenter / Position(triangleWidth, triangleHeight) / scale
-          - Position(global::bmpArray[arrowIdx].nx, global::bmpArray[arrowIdx].ny);
+        const Position arrowPos = contentPos + arrowCenter / Position(triangleWidth, triangleHeight) / scale
+                                  - Position(global::bmpArray[arrowIdx].nx, global::bmpArray[arrowIdx].ny);
         getBmpTexture(arrowIdx).draw(arrowPos);
     }
 }

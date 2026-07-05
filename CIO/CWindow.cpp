@@ -281,8 +281,8 @@ void CWindow::draw(Position /*parentOrigin*/)
     if(title)
     {
         const int titleY = pos_.y + (getBmpTexture(WINDOW_UPPER_FRAME).getSize().y - 9) / 2;
-        CFont::draw(title, Position(pos_.x + static_cast<int>(size_.x) / 2, titleY), FontSize::Small,
-                    FontColor::Yellow, FontAlign::Middle);
+        CFont::draw(title, Position(pos_.x + static_cast<int>(size_.x) / 2, titleY), FontSize::Small, FontColor::Yellow,
+                    FontAlign::Middle);
     }
 
     // 5. Lower frame (tiled across bottom)
@@ -317,8 +317,7 @@ void CWindow::draw(Position /*parentOrigin*/)
         const int crW = getBmpTexture(WINDOW_CORNER_RECTANGLE).getSize().x;
         const int crH = getBmpTexture(WINDOW_CORNER_RECTANGLE).getSize().y;
         getBmpTexture(WINDOW_CORNER_RECTANGLE).draw(pos_ + Position(0, static_cast<int>(size_.y) - crH));
-        getBmpTexture(WINDOW_CORNER_RECTANGLE)
-          .draw(pos_ + size_ - Position(crW, crH));
+        getBmpTexture(WINDOW_CORNER_RECTANGLE).draw(pos_ + size_ - Position(crW, crH));
     }
 
     // 9. Close button
@@ -358,8 +357,7 @@ void CWindow::draw(Position /*parentOrigin*/)
             resizebutton = WINDOW_BUTTON_RESIZE_MARKED;
         else
             resizebutton = WINDOW_BUTTON_RESIZE;
-        getBmpTexture(resizebutton)
-          .draw(pos_ + size_ - getBmpTexture(resizebutton).getSize());
+        getBmpTexture(resizebutton).draw(pos_ + size_ - getBmpTexture(resizebutton).getSize());
     }
 }
 
