@@ -228,13 +228,6 @@ Texture& getBmpTexture(int idx, bool filterLinear)
     return cache[idx];
 }
 
-void ensureBmpTex(int idx)
-{
-    if(static_cast<unsigned>(idx) >= global::bmpArray.size())
-        return;
-    getBmpTexture(idx);
-}
-
 void drawButtonBox(const Rect& area, bool pressed, int baseTex, int faceTex)
 {
     getBmpTexture(baseTex).drawTiled(area);
