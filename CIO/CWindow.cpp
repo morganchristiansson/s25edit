@@ -78,14 +78,11 @@ void CWindow::setMouseData(SDL_MouseMotionEvent motion)
         moving = false;
     if(moving && canMove)
     {
-        pos_.x += motion.xrel;
-        pos_.y += motion.yrel;
-        // Clamp window position to screen bounds
+        pos_ += Position(motion.xrel, motion.yrel);
+        // Clamp window position so it stays on screen
         const auto res = global::s2->getRes();
-        const int maxX = static_cast<int>(res.x - size_.x) - 1;
-        const int maxY = static_cast<int>(res.y - size_.y) - 1;
-        pos_.x = std::clamp(pos_.x, 0, maxX);
-        pos_.y = std::clamp(pos_.y, 0, maxY);
+        const auto maxPos = res - elMin(size_, res);
+        pos_ = elMin(elMax(pos_, Position(0, 0)), Position(maxPos));
     }
 
     // check whats happen to the close button
