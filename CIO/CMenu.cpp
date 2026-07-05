@@ -13,17 +13,8 @@ CMenu::CMenu(int pic_background) : CControlContainer(pic_background) {}
 void CMenu::draw(Position /*parentOrigin*/)
 {
     // Draw full-screen background texture
-    const int picIdx = getBackground();
-    if(picIdx >= 0 && picIdx < static_cast<int>(global::bmpArray.size()))
-    {
-        auto& tex = getBmpTexture(picIdx, true);
-        if(tex.isValid())
-        {
-            const auto res = global::s2->getRes();
-            tex.draw(Rect(0, 0, res.x, res.y));
-        }
-    }
+    const auto res = global::s2->getRes();
+    getBmpTexture(getBackground(), true).draw(Rect(0, 0, res.x, res.y));
 
-    // Draw children
     drawChildren(Position(0, 0));
 }

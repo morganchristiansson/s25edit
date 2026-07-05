@@ -50,7 +50,7 @@ private:
     bool eraseElement(T& collection, const U* element);
 
 protected:
-    virtual void draw(Position parentOrigin);
+    virtual void draw(Position parentOrigin) = 0;
     void drawChildren(Position origin);
 
     auto& getTextFields() { return textfields; }

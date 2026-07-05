@@ -265,14 +265,13 @@ void CWindow::draw(Position /*parentOrigin*/)
     {
         const auto viewH = global::s2->getRes().y;
         const auto& b = getBorderSizes();
-        const auto contentX = origin.x + b.left;
-        const auto contentY = origin.y + b.top;
+        const auto contentOrigin = origin + Position(b.left, b.top);
         const auto contentW = static_cast<int>(size_.x) - b.left - b.right;
         const auto contentH = static_cast<int>(size_.y) - b.top - b.bottom;
         if(contentW > 0 && contentH > 0)
         {
             glEnable(GL_SCISSOR_TEST);
-            glScissor(contentX, viewH - (contentY + contentH), contentW, contentH);
+            glScissor(contentOrigin.x, viewH - (contentOrigin.y + contentH), contentW, contentH);
             drawChildren(origin);
             glDisable(GL_SCISSOR_TEST);
         }
@@ -328,13 +327,13 @@ void CWindow::draw(Position /*parentOrigin*/)
         getBmpTexture(WINDOW_LEFT_UPPER_CORNER).draw(origin);
 
         const int ruW = getBmpTexture(WINDOW_RIGHT_UPPER_CORNER).getSize().x;
-        getBmpTexture(WINDOW_RIGHT_UPPER_CORNER).draw(Position(origin.x + static_cast<int>(size_.x) - ruW, origin.y));
+        getBmpTexture(WINDOW_RIGHT_UPPER_CORNER).draw(origin + Position(static_cast<int>(size_.x) - ruW, 0));
 
         const int crW = getBmpTexture(WINDOW_CORNER_RECTANGLE).getSize().x;
         const int crH = getBmpTexture(WINDOW_CORNER_RECTANGLE).getSize().y;
-        getBmpTexture(WINDOW_CORNER_RECTANGLE).draw(Position(origin.x, origin.y + static_cast<int>(size_.y) - crH));
+        getBmpTexture(WINDOW_CORNER_RECTANGLE).draw(origin + Position(0, static_cast<int>(size_.y) - crH));
         getBmpTexture(WINDOW_CORNER_RECTANGLE)
-          .draw(Position(origin.x + static_cast<int>(size_.x) - crW, origin.y + static_cast<int>(size_.y) - crH));
+          .draw(origin + Position(static_cast<int>(size_.x) - crW, static_cast<int>(size_.y) - crH));
     }
 
     // 9. Close button
@@ -361,7 +360,7 @@ void CWindow::draw(Position /*parentOrigin*/)
         else
             minimizebutton = WINDOW_BUTTON_MINIMIZE;
         getBmpTexture(minimizebutton)
-          .draw(Position(origin.x + static_cast<int>(size_.x) - getBmpTexture(minimizebutton).getSize().x, origin.y));
+          .draw(origin + Position(static_cast<int>(size_.x) - getBmpTexture(minimizebutton).getSize().x, 0));
     }
 
     // 11. Resize button

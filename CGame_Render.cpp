@@ -117,10 +117,8 @@ void CGame::Render()
         framesPassedSinceLastFps = 0;
         lastFpsTick = curTicks;
     }
-    // Draw FPS counter
     lastFps.draw(Position(0, 0));
 
-    // Cursor on top of everything
     const auto& cursorImg = Cursor.clicked ? (Cursor.button.right ? cross_ : cursorClicked_) : cursor_;
     cursorImg.draw(Cursor.pos);
 

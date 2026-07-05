@@ -175,11 +175,6 @@ bool CControlContainer::delSelectBox(CSelectBox* SelectBoxToDelete)
     return eraseElement(selectboxes, SelectBoxToDelete);
 }
 
-void CControlContainer::draw(Position parentOrigin)
-{
-    drawChildren(parentOrigin);
-}
-
 void CControlContainer::drawChildren(Position origin)
 {
     for(const auto& picture : pictures)

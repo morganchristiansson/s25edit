@@ -28,8 +28,8 @@ public:
     CFont(std::string text, Position pos = {0, 0}, FontSize fontsize = FontSize::Small,
           FontColor color = FontColor::Yellow);
     // Access
-    const Position& getPos() const { return pos_; }
-    const Extent& getSize() const { return size_; }
+    Position getPos() const { return pos_; }
+    Extent getSize() const { return size_; }
     void setPos(Position pos);
     void setFontsize(FontSize fontsize);
     void setColor(FontColor color);

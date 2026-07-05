@@ -16,7 +16,7 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
 
     // Compute content area (inside the frames)
     const auto& b = getBorderSizes();
-    const Position contentPos(pos_.x + b.left, pos_.y + b.top);
+    const Position contentPos = pos_ + Position(b.left, b.top);
     const int cw = static_cast<int>(size_.x) - b.left - b.right;
     const int ch = static_cast<int>(size_.y) - b.top - b.bottom;
     if(cw <= 0 || ch <= 0)
@@ -46,10 +46,10 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
             continue;
 
         const int flagIdx = FLAG_BLUE_DARK + i % 7;
-        const Position hqPos(hqX / scale, hqY / scale);
-        getBmpTexture(flagIdx).draw(
-          contentPos + hqPos
-          - Position(static_cast<int>(global::bmpArray[flagIdx].nx), static_cast<int>(global::bmpArray[flagIdx].ny)));
+        const Position hqPos = Position(hqX, hqY) / scale;
+        const Position flagOffset(static_cast<int>(global::bmpArray[flagIdx].nx),
+                                  static_cast<int>(global::bmpArray[flagIdx].ny));
+        getBmpTexture(flagIdx).draw(contentPos + hqPos - flagOffset);
 
         // Player number
         CFont::draw(std::to_string(i + 1), contentPos + hqPos, FontSize::Small, FontColor::MintGreen);
@@ -59,10 +59,8 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
     {
         const int arrowIdx = MAPPIC_ARROWCROSS_ORANGE;
         const auto& dispRect = map->getDisplayRect();
-        const Position arrowPos =
-          contentPos
-          + Position((dispRect.left + static_cast<int>(dispRect.getSize().x) / 2) / triangleWidth / scale,
-                     (dispRect.top + static_cast<int>(dispRect.getSize().y) / 2) / triangleHeight / scale)
+        const Position arrowCenter = dispRect.getOrigin() + Position(dispRect.getSize().x / 2, dispRect.getSize().y / 2);
+        const Position arrowPos = contentPos + arrowCenter / Position(triangleWidth, triangleHeight) / scale
           - Position(static_cast<int>(global::bmpArray[arrowIdx].nx), static_cast<int>(global::bmpArray[arrowIdx].ny));
         getBmpTexture(arrowIdx).draw(arrowPos);
     }
