@@ -1294,15 +1294,6 @@ static const TerrainDesc* getTerrainDesc(const bobMAP& map, Uint8 rawTextureId)
     return nullptr;
 }
 
-static bool nodeIsMountain(const bobMAP& map, const MapNode& node, bool checkBoth = true)
-{
-    const auto* rsu = getTerrainDesc(map, node.rsuTexture);
-    const auto* usd = getTerrainDesc(map, node.usdTexture);
-    if(checkBoth)
-        return rsu && usd && rsu->kind == TerrainKind::Mountain && usd->kind == TerrainKind::Mountain;
-    return (rsu && rsu->kind == TerrainKind::Mountain) || (usd && usd->kind == TerrainKind::Mountain);
-}
-
 static bool nodeHasTerrainFlag(const bobMAP& map, const MapNode& node, ETerrain flag, bool checkBoth = true)
 {
     const auto* rsu = getTerrainDesc(map, node.rsuTexture);
@@ -2211,23 +2202,23 @@ void CMap::modifyResource(Position pos)
 
     // SPECIAL CASE: test if we should set water only
     // test if vertex is surrounded by meadow and meadow-like textures
-    auto isBuildableLand = [&](const MapNode& node) {
-        const auto* rsu = getTerrainDesc(*map, node.rsuTexture);
-        const auto* usd = getTerrainDesc(*map, node.usdTexture);
-        return rsu && usd && rsu->kind == TerrainKind::Land && rsu->Is(ETerrain::Buildable)
-               && usd->kind == TerrainKind::Land && usd->Is(ETerrain::Buildable);
-    };
-    if(isBuildableLand(*mapVertices[0]) && isBuildableLand(*mapVertices[1]) && isBuildableLand(*mapVertices[2])
-       && isBuildableLand(*mapVertices[3]))
+    // Original logic: both triangles for v0/v1, only rsu for v2, only usd for v3
+    if(getTerrainDesc(*map, mapVertices[0]->rsuTexture)->Is(ETerrain::Buildable)
+       && getTerrainDesc(*map, mapVertices[0]->usdTexture)->Is(ETerrain::Buildable)
+       && getTerrainDesc(*map, mapVertices[1]->rsuTexture)->Is(ETerrain::Buildable)
+       && getTerrainDesc(*map, mapVertices[1]->usdTexture)->Is(ETerrain::Buildable)
+       && getTerrainDesc(*map, mapVertices[2]->rsuTexture)->Is(ETerrain::Buildable)
+       && getTerrainDesc(*map, mapVertices[3]->usdTexture)->Is(ETerrain::Buildable))
     {
         curVertex.resource = 0x21;
     }
     // SPECIAL CASE: test if we should set fishes only
     // test if vertex is surrounded by water (first section) and at least one non-water texture in the second section
+    // Original logic: both triangles for v0/v1, only rsu for v2, only usd for v3
     else if(nodeHasTerrainFlag(*map, *mapVertices[0], ETerrain::Shippable, true)
             && nodeHasTerrainFlag(*map, *mapVertices[1], ETerrain::Shippable, true)
-            && nodeHasTerrainFlag(*map, *mapVertices[2], ETerrain::Shippable, true)
-            && nodeHasTerrainFlag(*map, *mapVertices[3], ETerrain::Shippable, true)
+            && getTerrainDesc(*map, mapVertices[2]->rsuTexture)->Is(ETerrain::Shippable)
+            && getTerrainDesc(*map, mapVertices[3]->usdTexture)->Is(ETerrain::Shippable)
             && (!nodeHasTerrainFlag(*map, *mapVertices[2], ETerrain::Shippable, false)
                 || !nodeHasTerrainFlag(*map, *mapVertices[3], ETerrain::Shippable, false)
                 || !nodeHasTerrainFlag(*map, *mapVertices[4], ETerrain::Shippable, false)
@@ -2244,8 +2235,13 @@ void CMap::modifyResource(Position pos)
         curVertex.resource = 0x87;
     }
     // test if vertex is surrounded by mining textures
-    else if(nodeIsMountain(*map, *mapVertices[0], true) && nodeIsMountain(*map, *mapVertices[1], true)
-            && nodeIsMountain(*map, *mapVertices[2], true) && nodeIsMountain(*map, *mapVertices[3], true))
+    // Original logic: both triangles for v0/v1, only rsu for v2, only usd for v3
+    else if(getTerrainDesc(*map, mapVertices[0]->rsuTexture)->Is(ETerrain::Mineable)
+            && getTerrainDesc(*map, mapVertices[0]->usdTexture)->Is(ETerrain::Mineable)
+            && getTerrainDesc(*map, mapVertices[1]->rsuTexture)->Is(ETerrain::Mineable)
+            && getTerrainDesc(*map, mapVertices[1]->usdTexture)->Is(ETerrain::Mineable)
+            && getTerrainDesc(*map, mapVertices[2]->rsuTexture)->Is(ETerrain::Mineable)
+            && getTerrainDesc(*map, mapVertices[3]->usdTexture)->Is(ETerrain::Mineable))
     {
         // check which resource to set
         if(mode == EDITOR_MODE_RESOURCE_RAISE)
