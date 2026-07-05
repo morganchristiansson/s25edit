@@ -166,7 +166,6 @@ void Texture::drawTiled(const Rect& destRect) const
     if(tileSize.x == 0 || tileSize.y == 0)
         return;
 
-    glColor4f(1, 1, 1, 1);
     glBindTexture(GL_TEXTURE_2D, texture_);
     glBegin(GL_QUADS);
     for(int y = destRect.top; y < destRect.bottom; y += static_cast<int>(tileSize.y))
