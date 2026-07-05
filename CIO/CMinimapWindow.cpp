@@ -45,8 +45,7 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
 
         const int flagIdx = FLAG_BLUE_DARK + i % 7;
         const Position hqPos = Position(hqX, hqY) / scale;
-        const Position flagOffset(static_cast<int>(global::bmpArray[flagIdx].nx),
-                                  static_cast<int>(global::bmpArray[flagIdx].ny));
+        const Position flagOffset(global::bmpArray[flagIdx].nx, global::bmpArray[flagIdx].ny);
         getBmpTexture(flagIdx).draw(contentPos + hqPos - flagOffset);
 
         // Player number
@@ -60,7 +59,7 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
         const Position arrowCenter = dispRect.getOrigin() + dispRect.getSize() / 2u;
         const Position arrowPos =
           contentPos + arrowCenter / Position(triangleWidth, triangleHeight) / scale
-          - Position(static_cast<int>(global::bmpArray[arrowIdx].nx), static_cast<int>(global::bmpArray[arrowIdx].ny));
+          - Position(global::bmpArray[arrowIdx].nx, global::bmpArray[arrowIdx].ny);
         getBmpTexture(arrowIdx).draw(arrowPos);
     }
 }

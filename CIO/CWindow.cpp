@@ -174,8 +174,7 @@ void CWindow::setMouseData(SDL_MouseButtonEvent button)
             clicked = true;
         }
         // pressed inside the window
-        if(button.state == SDL_PRESSED && (button.x >= pos_.x) && (button.x <= pos_.x + static_cast<int>(size_.x))
-           && (button.y >= pos_.y) && (button.y <= pos_.y + static_cast<int>(size_.y)))
+        if(button.state == SDL_PRESSED && IsPointInRect(button.x, button.y, Rect(pos_, size_)))
             marked = true;
         // else pressed outside of the window
         else if(button.state == SDL_PRESSED)
