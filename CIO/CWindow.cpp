@@ -242,26 +242,23 @@ void CWindow::setMouseData(SDL_MouseButtonEvent button)
 
 void CWindow::draw(Position /*parentOrigin*/)
 {
-    const Position origin = pos_;
-    const Rect winRect(origin, size_);
-
     // 1. Background fill (tiled)
     if(getBackground() != WINDOW_NOTHING)
-        getBmpTexture(getBackground()).drawTiled(winRect);
+        getBmpTexture(getBackground()).drawTiled(Rect(pos_, size_));
 
     // 2. Content (if not minimized) — clipped to the area inside frames
     if(!minimized)
     {
         const auto viewH = global::s2->getRes().y;
         const auto& b = getBorderSizes();
-        const auto contentOrigin = origin + Position(b.left, b.top);
+        const auto contentOrigin = pos_ + Position(b.left, b.top);
         const auto contentSize = getSize() - getBorderSize();
         if(static_cast<int>(contentSize.x) > 0 && static_cast<int>(contentSize.y) > 0)
         {
             glEnable(GL_SCISSOR_TEST);
             glScissor(contentOrigin.x, viewH - (contentOrigin.y + static_cast<int>(contentSize.y)),
                       static_cast<int>(contentSize.x), static_cast<int>(contentSize.y));
-            drawChildren(origin);
+            drawChildren(pos_);
             glDisable(GL_SCISSOR_TEST);
         }
     }
@@ -277,52 +274,52 @@ void CWindow::draw(Position /*parentOrigin*/)
 
     // Draw upper frame tile across the top of the window
     {
-        const Rect upperFrameRect(origin, Extent(size_.x, getBmpTexture(upperframe).getSize().y));
+        const Rect upperFrameRect(pos_, Extent(size_.x, getBmpTexture(upperframe).getSize().y));
         getBmpTexture(upperframe).drawTiled(upperFrameRect);
     }
 
     // 4. Title text
     if(title)
     {
-        const int titleY = origin.y + (getBmpTexture(WINDOW_UPPER_FRAME).getSize().y - 9) / 2;
-        CFont::draw(title, Position(origin.x + static_cast<int>(size_.x) / 2, titleY), FontSize::Small,
+        const int titleY = pos_.y + (getBmpTexture(WINDOW_UPPER_FRAME).getSize().y - 9) / 2;
+        CFont::draw(title, Position(pos_.x + static_cast<int>(size_.x) / 2, titleY), FontSize::Small,
                     FontColor::Yellow, FontAlign::Middle);
     }
 
     // 5. Lower frame (tiled across bottom)
     {
         const int lowerH = getBmpTexture(WINDOW_LOWER_FRAME).getSize().y;
-        const Rect lowerFrameRect(Position(origin.x, origin.y + static_cast<int>(size_.y) - lowerH),
+        const Rect lowerFrameRect(Position(pos_.x, pos_.y + static_cast<int>(size_.y) - lowerH),
                                   Extent(size_.x, lowerH));
         getBmpTexture(WINDOW_LOWER_FRAME).drawTiled(lowerFrameRect);
     }
 
     // 6. Left frame (tiled down left side)
     {
-        const Rect leftFrameRect(origin, Extent(getBmpTexture(WINDOW_LEFT_FRAME).getSize().x, size_.y));
+        const Rect leftFrameRect(pos_, Extent(getBmpTexture(WINDOW_LEFT_FRAME).getSize().x, size_.y));
         getBmpTexture(WINDOW_LEFT_FRAME).drawTiled(leftFrameRect);
     }
 
     // 7. Right frame (tiled down right side)
     {
         const int rightW = getBmpTexture(WINDOW_RIGHT_FRAME).getSize().x;
-        const Rect rightFrameRect(Position(origin.x + static_cast<int>(size_.x) - rightW, origin.y),
+        const Rect rightFrameRect(Position(pos_.x + static_cast<int>(size_.x) - rightW, pos_.y),
                                   Extent(rightW, size_.y));
         getBmpTexture(WINDOW_RIGHT_FRAME).drawTiled(rightFrameRect);
     }
 
     // 8. Corners
     {
-        getBmpTexture(WINDOW_LEFT_UPPER_CORNER).draw(origin);
+        getBmpTexture(WINDOW_LEFT_UPPER_CORNER).draw(pos_);
 
         const int ruW = getBmpTexture(WINDOW_RIGHT_UPPER_CORNER).getSize().x;
-        getBmpTexture(WINDOW_RIGHT_UPPER_CORNER).draw(origin + Position(static_cast<int>(size_.x) - ruW, 0));
+        getBmpTexture(WINDOW_RIGHT_UPPER_CORNER).draw(pos_ + Position(static_cast<int>(size_.x) - ruW, 0));
 
         const int crW = getBmpTexture(WINDOW_CORNER_RECTANGLE).getSize().x;
         const int crH = getBmpTexture(WINDOW_CORNER_RECTANGLE).getSize().y;
-        getBmpTexture(WINDOW_CORNER_RECTANGLE).draw(origin + Position(0, static_cast<int>(size_.y) - crH));
+        getBmpTexture(WINDOW_CORNER_RECTANGLE).draw(pos_ + Position(0, static_cast<int>(size_.y) - crH));
         getBmpTexture(WINDOW_CORNER_RECTANGLE)
-          .draw(origin + size_ - Position(crW, crH));
+          .draw(pos_ + size_ - Position(crW, crH));
     }
 
     // 9. Close button
@@ -335,7 +332,7 @@ void CWindow::draw(Position /*parentOrigin*/)
             closebutton = WINDOW_BUTTON_CLOSE_MARKED;
         else
             closebutton = WINDOW_BUTTON_CLOSE;
-        getBmpTexture(closebutton).draw(origin);
+        getBmpTexture(closebutton).draw(pos_);
     }
 
     // 10. Minimize button
@@ -349,7 +346,7 @@ void CWindow::draw(Position /*parentOrigin*/)
         else
             minimizebutton = WINDOW_BUTTON_MINIMIZE;
         getBmpTexture(minimizebutton)
-          .draw(origin + Position(static_cast<int>(size_.x) - getBmpTexture(minimizebutton).getSize().x, 0));
+          .draw(pos_ + Position(static_cast<int>(size_.x) - getBmpTexture(minimizebutton).getSize().x, 0));
     }
 
     // 11. Resize button
@@ -363,7 +360,7 @@ void CWindow::draw(Position /*parentOrigin*/)
         else
             resizebutton = WINDOW_BUTTON_RESIZE;
         getBmpTexture(resizebutton)
-          .draw(origin + size_ - getBmpTexture(resizebutton).getSize());
+          .draw(pos_ + size_ - getBmpTexture(resizebutton).getSize());
     }
 }
 
