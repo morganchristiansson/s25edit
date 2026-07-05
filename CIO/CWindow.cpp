@@ -80,18 +80,12 @@ void CWindow::setMouseData(SDL_MouseMotionEvent motion)
     {
         pos_.x += motion.xrel;
         pos_.y += motion.yrel;
-        // make sure to not move the window outside the display surface
-        if(pos_.x < 0)
-            pos_.x = 0;
-        {
-            const auto res = global::s2->getRes();
-            const int resX = static_cast<int>(res.x);
-            const int resY = static_cast<int>(res.y);
-            if(pos_.x + static_cast<int>(size_.x) >= resX) //-V807
-                pos_.x = resX - static_cast<int>(size_.x) - 1;
-            if(pos_.y + static_cast<int>(size_.y) >= resY)
-                pos_.y = resY - static_cast<int>(size_.y) - 1;
-        }
+        // Clamp window position to screen bounds
+        const auto res = global::s2->getRes();
+        const int maxX = static_cast<int>(res.x - size_.x) - 1;
+        const int maxY = static_cast<int>(res.y - size_.y) - 1;
+        pos_.x = std::clamp(pos_.x, 0, maxX);
+        pos_.y = std::clamp(pos_.y, 0, maxY);
     }
 
     // check whats happen to the close button
@@ -374,7 +368,7 @@ void CWindow::draw(Position /*parentOrigin*/)
         else
             resizebutton = WINDOW_BUTTON_RESIZE;
         getBmpTexture(resizebutton)
-          .draw(Position(origin + Position(static_cast<int>(size_.x), static_cast<int>(size_.y)))
+          .draw(origin + Position(static_cast<int>(size_.x), static_cast<int>(size_.y))
                 - Position(getBmpTexture(resizebutton).getSize()));
     }
 }
