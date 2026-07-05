@@ -163,7 +163,7 @@ void Texture::drawTiled(const Rect& destRect) const
         return;
 
     const Extent tileSize = getSize();
-    if(static_cast<int>(tileSize.x) <= 0 || static_cast<int>(tileSize.y) <= 0)
+    if(tileSize.x == 0 || tileSize.y == 0)
         return;
 
     glColor4f(1, 1, 1, 1);

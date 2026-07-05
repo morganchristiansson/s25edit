@@ -33,9 +33,8 @@ CWindow::CWindow(void callback(int), int callbackQuitMessage, Position pos, Exte
 static Position makePos(WindowPos pos, Extent size)
 {
     if(pos == WindowPos::Center)
-    {
         return (global::s2->getRes() - size) / 2;
-    } else
+    else
         return {};
 }
 
@@ -126,10 +125,9 @@ void CWindow::setMouseData(SDL_MouseMotionEvent motion)
             if(!minimized)
             {
                 size_ = Extent(static_cast<int>(size_.x) + motion.xrel, static_cast<int>(size_.y) + motion.yrel);
-
-                // MISSING: we have to test if window size is under minimum
-
-                // notify the callback that the window has been resized
+                const auto res = global::s2->getRes();
+                const auto maxSize = Extent(elMax(Position(res) - pos_, Position(1, 1)));
+                size_ = elMin(elMax(size_, Extent::all(1u)), maxSize);
                 callback_(WINDOW_RESIZED_CALL);
             }
         }
@@ -324,7 +322,7 @@ void CWindow::draw(Position /*parentOrigin*/)
         const int crH = getBmpTexture(WINDOW_CORNER_RECTANGLE).getSize().y;
         getBmpTexture(WINDOW_CORNER_RECTANGLE).draw(origin + Position(0, static_cast<int>(size_.y) - crH));
         getBmpTexture(WINDOW_CORNER_RECTANGLE)
-          .draw(origin + Position(static_cast<int>(size_.x) - crW, static_cast<int>(size_.y) - crH));
+          .draw(origin + size_ - Position(crW, crH));
     }
 
     // 9. Close button
@@ -365,8 +363,7 @@ void CWindow::draw(Position /*parentOrigin*/)
         else
             resizebutton = WINDOW_BUTTON_RESIZE;
         getBmpTexture(resizebutton)
-          .draw(origin + Position(static_cast<int>(size_.x), static_cast<int>(size_.y))
-                - Position(getBmpTexture(resizebutton).getSize()));
+          .draw(origin + size_ - getBmpTexture(resizebutton).getSize());
     }
 }
 

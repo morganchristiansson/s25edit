@@ -57,8 +57,7 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
     {
         const int arrowIdx = MAPPIC_ARROWCROSS_ORANGE;
         const auto& dispRect = map->getDisplayRect();
-        const Position arrowCenter =
-          dispRect.getOrigin() + Position(dispRect.getSize().x / 2, dispRect.getSize().y / 2);
+        const Position arrowCenter = dispRect.getOrigin() + dispRect.getSize() / 2u;
         const Position arrowPos =
           contentPos + arrowCenter / Position(triangleWidth, triangleHeight) / scale
           - Position(static_cast<int>(global::bmpArray[arrowIdx].nx), static_cast<int>(global::bmpArray[arrowIdx].ny));
