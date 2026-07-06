@@ -15,6 +15,7 @@ class CPicture;
 class CTextfield;
 class CSelectBox;
 
+/// Pixel thickness of a window's frame border on each edge.
 struct BorderSizes
 {
     int left = 0;
@@ -50,7 +51,10 @@ private:
     bool eraseElement(T& collection, const U* element);
 
 protected:
+    /// Draw the container's background and child elements using OpenGL.
+    /// @param parentOrigin  Absolute position of the parent container.
     virtual void draw(Position parentOrigin) = 0;
+    /// Draw children at the given origin (calls each child's Draw).
     void drawChildren(Position origin);
 
     auto& getTextFields() { return textfields; }

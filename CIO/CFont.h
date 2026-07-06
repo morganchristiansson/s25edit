@@ -47,8 +47,11 @@ public:
     }
     void setMouseData(SDL_MouseButtonEvent button);
 
+    /// Draw this font's text at the given absolute position using OpenGL.
     void draw(Position parentOrigin) const;
 
+    /// Static helpers for drawing text with OpenGL directly.
+    /// @param pos  Absolute position (top-left of the text, adjusted for alignment).
     static void draw(const std::string& string, Position pos, FontSize fontsize = FontSize::Small,
                      FontColor color = FontColor::Yellow, FontAlign align = FontAlign::Left);
 
