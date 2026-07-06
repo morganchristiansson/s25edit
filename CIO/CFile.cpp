@@ -349,7 +349,6 @@ bool CFile::read_lbm(FILE* fp, const boost::filesystem::path& filepath)
     // fseek(fp, length-20, SEEK_CUR);
 
     const Uint16 tilesetSlot = static_cast<Uint16>(bmpArray - global::bmpArray.data());
-    int chunkIdx = 0;
 
     /* READ SECOND CHUNK "CMAP" */
 
@@ -421,7 +420,13 @@ bool CFile::read_lbm(FILE* fp, const boost::filesystem::path& filepath)
                     anim.currentOffset = 0;
                     anim.lastAppliedOffset = 0;
                     anim.lastUpdateTime = SDL_GetTicks();
-                    global::paletteAnimations[tilesetSlot][chunkIdx] = anim;
+                    switch(tilesetSlot)
+                    {
+                        case TILESET_GREENLAND_8BPP: global::paletteAnimations[MAP_GREENLAND].push_back(anim); break;
+                        case TILESET_WASTELAND_8BPP: global::paletteAnimations[MAP_WASTELAND].push_back(anim); break;
+                        case TILESET_WINTERLAND_8BPP: global::paletteAnimations[MAP_WINTERLAND].push_back(anim); break;
+                        default: break;
+                    }
                 }
                 if(chunkLen > 8)
                 {
@@ -445,7 +450,6 @@ bool CFile::read_lbm(FILE* fp, const boost::filesystem::path& filepath)
                 chunkLen++;
             fseek(fp, chunkLen, SEEK_CUR);
         }
-        chunkIdx++;
     }
     if(feof(fp))
         return false;

@@ -1515,12 +1515,10 @@ static void rotatePaletteRange(SDL_Palette* pal, uint8_t firstClr, int colorCoun
 
 void CSurface::UpdatePaletteAnimations(MapType mapType)
 {
-    const auto tilesetIdx8 = tilesetIdxForMapType(mapType, false);
-    auto animIt = global::paletteAnimations.find(static_cast<Uint16>(tilesetIdx8));
-    if(animIt == global::paletteAnimations.end() || animIt->second.empty())
+    if(global::paletteAnimations[mapType].empty())
         return;
 
-    auto& animMap = animIt->second;
+    const auto tilesetIdx8 = tilesetIdxForMapType(mapType, false);
     auto* surf8 = global::bmpArray[tilesetIdx8].surface.get();
     if(!surf8 || !surf8->format->palette)
         return;
@@ -1535,7 +1533,7 @@ void CSurface::UpdatePaletteAnimations(MapType mapType)
     const unsigned now = SDL_GetTicks();
     bool anyUpdate = false;
 
-    for(auto& [palAnimIdx, anim] : animMap)
+    for(auto& anim : global::paletteAnimations[mapType])
     {
         if(anim.rate == 0)
             continue;
