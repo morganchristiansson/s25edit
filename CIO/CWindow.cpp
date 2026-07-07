@@ -243,7 +243,7 @@ void CWindow::draw(Position /*parentOrigin*/)
 {
     // 1. Background fill (tiled)
     if(getBackground() != WINDOW_NOTHING)
-        getBmpTexture(getBackground()).drawTiled(Rect(pos_, size_));
+        getBmpTexture(getBackground()).drawTiled(getRect());
 
     // 2. Content (if not minimized) — clipped to the area inside frames
     if(!minimized)
