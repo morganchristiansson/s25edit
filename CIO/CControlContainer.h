@@ -51,7 +51,7 @@ private:
     bool eraseElement(T& collection, const U* element);
 
 protected:
-    /// Draw the container's background and child elements using OpenGL.
+    /// Draw the container's background and child elements
     /// @param parentOrigin  Absolute position of the parent container.
     virtual void draw(Position parentOrigin) = 0;
     /// Draw children at the given origin (calls each child's Draw).
