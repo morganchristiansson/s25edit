@@ -77,11 +77,8 @@ int CGame::Execute()
 
 void CGame::RenderPresent()
 {
-    displayTexture_.upload(Surf_Display->pixels);
-    displayTexture_.Draw(Rect(0, 0, GameResolution.x, GameResolution.y));
-
     const auto& cursorImg = Cursor.clicked ? (Cursor.button.right ? cross_ : cursorClicked_) : cursor_;
-    cursorImg.Draw(Cursor.pos);
+    cursorImg.draw(Cursor.pos);
 
     SDL_GL_SwapWindow(window_.get());
 }

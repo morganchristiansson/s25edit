@@ -38,8 +38,6 @@ bool CGame::CreateWindow()
     SDL_ShowWindow(window_.get());
 
     ApplyWindowChanges();
-    if(!displayTexture_.isValid() || !Surf_Display)
-        return false;
 
     SetAppIcon();
 
@@ -125,16 +123,7 @@ void CGame::UpdateDisplaySize(const Extent& newSize)
     appliedResolution_ = GameResolution;
     appliedFullscreen_ = fullscreen;
 
-    Surf_Display = makeRGBSurface(GameResolution.x, GameResolution.y, true);
-    displayTexture_.createEmpty(GameResolution);
-
     setGLViewport();
-    for(auto& menu : Menus)
-    {
-        menu->resetSurface();
-    }
-    for(auto& wnd : Windows)
-        wnd->resetSurface();
 }
 
 bool CGame::Init()
@@ -182,7 +171,7 @@ bool CGame::Init()
     // std::cout << "\nShow loading screen...";
     showLoadScreen = true;
     glClear(GL_COLOR_BUFFER_BIT);
-    splashBg_.Draw(Rect(0, 0, GameResolution.x, GameResolution.y));
+    splashBg_.draw(Rect(0, 0, GameResolution.x, GameResolution.y));
     SDL_GL_SwapWindow(window_.get());
 
     GameDataLoader gdLoader(global::worldDesc);

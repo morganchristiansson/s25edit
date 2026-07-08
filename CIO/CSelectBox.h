@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "SdlSurface.h"
 #include "defines.h"
 #include <functional>
 #include <memory>
@@ -19,7 +18,6 @@ class CSelectBox
     friend class CDebug;
 
 private:
-    SdlSurface Surf_SelectBox;
     std::vector<std::unique_ptr<CFont>> Entries;
     Position pos_;
     Extent size_;
@@ -30,30 +28,17 @@ private:
     std::unique_ptr<CButton> ScrollUpButton;
     std::unique_ptr<CButton> ScrollDownButton;
     Uint16 last_text_pos_y = 10;
-    // we need this to say the window if it needs to render, otherwise no chiffre are shown
-    bool rendered = false;
-    bool needRender = true;
 
 public:
     CSelectBox(Position pos, Extent size, FontSize fontsize = FontSize::Large, FontColor text_color = FontColor::Yellow,
                int bg_color = -1);
-    const Position& getPos() const { return pos_; }
-    const Extent& getSize() const { return size_; }
-    bool hasRendered();
+    Position getPos() const { return pos_; }
+    Extent getSize() const { return size_; }
     void setMouseData(SDL_MouseButtonEvent button);
     void setMouseData(SDL_MouseMotionEvent motion);
-    bool render();
-    SdlSurface& getSurface()
-    {
-        render();
-        return Surf_SelectBox;
-    }
+    void draw(Position parentOrigin);
     void setColor(int color);
-    void setTextColor(FontColor color)
-    {
-        text_color = color;
-        needRender = true;
-    }
+    void setTextColor(FontColor color) { text_color = color; }
     void addOption(const std::string& string, std::function<void(int)> callback = nullptr, int param = 0);
     void setSize(Extent size);
     void setPos(Position pos);

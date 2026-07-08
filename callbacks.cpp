@@ -10,15 +10,18 @@
 #include "CIO/CFile.h"
 #include "CIO/CFont.h"
 #include "CIO/CMenu.h"
+#include "CIO/CMinimapWindow.h"
 #include "CIO/CPicture.h"
 #include "CIO/CSelectBox.h"
 #include "CIO/CTextfield.h"
 #include "CIO/CWindow.h"
 #include "CMap.h"
 #include "CSurface.h"
+#include "CollisionDetection.h"
 #include "globals.h"
 #include "helpers/format.hpp"
 #include "s25util/strAlgos.h"
+#include <glad/glad.h>
 #include <boost/filesystem.hpp>
 #include <algorithm>
 #include <cctype>
@@ -51,8 +54,8 @@ void callback::PleaseWait(int Param)
             WNDWait->addText("Please wait ...", Position(10, 10), FontSize::Large);
             // we need to render this window NOW, cause the render loop will do it too late (when the operation
             // is done and we don't need the "Please wait"-window anymore)
-            CSurface::Draw(global::s2->getDisplaySurface(), WNDWait->getSurface(),
-                           global::s2->getDisplaySurface()->w / 2 - 106, global::s2->getDisplaySurface()->h / 2 - 35);
+            glClear(GL_COLOR_BUFFER_BIT);
+            WNDWait->draw(Position(0, 0));
             global::s2->RenderPresent();
             break;
 
@@ -813,8 +816,8 @@ void callback::EditorLoadMenu(int Param)
             int borderT = global::bmpArray[WINDOW_UPPER_FRAME].h;
             int borderB = global::bmpArray[WINDOW_LOWER_FRAME].h;
 
-            int window_w = WNDLoad->getW();
-            int window_h = WNDLoad->getH();
+            int window_w = static_cast<int>(WNDLoad->getSize().x);
+            int window_h = static_cast<int>(WNDLoad->getSize().y);
             int client_w = window_w - borderL - borderR;
             int client_h = window_h - borderT - borderB;
 
@@ -928,10 +931,10 @@ void callback::EditorSaveMenu(int Param)
                 TXTF_Filename = WNDSave->addTextfield(Position(10, 13), 21, 1);
                 const bfs::path filePath = MapObj->getFilepath().empty() ? "MyMap" : MapObj->getFilepath();
                 TXTF_Filename->setText(filePath.filename().string());
-                WNDSave->addText("Mapname", Position(98, 38), FontSize::Small);
+                WNDSave->addText("Mapname", Position(100, 38), FontSize::Small);
                 TXTF_Mapname = WNDSave->addTextfield(Position(10, 50), 21, 1);
                 TXTF_Mapname->setText(MapObj->getMapname());
-                WNDSave->addText("Author", Position(110, 75), FontSize::Medium);
+                WNDSave->addText("Author", Position(100, 75), FontSize::Small);
                 TXTF_Author = WNDSave->addTextfield(Position(10, 87), 21, 1);
                 TXTF_Author->setText(MapObj->getAuthor());
                 WNDSave->addButton(EditorSaveMenu, SAVEMAP, Position(170, 120), Extent(90, 20), BUTTON_GREY, "Save");
@@ -2820,7 +2823,6 @@ void callback::MinimapMenu(int Param)
 {
     static CWindow* WNDMinimap = nullptr;
     static CMap* MapObj = nullptr;
-    static SDL_Surface* WndSurface = nullptr;
     static int scaleNum = 1;
     // only in case INITIALIZING_CALL needed to create the window
     int width;
@@ -2849,20 +2851,14 @@ void callback::MinimapMenu(int Param)
                 height = map->height / scaleNum;
                 //--> 12px is width of left and right window frame and 30px is height of the upper and lower window
                 // frame
-                if((global::s2->getDisplaySurface()->w - 12 < width)
-                   || (global::s2->getDisplaySurface()->h - 30 < height))
+                if((static_cast<int>(global::s2->getRes().x) - 12 < width)
+                   || (static_cast<int>(global::s2->getRes().y) - 30 < height))
                     break;
-                WNDMinimap = global::s2->RegisterWindow(
-                  std::make_unique<CWindow>(MinimapMenu, WINDOWQUIT, WindowPos::Center, Extent(width + 12, height + 30),
-                                            "Overview", WINDOW_NOTHING, WINDOW_CLOSE | WINDOW_MOVE));
+                WNDMinimap = global::s2->RegisterWindow(std::make_unique<CMinimapWindow>(
+                  MinimapMenu, WINDOWQUIT, WindowPos::Center, Extent(width + 12, height + 30), "Overview",
+                  WINDOW_NOTHING, WINDOW_CLOSE | WINDOW_MOVE));
                 global::s2->RegisterCallback(MinimapMenu);
-                WndSurface = WNDMinimap->getSurface();
             }
-            break;
-
-        case CALL_FROM_GAMELOOP:
-            if(MapObj && WndSurface)
-                MapObj->drawMinimap(WndSurface);
             break;
 
         case WINDOW_CLICKED_CALL:
@@ -2871,9 +2867,8 @@ void callback::MinimapMenu(int Param)
                 Position mouse;
                 if(SDL_GetMouseState(&mouse.x, &mouse.y) & SDL_BUTTON(1))
                 {
-                    if(mouse.x > (WNDMinimap->getX() + 6) && mouse.x < (WNDMinimap->getX() + WNDMinimap->getW() - 6)
-                       && mouse.y > (WNDMinimap->getY() + 20)
-                       && mouse.y < (WNDMinimap->getY() + WNDMinimap->getH() - 10))
+                    if(IsPointInRect(
+                         mouse, Rect(WNDMinimap->getPos() + Position(6, 20), WNDMinimap->getSize() - Extent(12, 30))))
                     {
                         DisplayRectangle displayRect = MapObj->getDisplayRect();
                         displayRect.setOrigin((mouse - WNDMinimap->getRect().getOrigin() - Position(6, 20)
@@ -2894,7 +2889,6 @@ void callback::MinimapMenu(int Param)
                 WNDMinimap = nullptr;
             }
             MapObj = nullptr;
-            WndSurface = nullptr;
             global::s2->UnregisterCallback(MinimapMenu);
             break;
 
@@ -3105,8 +3099,7 @@ void callback::submenu1(int Param)
                                "Create window");
             picObject = SubMenu->addPicture(submenu1, PICOBJECT, Position(200, 30), MIS0BOBS_SHIP);
             picObject->setMotionParams(PICOBJECTENTRY, PICOBJECTLEAVE);
-            // text block with \n
-            SubMenu->addText("\nTextblock:\n\nNeue Zeile\nNoch eine neue Zeile", Position(400, 200), FontSize::Large);
+            SubMenu->addText("Textblock", Position(400, 200), FontSize::Large);
             testTextfield = SubMenu->addTextfield(Position(400, 300), 10, 3);
             testSelectBox = SubMenu->addSelectBox(Position(500, 500), Extent(300, 200));
             testSelectBox->addOption("Erste Option", submenu1, SELECTBOX_OPTION1);

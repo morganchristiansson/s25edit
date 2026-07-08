@@ -6,7 +6,6 @@
 #pragma once
 
 #include "CIO/CFont.h"
-#include "SdlSurface.h"
 #include "Texture.h"
 #include <boost/filesystem/path.hpp>
 #include <Point.h>
@@ -27,8 +26,6 @@ public:
 
     bool Running;
     bool showLoadScreen;
-    SdlSurface Surf_Display;
-    Texture displayTexture_;
     SDL_GLContext glContext_ = nullptr;
     SdlWindow window_;
 
@@ -52,6 +49,7 @@ private:
     Texture cursor_;
     Texture cursorClicked_;
     Texture cross_;
+    Texture mapTex_; ///< Texture for the map/terrain (Surf_Map may be 8-bit)
 
     // structure for mouse cursor
     struct
@@ -111,6 +109,5 @@ public:
     CMap* getMapObj();
     void delMapObj();
     void enterEditor(const boost::filesystem::path& filepath);
-    SDL_Surface* getDisplaySurface() const { return Surf_Display.get(); };
     auto getRes() const { return GameResolution; }
 };

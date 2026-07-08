@@ -6,15 +6,13 @@
 #pragma once
 
 #include "Point.h"
-#include "SdlSurface.h"
+#include "defines.h"
 
 class CPicture
 {
     friend class CDebug;
 
 private:
-    SdlSurface Surf_Picture;
-    bool needRender;
     Position pos_;
     Extent size_;
     int picture_;
@@ -30,17 +28,13 @@ public:
     // Access
     int getX() const { return pos_.x; };
     int getY() const { return pos_.y; };
-    const Extent& getSize() const { return size_; };
+    Position getPos() const { return pos_; }
+    Extent getSize() const { return size_; };
     void setX(int x) { pos_.x = x; };
     void setY(int y) { pos_.y = y; };
     void setMouseData(const SDL_MouseMotionEvent& motion);
     void setMouseData(const SDL_MouseButtonEvent& button);
-    bool render();
-    SDL_Surface* getSurface()
-    {
-        render();
-        return Surf_Picture.get();
-    };
+    void draw(Position parentOrigin) const;
     void setMotionParams(int entry, int leave)
     {
         motionEntryParam = entry;

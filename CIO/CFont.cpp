@@ -5,37 +5,30 @@
 
 #include "CFont.h"
 #include "../CSurface.h"
+#include "../Texture.h"
 #include "../globals.h"
+#include "CollisionDetection.h"
 #include <cassert>
 
 CFont::CFont(std::string text, Position pos, FontSize fontsize, FontColor color)
-    : x_(pos.x), y_(pos.y), string_(std::move(text)), fontsize_(fontsize), color_(color), initialColor_(color),
-      clickedParam(0)
-{}
+    : pos_(pos), string_(std::move(text)), fontsize_(fontsize), color_(color), initialColor_(color), clickedParam(0)
+{
+    size_ = Extent(getTextWidth(string_, fontsize_), getLineHeight(fontsize_));
+}
 
 void CFont::setPos(Position pos)
 {
-    if(pos != Position(x_, y_))
-    {
-        x_ = pos.x;
-        y_ = pos.y;
-        Surf_Font.reset();
-    }
+    pos_ = pos;
 }
 
 void CFont::setFontsize(FontSize fontsize)
 {
-    if(fontsize != fontsize_)
-    {
-        fontsize_ = fontsize;
-        Surf_Font.reset();
-    }
+    fontsize_ = fontsize;
+    size_ = Extent(getTextWidth(string_, fontsize_), getLineHeight(fontsize_));
 }
 
 void CFont::setColor(FontColor color)
 {
-    if(color != color_)
-        Surf_Font.reset();
     initialColor_ = color_ = color;
 }
 
@@ -43,8 +36,8 @@ void CFont::setText(std::string text)
 {
     if(text == string_)
         return;
-    Surf_Font.reset();
     this->string_ = std::move(text);
+    size_ = Extent(getTextWidth(string_, fontsize_), getLineHeight(fontsize_));
 }
 
 void CFont::setMouseData(SDL_MouseButtonEvent button)
@@ -54,10 +47,10 @@ void CFont::setMouseData(SDL_MouseButtonEvent button)
     // left button is pressed
     if(button.button == SDL_BUTTON_LEFT)
     {
-        if((button.x >= x_) && (button.x < x_ + w) && (button.y >= y_) && (button.y < y_ + h))
+        if(IsPointInRect(button.x, button.y, Rect(pos_, size_)))
         {
             // if mouse button is pressed ON the text
-            if((button.state == SDL_PRESSED) && getColor() == initialColor_)
+            if(button.state == SDL_PRESSED && getColor() == initialColor_)
             {
                 const auto tmpInitialColor = initialColor_;
                 setColor(FontColor::Orange);
@@ -71,19 +64,10 @@ void CFont::setMouseData(SDL_MouseButtonEvent button)
     }
 }
 
-SDL_Surface* CFont::getSurface()
-{
-    if(!Surf_Font)
-        writeText();
-    return Surf_Font.get();
-}
-
 namespace {
 unsigned getIndexForChar(uint8_t c)
 {
     // subtract 32 shows that we start by spacebar as 'zero-position'
-    // subtract another value after subtracting 32 means the skipped chiffres in ansi in compare to our enumeration
-    // (cause we dont have all ansi-values as pictures)
     if(c >= 32 && c <= 90)
         return c - 32;
     /* \ */
@@ -197,97 +181,47 @@ unsigned getIndexForChar(uint8_t c, FontSize fontsize, FontColor color)
 }
 
 unsigned getCharWidth(uint8_t c, FontSize fontsize, FontColor color)
-{ // NOTE: there is a bug in the ansi 236 'ì' at fontsize 9, the width is 39, this is not useable, we will use the width
-  // of ansi 237
-    // 'í' instead
+{
+    // NOTE: there is a bug in the ansi 236 'ì' at fontsize 9, the width is 39, this is not useable, we will use the
+    // width of ansi 237 'í' instead
     if(fontsize == FontSize::Small && c == 236)
         c = 109;
     return global::bmpArray[getIndexForChar(c, fontsize, color)].w;
 }
 } // namespace
 
-void CFont::writeText()
+void CFont::draw(Position parentOrigin) const
 {
     if(string_.empty())
         return;
-    // data for counting pixels to create the surface
-    unsigned pixel_ctr_w = 0;
-    unsigned pixel_ctr_w_tmp = 0;
-    const unsigned lineHeight = getLineHeight(fontsize_);
-    auto pixel_ctr_h = static_cast<unsigned>(fontsize_);
-    bool pixel_count_loop = true;
-    // counter for the drawed pixels (cause we dont want to draw outside of the surface)
-    Position pos{0, 0};
+    draw(string_, parentOrigin + pos_, fontsize_, color_, FontAlign::Left);
+}
 
-    // now lets draw the chiffres
-    auto chiffre = string_.begin();
-    while(chiffre != string_.end())
+void CFont::draw(const std::string& string, Position pos, FontSize fontsize, FontColor color, FontAlign align)
+{
+    if(string.empty())
+        return;
+
+    // Measure text width for alignment
+    unsigned totalWidth = 0;
+    for(unsigned char c : string)
+        totalWidth += getCharWidth(c, fontsize, color);
+
+    // Apply alignment
+    switch(align)
     {
-        const auto charW = getCharWidth(*chiffre, fontsize_, color_);
-        // if we only count pixels in this round
-        if(pixel_count_loop)
-        {
-            if(*chiffre == '\n')
-            {
-                pixel_ctr_h += lineHeight;
-                if(pixel_ctr_w_tmp > pixel_ctr_w)
-                    pixel_ctr_w = pixel_ctr_w_tmp;
-                pixel_ctr_w_tmp = 0;
-                ++chiffre;
-            } else
-            {
-                pixel_ctr_w_tmp += charW;
-                ++chiffre;
-            }
+        case FontAlign::Middle: pos.x -= static_cast<int>(totalWidth / 2); break;
+        case FontAlign::Right: pos.x -= static_cast<int>(totalWidth); break;
+        case FontAlign::Left: break; // no adjustment
+    }
 
-            // if this was the last chiffre setup width, create surface and go in normal mode to write text to the
-            // surface
-            if(chiffre == string_.end())
-            {
-                if(pixel_ctr_w_tmp > pixel_ctr_w)
-                    pixel_ctr_w = pixel_ctr_w_tmp;
-                w = pixel_ctr_w;
-                h = pixel_ctr_h;
-                Surf_Font = makeRGBSurface(w, h);
-                if(!Surf_Font)
-                    return;
-                SDL_SetColorKey(Surf_Font.get(), SDL_TRUE, SDL_MapRGB(Surf_Font->format, 0, 0, 0));
-                chiffre = string_.begin();
-                pixel_count_loop = false;
-                continue;
-            } else
-                continue;
-        }
-
-        // now we have our index and can use global::bmpArray[chiffre_index] to get the picture
-
-        // test for new line
-        if(*chiffre == '\n')
-        {
-            pos.x = 0;
-            pos.y += lineHeight;
-            ++chiffre;
-            continue;
-        }
-
-        // if right end of surface is reached, stop drawing chiffres
-        if(Surf_Font->w < static_cast<int>(pos.x + charW))
-            break;
-
-        const auto chiffre_index = getIndexForChar(*chiffre, fontsize_, color_);
-
-        // if lower end of surface is reached, stop drawing chiffres
-        if(Surf_Font->h < static_cast<int>(pos.y + global::bmpArray[chiffre_index].h))
-            break;
-
-        // draw the chiffre to the destination
-        CSurface::Draw(Surf_Font, global::bmpArray[chiffre_index].surface, pos);
-
-        // set position for next chiffre
-        pos.x += charW;
-
-        // go to next chiffre
-        ++chiffre;
+    // Draw each character as a textured quad
+    Position curPos = pos;
+    for(unsigned char c : string)
+    {
+        auto& tex = getBmpTexture(getIndexForChar(c, fontsize, color));
+        tex.draw(Rect(curPos, tex.getSize()));
+        curPos.x += tex.getSize().x;
     }
 }
 
@@ -361,4 +295,13 @@ bool CFont::writeText(SDL_Surface* Surf_Dest, const std::string& string, unsigne
     }
 
     return true;
+}
+
+unsigned CFont::getTextWidth(const std::string& string, FontSize fontsize)
+{
+    unsigned w = 0;
+    for(unsigned char c : string)
+        w += getCharWidth(c, fontsize, FontColor::Yellow); // width is same for all colors
+
+    return w;
 }

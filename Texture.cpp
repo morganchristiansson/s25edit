@@ -3,7 +3,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "Texture.h"
+#include "defines.h"
+#include "globals.h"
 #include <glad/glad.h>
+#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -109,7 +112,7 @@ bool Texture::load(SDL_Surface* surface, bool filterLinear)
     {
         auto* row = (Uint32*)((Uint8*)converted->pixels + y * converted->pitch);
         for(int x = 0; x < converted->w; x++)
-            row[x] |= 0xFF000000u; // set alpha bits
+            row[x] |= 0xFF000000u;
     }
     SDL_UnlockSurface(converted);
 
@@ -118,7 +121,7 @@ bool Texture::load(SDL_Surface* surface, bool filterLinear)
     return true;
 }
 
-void Texture::Draw(const Rect& destRect) const
+void Texture::draw(const Rect& destRect) const
 {
     if(!texture_)
         return;
@@ -136,7 +139,7 @@ void Texture::Draw(const Rect& destRect) const
     glEnd();
 }
 
-void Texture::Draw(Position pos) const
+void Texture::draw(Position pos) const
 {
     if(!texture_)
         return;
@@ -152,4 +155,97 @@ void Texture::Draw(Position pos) const
     glTexCoord2f(0, 1);
     glVertex2i(pos.x, pos.y + size_.y);
     glEnd();
+}
+
+void Texture::drawTiled(const Rect& destRect) const
+{
+    if(!texture_)
+        return;
+
+    const Extent tileSize = getSize();
+    if(tileSize.x == 0 || tileSize.y == 0)
+        return;
+
+    glBindTexture(GL_TEXTURE_2D, texture_);
+    glBegin(GL_QUADS);
+    for(int y = destRect.top; y < destRect.bottom; y += static_cast<int>(tileSize.y))
+    {
+        const int rowH = std::min(static_cast<int>(tileSize.y), destRect.bottom - y);
+        const float v1 = float(rowH) / float(tileSize.y);
+        for(int x = destRect.left; x < destRect.right; x += static_cast<int>(tileSize.x))
+        {
+            const int colW = std::min(static_cast<int>(tileSize.x), destRect.right - x);
+            const float u1 = float(colW) / float(tileSize.x);
+
+            glTexCoord2f(0, 0);
+            glVertex2i(x, y);
+            glTexCoord2f(u1, 0);
+            glVertex2i(x + colW, y);
+            glTexCoord2f(u1, v1);
+            glVertex2i(x + colW, y + rowH);
+            glTexCoord2f(0, v1);
+            glVertex2i(x, y + rowH);
+        }
+    }
+    glEnd();
+}
+
+void drawRect(const Rect& rect, unsigned color)
+{
+    glDisable(GL_TEXTURE_2D);
+    glColor4ub((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF);
+    glBegin(GL_QUADS);
+    glVertex2i(rect.left, rect.top);
+    glVertex2i(rect.right, rect.top);
+    glVertex2i(rect.right, rect.bottom);
+    glVertex2i(rect.left, rect.bottom);
+    glEnd();
+    glEnable(GL_TEXTURE_2D);
+    glColor4f(1, 1, 1, 1);
+}
+
+Texture& getBmpTexture(unsigned idx, bool filterLinear)
+{
+    static std::vector<Texture> cache;
+    static std::vector<bool> linearFlags;
+    if(idx >= global::bmpArray.size())
+    {
+        static Texture dummy;
+        return dummy;
+    }
+    if(idx >= cache.size())
+    {
+        cache.resize(static_cast<size_t>(idx) + 1);
+        linearFlags.resize(static_cast<size_t>(idx) + 1, false);
+    }
+    if(!cache[idx].isValid() || linearFlags[idx] != filterLinear)
+    {
+        linearFlags[idx] = filterLinear;
+        auto& bmp = global::bmpArray[idx];
+        if(bmp.surface)
+            cache[idx].load(bmp.surface.get(), filterLinear);
+    }
+    return cache[idx];
+}
+
+void drawButtonBox(const Rect& area, bool pressed, unsigned baseTex, unsigned faceTex)
+{
+    getBmpTexture(baseTex).drawTiled(area);
+
+    const auto sz = area.getSize();
+
+    // 2px black frame: left+top if pressed, right+bottom otherwise
+    if(pressed)
+    {
+        drawRect(Rect(area.getOrigin(), 2, sz.y), 0xFF000000);
+        drawRect(Rect(area.getOrigin(), sz.x, 2), 0xFF000000);
+    } else
+    {
+        drawRect(Rect(area.right - 2, area.top, 2, sz.y), 0xFF000000);
+        drawRect(Rect(area.left, area.bottom - 2, sz.x, 2), 0xFF000000);
+    }
+
+    // Foreground inset by 2px
+    const Rect fgRect(area.getOrigin() + Position(2, 2), sz - Extent(4, 4));
+    getBmpTexture(faceTex).drawTiled(fgRect);
 }

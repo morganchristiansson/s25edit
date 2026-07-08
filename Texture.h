@@ -33,10 +33,19 @@ public:
     void upload(const void* bgraPixels);
 
     /// Draw the texture stretched to fill the given rect.
-    void Draw(const Rect& destRect) const;
+    void draw(const Rect& destRect) const;
 
     /// Draw the texture at native size at the given position.
-    void Draw(Position pos) const;
+    void draw(Position pos) const;
+
+    /// Tile the texture to fill the given rectangle.
+    void drawTiled(const Rect& destRect) const;
+
+    /// Returns the raw GL texture name (for use with glBindTexture).
+    unsigned getHandle() const { return texture_; }
+
+    /// Size in pixels.
+    Extent getSize() const { return size_; }
 
     /// Returns true if the texture has been created.
     bool isValid() const { return texture_ != 0; }
@@ -48,3 +57,15 @@ private:
     /// Internal: create or recreate texture from raw BGRA pixel data.
     void load(const void* bgraPixels, Extent size, bool filterLinear);
 };
+
+/// Draw a filled rectangle with a 32-bit ARGB colour.
+void drawRect(const Rect& rect, unsigned color);
+
+/// Draw a 3D-style button box: tiled background, 2px black frame (sunken if pressed, raised otherwise),
+/// and tiled foreground inset by 2px.
+void drawButtonBox(const Rect& area, bool pressed, unsigned baseTex, unsigned faceTex);
+
+/// Get or create the cached OpenGL texture for a bitmap index.
+/// The texture is loaded from the SDL surface on first access.
+/// @param filterLinear Whether to use linear filtering (for scaled backgrounds).
+Texture& getBmpTexture(int idx, bool filterLinear = false);

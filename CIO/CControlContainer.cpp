@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "CControlContainer.h"
-#include "../CSurface.h"
+#include "../Texture.h"
 #include "../globals.h"
 #include "CButton.h"
 #include "CFont.h"
@@ -13,11 +13,9 @@
 #include "CTextfield.h"
 #include "helpers/containerUtils.h"
 
-CControlContainer::CControlContainer(int pic_background)
-    : CControlContainer(pic_background, Extent::all(0), Extent::all(0))
-{}
-CControlContainer::CControlContainer(int pic_background, Extent borderBeginSize, Extent borderEndSize)
-    : borderBeginSize(borderBeginSize), borderEndSize(borderEndSize), pic_background(pic_background)
+CControlContainer::CControlContainer(int pic_background) : CControlContainer(pic_background, BorderSizes{}) {}
+CControlContainer::CControlContainer(int pic_background, BorderSizes border)
+    : border(border), pic_background(pic_background)
 {}
 
 CControlContainer::~CControlContainer() noexcept = default;
@@ -25,7 +23,6 @@ CControlContainer::~CControlContainer() noexcept = default;
 void CControlContainer::setBackgroundPicture(int pic_background)
 {
     this->pic_background = pic_background;
-    needRender = true;
 }
 
 void CControlContainer::setMouseData(const SDL_MouseMotionEvent motion)
@@ -42,7 +39,6 @@ void CControlContainer::setMouseData(const SDL_MouseMotionEvent motion)
     {
         selectbox->setMouseData(motion);
     }
-    needRender = true;
 }
 
 void CControlContainer::setMouseData(const SDL_MouseButtonEvent button)
@@ -63,7 +59,6 @@ void CControlContainer::setMouseData(const SDL_MouseButtonEvent button)
     {
         selectbox->setMouseData(button);
     }
-    needRender = true;
 }
 
 void CControlContainer::setKeyboardData(const SDL_KeyboardEvent& key)
@@ -81,7 +76,6 @@ bool CControlContainer::eraseElement(T& collection, const U* element)
     if(it != collection.end())
     {
         collection.erase(it);
-        needRender = true;
         return true;
     }
     return false;
@@ -90,10 +84,9 @@ bool CControlContainer::eraseElement(T& collection, const U* element)
 CButton* CControlContainer::addButton(void callback(int), int clickedParam, Position pos, Extent size, int color,
                                       const char* text, int picture)
 {
-    pos = pos + borderBeginSize;
+    pos = pos + Position(border.left, border.top);
 
     buttons.emplace_back(std::make_unique<CButton>(callback, clickedParam, pos, size, color, text, picture));
-    needRender = true;
     return buttons.back().get();
 }
 
@@ -104,10 +97,9 @@ bool CControlContainer::delButton(CButton* ButtonToDelete)
 
 CFont* CControlContainer::addText(std::string string, Position pos, FontSize fontsize, FontColor color)
 {
-    pos = pos + borderBeginSize;
+    pos = pos + Position(border.left, border.top);
 
     texts.emplace_back(std::make_unique<CFont>(std::move(string), pos, fontsize, color));
-    needRender = true;
     return texts.back().get();
 }
 
@@ -118,10 +110,9 @@ bool CControlContainer::delText(CFont* TextToDelete)
 
 CPicture* CControlContainer::addPicture(void callback(int), int clickedParam, Position pos, int picture)
 {
-    pos = pos + borderBeginSize;
+    pos = pos + Position(border.left, border.top);
 
     pictures.emplace_back(std::make_unique<CPicture>(callback, clickedParam, pos, picture));
-    needRender = true;
     return pictures.back().get();
 }
 
@@ -134,11 +125,10 @@ int CControlContainer::addStaticPicture(Position pos, int picture)
 {
     if(picture < 0)
         return -1;
-    pos = pos + borderBeginSize;
+    pos = pos + Position(border.left, border.top);
 
     unsigned id = static_pictures.empty() ? 0u : static_pictures.back().id + 1u;
     static_pictures.emplace_back(Picture{pos, picture, id});
-    needRender = true;
     return id;
 }
 
@@ -151,7 +141,6 @@ bool CControlContainer::delStaticPicture(int picId)
     if(it != static_pictures.end())
     {
         static_pictures.erase(it);
-        needRender = true;
         return true;
     }
     return false;
@@ -160,11 +149,10 @@ bool CControlContainer::delStaticPicture(int picId)
 CTextfield* CControlContainer::addTextfield(Position pos, Uint16 cols, Uint16 rows, FontSize fontsize,
                                             FontColor text_color, int bg_color, bool button_style)
 {
-    pos = pos + borderBeginSize;
+    pos = pos + Position(border.left, border.top);
 
     textfields.emplace_back(
       std::make_unique<CTextfield>(pos, cols, rows, fontsize, text_color, bg_color, button_style));
-    needRender = true;
     return textfields.back().get();
 }
 
@@ -176,10 +164,9 @@ bool CControlContainer::delTextfield(CTextfield* TextfieldToDelete)
 CSelectBox* CControlContainer::addSelectBox(Position pos, Extent size, FontSize fontsize, FontColor text_color,
                                             int bg_color)
 {
-    pos += Position(borderBeginSize);
+    pos += Position(border.left, border.top);
 
     selectboxes.emplace_back(std::make_unique<CSelectBox>(pos, size, fontsize, text_color, bg_color));
-    needRender = true;
     return selectboxes.back().get();
 }
 
@@ -188,18 +175,20 @@ bool CControlContainer::delSelectBox(CSelectBox* SelectBoxToDelete)
     return eraseElement(selectboxes, SelectBoxToDelete);
 }
 
-void CControlContainer::renderElements()
+void CControlContainer::drawChildren(Position origin)
 {
     for(const auto& picture : pictures)
-        CSurface::Draw(surface, picture->getSurface(), picture->getX(), picture->getY());
+        picture->draw(origin);
     for(const auto& text : texts)
-        CSurface::Draw(surface, text->getSurface(), text->getX(), text->getY());
+        text->draw(origin);
     for(const auto& textfield : textfields)
-        CSurface::Draw(surface, textfield->getSurface(), textfield->getX(), textfield->getY());
+        textfield->draw(origin);
     for(const auto& selectbox : selectboxes)
-        CSurface::Draw(surface, selectbox->getSurface(), selectbox->getPos());
+        selectbox->draw(origin);
     for(const auto& button : buttons)
-        CSurface::Draw(surface, button->getSurface(), button->getX(), button->getY());
+        button->draw(origin);
     for(const auto& static_picture : static_pictures)
-        CSurface::Draw(surface, global::bmpArray[static_picture.pic].surface, static_picture.pos);
+    {
+        getBmpTexture(static_picture.pic).draw(origin + static_picture.pos);
+    }
 }

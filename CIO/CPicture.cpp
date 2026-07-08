@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "CPicture.h"
-#include "../CSurface.h"
+#include "../Texture.h"
 #include "../globals.h"
 #include "CollisionDetection.h"
 
@@ -22,13 +22,12 @@ CPicture::CPicture(void callback(int), int clickedParam, Position pos, int pictu
     this->clickedParam = clickedParam;
     motionEntryParam = -1;
     motionLeaveParam = -1;
-    needRender = true;
 }
 
 void CPicture::setMouseData(const SDL_MouseMotionEvent& motion)
 {
     // cursor is on the picture
-    if(IsPointInRect(Position(motion.x, motion.y), Rect(pos_, size_)))
+    if(IsPointInRect(motion.x, motion.y, Rect(pos_, size_)))
     {
         if(motion.state == SDL_RELEASED)
         {
@@ -43,7 +42,6 @@ void CPicture::setMouseData(const SDL_MouseMotionEvent& motion)
             callback(motionLeaveParam);
         marked = false;
     }
-    needRender = true;
 }
 
 void CPicture::setMouseData(const SDL_MouseButtonEvent& button)
@@ -52,7 +50,7 @@ void CPicture::setMouseData(const SDL_MouseButtonEvent& button)
     if(button.button == SDL_BUTTON_LEFT)
     {
         // if mouse button is pressed ON the button, set marked=true
-        if((button.state == SDL_PRESSED) && IsPointInRect(Position(button.x, button.y), Rect(pos_, size_)))
+        if(button.state == SDL_PRESSED && IsPointInRect(button.x, button.y, Rect(pos_, size_)))
         {
             marked = true;
             clicked = true;
@@ -64,25 +62,9 @@ void CPicture::setMouseData(const SDL_MouseButtonEvent& button)
                 callback(clickedParam);
         }
     }
-    needRender = true;
 }
 
-bool CPicture::render()
+void CPicture::draw(Position parentOrigin) const
 {
-    // if we don't need to render, all is up to date, return true
-    if(!needRender)
-        return true;
-    needRender = false;
-    // if we need a new surface
-    if(!Surf_Picture)
-    {
-        Surf_Picture = makeRGBSurface(size_.x, size_.y);
-        if(!Surf_Picture)
-            return false;
-        SDL_SetColorKey(Surf_Picture.get(), SDL_TRUE, SDL_MapRGB(Surf_Picture->format, 0, 0, 0));
-    }
-
-    CSurface::Draw(Surf_Picture, global::bmpArray[picture_].surface);
-
-    return true;
+    getBmpTexture(picture_).draw(parentOrigin + pos_);
 }

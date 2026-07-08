@@ -15,6 +15,15 @@ class CPicture;
 class CTextfield;
 class CSelectBox;
 
+/// Pixel thickness of a window's frame border on each edge.
+struct BorderSizes
+{
+    int left = 0;
+    int top = 0;
+    int right = 0;
+    int bottom = 0;
+};
+
 class CControlContainer
 {
     friend class CDebug;
@@ -28,7 +37,7 @@ private:
     };
 
     // if waste is true, the menu will be delete within the game loop
-    Extent borderBeginSize, borderEndSize; // Width and height of border at left/top and right/bottom
+    BorderSizes border;
     bool waste = false;
     int pic_background;
     std::vector<std::unique_ptr<CButton>> buttons;
@@ -40,39 +49,34 @@ private:
 
     template<class T, class U>
     bool eraseElement(T& collection, const U* element);
-    virtual bool render() = 0;
 
 protected:
-    SdlSurface surface;
-    bool needRender = true;
+    /// Draw the container's background and child elements
+    /// @param parentOrigin  Absolute position of the parent container.
+    virtual void draw(Position parentOrigin) = 0;
+    /// Draw children at the given origin (calls each child's Draw).
+    void drawChildren(Position origin);
 
-    void renderElements();
     auto& getTextFields() { return textfields; }
     const auto& getTextFields() const { return textfields; }
     int getBackground() const { return pic_background; }
 
 public:
     CControlContainer(int pic_background);
-    CControlContainer(int pic_background, Extent borderBeginSize, Extent borderEndSize);
-    ~CControlContainer() noexcept;
+    CControlContainer(int pic_background, BorderSizes border);
+    virtual ~CControlContainer() noexcept;
     // Access
-    Extent getBorderSize() const { return borderBeginSize + borderEndSize; }
+    BorderSizes getBorderSizes() const { return border; }
+    Extent getBorderSize() const
+    {
+        return {static_cast<unsigned>(border.left + border.right), static_cast<unsigned>(border.top + border.bottom)};
+    }
     void setBackgroundPicture(int pic_background);
     virtual void setMouseData(SDL_MouseMotionEvent motion);
     virtual void setMouseData(SDL_MouseButtonEvent button);
     void setKeyboardData(const SDL_KeyboardEvent& key);
-    SDL_Surface* getSurface()
-    {
-        render();
-        return surface.get();
-    }
     void setWaste() { waste = true; }
     bool isWaste() const { return waste; }
-    void resetSurface()
-    {
-        surface.reset();
-        needRender = true;
-    }
     // Methods
     CButton* addButton(void callback(int), int clickedParam, Position pos = {0, 0}, Extent size = {20, 20},
                        int color = BUTTON_GREY, const char* text = nullptr, int picture = -1);

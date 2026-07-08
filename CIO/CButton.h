@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "SdlSurface.h"
 #include "defines.h"
 
 class CButton
@@ -13,8 +12,6 @@ class CButton
     friend class CDebug;
 
 private:
-    SdlSurface Surf_Button;
-    bool needRender;
     Position pos_;
     Extent size_;
     int pic_normal;
@@ -36,26 +33,17 @@ public:
     // Access
     int getX() const { return pos_.x; };
     int getY() const { return pos_.y; };
-    const Position& getPos() const { return pos_; }
-    const Extent& getSize() const { return size_; };
+    Position getPos() const { return pos_; }
+    Extent getSize() const { return size_; };
     void setX(int x) { pos_.x = x; };
     void setY(int y) { pos_.y = y; };
     void setButtonPicture(int picture);
     void setButtonText(const char* text);
     void setMouseData(const SDL_MouseMotionEvent& motion);
     void setMouseData(const SDL_MouseButtonEvent& button);
-    bool render();
-    SDL_Surface* getSurface()
-    {
-        render();
-        return Surf_Button.get();
-    };
+    void draw(Position parentOrigin) const;
     void setColor(int color);
-    void setTextColor(FontColor color)
-    {
-        button_text_color = color;
-        needRender = true;
-    };
+    void setTextColor(FontColor color) { button_text_color = color; };
     void setMotionParams(int entry, int leave)
     {
         motionEntryParam = entry;

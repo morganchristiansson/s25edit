@@ -161,7 +161,7 @@ public:
     std::string getAuthor() const { return map->getAuthor(); }
     void setAuthor(const std::string& author) { map->setAuthor(author); }
 
-    void drawMinimap(SDL_Surface* Window);
+    void drawMinimap(std::vector<uint32_t>& pixels, int w, int h, int& scale);
     void render();
     // get and set some variables necessary for cursor behavior
     void setHexagonMode(bool HexagonMode)

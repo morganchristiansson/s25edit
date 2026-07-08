@@ -1319,35 +1319,37 @@ static void getTriangleColor(const bobMAP& map, Uint8 rawTextureId, Sint16& r, S
     b = 128;
 }
 
-void CMap::drawMinimap(SDL_Surface* Window)
+void CMap::drawMinimap(std::vector<uint32_t>& pixels, int w, int h, int& scale)
 {
-    // this variables are needed to reduce the size of minimap-windows of big maps
-    int num_x = (map->width > 256 ? map->width / 256 : 1);
-    int num_y = (map->height > 256 ? map->height / 256 : 1);
+    // Scale factor to keep minimap within a reasonable size
+    int sx = (map->width > 256 ? map->width / 256 : 1);
+    int sy = (map->height > 256 ? map->height / 256 : 1);
 
-    // make sure the minimap has the same proportions as the "real" map, so scale the same rate
-    num_x = (num_x > num_y ? num_x : num_y);
-    num_y = (num_x > num_y ? num_x : num_y);
+    // Keep aspect ratio uniform
+    scale = (sx > sy ? sx : sy);
 
-    // if (Window->w < map->width || Window->h < map->height)
-    // return;
+    // Ensure pixel buffer is the right size
+    pixels.assign(static_cast<size_t>(w) * h, 0);
 
     for(int y = 0; y < map->height; y++)
     {
-        if(y % num_y != 0)
+        if(y % scale != 0)
             continue;
 
         for(int x = 0; x < map->width; x++)
         {
-            if(x % num_x != 0)
+            if(x % scale != 0)
                 continue;
 
             Sint16 r, g, b;
             getTriangleColor(*map, map->getVertex(x, y).rsuTexture, r, g, b);
 
-            Uint32* row = (Uint32*)Window->pixels + (y / num_y + 20) * Window->pitch / 4; //-V206
-            //+6 because of the left window frame
-            Uint32* pixel = row + x / num_x + 6;
+            const int py = y / scale;
+            const int px = x / scale;
+            if(py >= h || px >= w)
+                continue;
+
+            auto& pixel = pixels[static_cast<size_t>(py) * w + px];
 
             Sint32 vertexLighting = map->getVertex(x, y).i;
             r = ((r * vertexLighting) >> 16);
@@ -1356,32 +1358,9 @@ void CMap::drawMinimap(SDL_Surface* Window)
             const auto r8 = (Uint8)(r > 255 ? 255 : (r < 0 ? 0 : r));
             const auto g8 = (Uint8)(g > 255 ? 255 : (g < 0 ? 0 : g));
             const auto b8 = (Uint8)(b > 255 ? 255 : (b < 0 ? 0 : b));
-            *pixel = ((r8 << Window->format->Rshift) + (g8 << Window->format->Gshift) + (b8 << Window->format->Bshift));
+            pixel = (0xFFu << 24) | (r8 << 16) | (g8 << 8) | b8;
         }
     }
-
-    // draw the player flags
-    for(int i = 0; i < MAXPLAYERS; i++)
-    {
-        if(PlayerHQx[i] != 0xFFFF && PlayerHQy[i] != 0xFFFF)
-        {
-            // draw flag
-            //%7 cause in the original game there are only 7 players and 7 different flags
-            CSurface::Draw(Window, global::bmpArray[FLAG_BLUE_DARK + i % 7].surface,
-                           6 + PlayerHQx[i] / num_x - global::bmpArray[FLAG_BLUE_DARK + i % 7].nx,
-                           20 + PlayerHQy[i] / num_y - global::bmpArray[FLAG_BLUE_DARK + i % 7].ny);
-            // write player number
-            CFont::writeText(Window, std::to_string(i + 1), 6 + PlayerHQx[i] / num_x, 20 + PlayerHQy[i] / num_y,
-                             FontSize::Small, FontColor::MintGreen);
-        }
-    }
-
-    // draw the arrow --> 6px is width of left window frame and 20px is the height of the upper window frame
-    CSurface::Draw(Window, global::bmpArray[MAPPIC_ARROWCROSS_ORANGE].surface,
-                   6 + (displayRect.left + displayRect.getSize().x / 2) / triangleWidth / num_x
-                     - global::bmpArray[MAPPIC_ARROWCROSS_ORANGE].nx,
-                   20 + (displayRect.top + displayRect.getSize().y / 2) / triangleHeight / num_y
-                     - global::bmpArray[MAPPIC_ARROWCROSS_ORANGE].ny);
 }
 
 void CMap::modifyVertex()

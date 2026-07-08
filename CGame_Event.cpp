@@ -8,6 +8,7 @@
 #include "CIO/CWindow.h"
 #include "CMap.h"
 #include "CSurface.h"
+#include "CollisionDetection.h"
 #include "callbacks.h"
 #include "globals.h"
 
@@ -195,9 +196,7 @@ void CGame::EventHandling(SDL_Event* Event)
                     if(!Window->isWaste() && Window->getPriority() == actualPriority)
                     {
                         // is the cursor INSIDE the window or does the user move or resize the window?
-                        if(((Event->motion.x >= Window->getX()) && (Event->motion.x < Window->getX() + Window->getW())
-                            && (Event->motion.y >= Window->getY())
-                            && (Event->motion.y < Window->getY() + Window->getH()))
+                        if(IsPointInRect(Event->motion.x, Event->motion.y, Rect(Window->getPos(), Window->getSize()))
                            || Window->isMoving() || Window->isResizing())
                         {
                             // Windows[i]->setActive();
@@ -275,9 +274,7 @@ void CGame::EventHandling(SDL_Event* Event)
                     if(!Window->isWaste() && Window->getPriority() == actualPriority)
                     {
                         // is the cursor INSIDE the window?
-                        if((Event->button.x >= Window->getX()) && (Event->button.x < Window->getX() + Window->getW())
-                           && (Event->button.y >= Window->getY())
-                           && (Event->button.y < Window->getY() + Window->getH()))
+                        if(IsPointInRect(Event->button.x, Event->button.y, Rect(Window->getPos(), Window->getSize())))
                         {
                             Window->setActive();
                             Window->setPriority(highestPriority + 1);
@@ -338,9 +335,7 @@ void CGame::EventHandling(SDL_Event* Event)
                     if(!Window->isWaste() && Window->getPriority() == actualPriority)
                     {
                         // is the cursor INSIDE the window?
-                        if((Event->button.x >= Window->getX()) && (Event->button.x < Window->getX() + Window->getW())
-                           && (Event->button.y >= Window->getY())
-                           && (Event->button.y < Window->getY() + Window->getH()))
+                        if(IsPointInRect(Event->button.x, Event->button.y, Rect(Window->getPos(), Window->getSize())))
                         {
                             // Windows[i]->setActive();
                             // Windows[i]->setPriority(highestPriority+1);
