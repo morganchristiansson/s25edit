@@ -5,8 +5,11 @@
 #pragma once
 
 #include "Rect.h"
+#include <glad/glad.h>
 #include <Point.h>
 #include <SDL.h>
+#include <memory>
+#include <vector>
 
 /// Wraps a texture with RAII and provides draw methods.
 class Texture
@@ -41,18 +44,40 @@ public:
     /// Tile the texture to fill the given rectangle.
     void drawTiled(const Rect& destRect) const;
 
-    /// Returns the raw GL texture name (for use with glBindTexture).
-    unsigned getHandle() const { return texture_; }
+    /// Direct handle access for manual GL ops.
+    GLuint getHandle() const { return texture_; }
 
     /// Size in pixels.
     Extent getSize() const { return size_; }
 
+    /// Draw a sub-rect of the texture stretched to fill the given dest rect.
+    void draw(const Rect& destRect, const Rect& srcRect) const;
+
     /// Returns true if the texture has been created.
     bool isValid() const { return texture_ != 0; }
 
+    /// Draw at native size at (baseX, baseY) adjusted by the sprite anchor.
+    void drawSprite(int baseX, int baseY) const;
+
+    // ---- Static bitmap-texture cache (used by CFont::draw) ----
+
+    /// Return (or create on first use) a cached GL texture for a bobBMP entry.
+    static Texture& getBmpTexture(int idx, bool filterLinear = false);
+
+    /// Ensure the bitmap at idx has a cached GL texture (pre-warm).
+    static void ensureBmpTex(int idx);
+
+    /// Invalidate the texture cache for entries [start, end] so the next getBmpTexture() re-uploads.
+    static void invalidateBmpCache(int start, int end);
+
 private:
-    unsigned int texture_ = 0;
+    GLuint texture_ = 0;
     Extent size_;
+    Sint16 anchorX_ = 0, anchorY_ = 0; // sprite anchor offset, set by getBmpTexture
+
+    // ---- Bitmap-texture cache internals ----
+    static std::vector<std::unique_ptr<Texture>> s_bmpTexCache;
+    static std::vector<bool> s_bmpTexLinearFlags;
 
     /// Internal: create or recreate texture from raw BGRA pixel data.
     void load(const void* bgraPixels, Extent size, bool filterLinear);

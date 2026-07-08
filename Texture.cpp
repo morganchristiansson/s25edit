@@ -7,6 +7,8 @@
 #include "globals.h"
 #include <glad/glad.h>
 #include <algorithm>
+#include <array>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -78,6 +80,36 @@ bool Texture::load(SDL_Surface* surface, bool filterLinear)
         const bool hasCK = SDL_GetColorKey(surface, &ck) == 0;
         const Uint8 ckIdx = hasCK ? static_cast<Uint8>(ck & 0xFF) : 0;
 
+        // Water color keys used by the ice floe rendering (two-pass alpha test).
+        // These are the RGB values decoded from the old 32-bit SGE colorkeys
+        // that were used to punch holes in the snow/swamp texture so that
+        // the animated water underneath shows through.
+        static constexpr std::array<SDL_Color, 5> kWaterColorKeys = {{
+          {0, 55, 111, 0},
+          {0, 55, 115, 0},
+          {0, 51, 111, 0},
+          {0, 51, 103, 0},
+          {0, 43, 111, 0},
+        }};
+
+        // Build set of transparent palette indices.
+        // Start with the SDL colorkey (if any), then add any palette entries
+        // that match the water color keys.
+        std::set<Uint8> transparentIdxs;
+        if(hasCK)
+            transparentIdxs.insert(ckIdx);
+        for(const auto& key : kWaterColorKeys)
+        {
+            for(int i = 0; i < 256; i++)
+            {
+                if(pal->colors[i].r == key.r && pal->colors[i].g == key.g && pal->colors[i].b == key.b)
+                {
+                    transparentIdxs.insert(static_cast<Uint8>(i));
+                    break;
+                }
+            }
+        }
+
         SDL_LockSurface(surface);
         for(int row = 0; row < h; row++)
         {
@@ -85,7 +117,7 @@ bool Texture::load(SDL_Surface* surface, bool filterLinear)
             for(int col = 0; col < w; col++)
             {
                 const Uint8 idx = src[col];
-                if(hasCK && idx == ckIdx)
+                if(transparentIdxs.count(idx))
                     pixels[row * w + col] = 0; // transparent
                 else
                 {
@@ -101,24 +133,9 @@ bool Texture::load(SDL_Surface* surface, bool filterLinear)
         return true;
     }
 
-    // 32-bit surface: convert to destination format (BGRA), force full opacity
-    SDL_Surface* converted = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ARGB8888, 0);
-    if(!converted)
-        return false;
-
-    // Force alpha to opaque (LBM palette entries often have alpha=0)
-    SDL_LockSurface(converted);
-    for(int y = 0; y < converted->h; y++)
-    {
-        auto* row = (Uint32*)((Uint8*)converted->pixels + y * converted->pitch);
-        for(int x = 0; x < converted->w; x++)
-            row[x] |= 0xFF000000u;
-    }
-    SDL_UnlockSurface(converted);
-
-    load(converted->pixels, Extent(converted->w, converted->h), filterLinear);
-    SDL_FreeSurface(converted);
-    return true;
+    // Only 8-bit paletted surfaces are used (LBM files).
+    // 32-bit surfaces are not expected from any current caller.
+    return false;
 }
 
 void Texture::draw(const Rect& destRect) const
@@ -126,6 +143,7 @@ void Texture::draw(const Rect& destRect) const
     if(!texture_)
         return;
 
+    glColor4f(1, 1, 1, 1);
     glBindTexture(GL_TEXTURE_2D, texture_);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
@@ -144,6 +162,7 @@ void Texture::draw(Position pos) const
     if(!texture_)
         return;
 
+    glColor4f(1, 1, 1, 1);
     glBindTexture(GL_TEXTURE_2D, texture_);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
@@ -190,6 +209,38 @@ void Texture::drawTiled(const Rect& destRect) const
     glEnd();
 }
 
+void Texture::draw(const Rect& destRect, const Rect& srcRect) const
+{
+    if(!texture_)
+        return;
+
+    // Clamp source rect to texture bounds
+    int srcL = std::max(0, srcRect.left);
+    int srcT = std::max(0, srcRect.top);
+    int srcR = std::min(static_cast<int>(size_.x), srcRect.right);
+    int srcB = std::min(static_cast<int>(size_.y), srcRect.bottom);
+    if(srcL >= srcR || srcT >= srcB)
+        return;
+
+    const float u0 = float(srcL) / float(size_.x);
+    const float v0 = float(srcT) / float(size_.y);
+    const float u1 = float(srcR) / float(size_.x);
+    const float v1 = float(srcB) / float(size_.y);
+
+    glColor4f(1, 1, 1, 1);
+    glBindTexture(GL_TEXTURE_2D, texture_);
+    glBegin(GL_QUADS);
+    glTexCoord2f(u0, v0);
+    glVertex2i(destRect.left, destRect.top);
+    glTexCoord2f(u1, v0);
+    glVertex2i(destRect.right, destRect.top);
+    glTexCoord2f(u1, v1);
+    glVertex2i(destRect.right, destRect.bottom);
+    glTexCoord2f(u0, v1);
+    glVertex2i(destRect.left, destRect.bottom);
+    glEnd();
+}
+
 void drawRect(const Rect& rect, unsigned color)
 {
     glDisable(GL_TEXTURE_2D);
@@ -204,28 +255,14 @@ void drawRect(const Rect& rect, unsigned color)
     glColor4f(1, 1, 1, 1);
 }
 
-Texture& getBmpTexture(unsigned idx, bool filterLinear)
+Texture& getBmpTexture(int idx, bool filterLinear)
 {
-    static std::vector<Texture> cache;
-    static std::vector<bool> linearFlags;
-    if(idx >= global::bmpArray.size())
+    if(idx < 0 || static_cast<size_t>(idx) >= global::bmpArray.size())
     {
         static Texture dummy;
         return dummy;
     }
-    if(idx >= cache.size())
-    {
-        cache.resize(static_cast<size_t>(idx) + 1);
-        linearFlags.resize(static_cast<size_t>(idx) + 1, false);
-    }
-    if(!cache[idx].isValid() || linearFlags[idx] != filterLinear)
-    {
-        linearFlags[idx] = filterLinear;
-        auto& bmp = global::bmpArray[idx];
-        if(bmp.surface)
-            cache[idx].load(bmp.surface.get(), filterLinear);
-    }
-    return cache[idx];
+    return Texture::getBmpTexture(idx, filterLinear);
 }
 
 void drawButtonBox(const Rect& area, bool pressed, unsigned baseTex, unsigned faceTex)
@@ -248,4 +285,66 @@ void drawButtonBox(const Rect& area, bool pressed, unsigned baseTex, unsigned fa
     // Foreground inset by 2px
     const Rect fgRect(area.getOrigin() + Position(2, 2), sz - Extent(4, 4));
     getBmpTexture(faceTex).drawTiled(fgRect);
+}
+
+// ---------------------------------------------------------------------------
+//  Bitmap-texture cache (static members)
+// ---------------------------------------------------------------------------
+
+std::vector<std::unique_ptr<Texture>> Texture::s_bmpTexCache;
+std::vector<bool> Texture::s_bmpTexLinearFlags;
+
+Texture& Texture::getBmpTexture(int idx, bool filterLinear)
+{
+    if(idx < 0 || idx >= static_cast<int>(global::bmpArray.size()))
+    {
+        static Texture dummy;
+        return dummy;
+    }
+    if(static_cast<int>(s_bmpTexCache.size()) <= idx)
+    {
+        s_bmpTexCache.resize(idx + 1);
+        s_bmpTexLinearFlags.resize(idx + 1, false);
+    }
+    if(!s_bmpTexCache[idx] || s_bmpTexLinearFlags[idx] != filterLinear || !s_bmpTexCache[idx]->isValid())
+    {
+        if(!s_bmpTexCache[idx])
+            s_bmpTexCache[idx] = std::make_unique<Texture>();
+        s_bmpTexLinearFlags[idx] = filterLinear;
+        auto& bmp = global::bmpArray[idx];
+        if(bmp.surface)
+        {
+            s_bmpTexCache[idx]->load(bmp.surface.get(), filterLinear);
+            s_bmpTexCache[idx]->anchorX_ = bmp.nx;
+            s_bmpTexCache[idx]->anchorY_ = bmp.ny;
+        }
+    }
+    return *s_bmpTexCache[idx];
+}
+
+void Texture::drawSprite(int baseX, int baseY) const
+{
+    if(!isValid())
+        return;
+    draw(Position(baseX - anchorX_, baseY - anchorY_));
+}
+
+void Texture::ensureBmpTex(int idx)
+{
+    if(idx < 0 || idx >= static_cast<int>(global::bmpArray.size()))
+        return;
+    getBmpTexture(idx);
+}
+
+void Texture::invalidateBmpCache(int start, int end)
+{
+    if(start > end)
+        return;
+    if(end >= static_cast<int>(s_bmpTexCache.size()))
+        end = static_cast<int>(s_bmpTexCache.size()) - 1;
+    for(int i = start; i <= end; i++)
+    {
+        if(i >= 0 && i < static_cast<int>(s_bmpTexCache.size()))
+            s_bmpTexCache[i].reset();
+    }
 }

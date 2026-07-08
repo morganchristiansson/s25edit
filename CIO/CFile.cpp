@@ -470,20 +470,10 @@ bool CFile::read_lbm(FILE* fp, const boost::filesystem::path& filepath)
     } else
         return false;
 
-    // if this is a texture file, we need a secondary 32-bit surface for SGE and we set a color key at both surfaces
+    // if this is a texture file, set a color key for transparency
     if(filepath.filename() == "TEX5.LBM" || filepath.filename() == "TEX6.LBM" || filepath.filename() == "TEX7.LBM"
        || filepath.filename() == "TEXTUR_0.LBM" || filepath.filename() == "TEXTUR_3.LBM")
-    {
-        SDL_SetColorKey(bmpArray->surface.get(), SDL_TRUE, SDL_MapRGB(bmpArray->surface->format, 0, 0, 0));
-
-        bmpArray++;
-        if((bmpArray->surface = makeRGBSurface((bmpArray - 1)->w, (bmpArray - 1)->h)))
-        {
-            SDL_SetColorKey(bmpArray->surface.get(), SDL_TRUE, SDL_MapRGB(bmpArray->surface->format, 0, 0, 0));
-            CSurface::Draw(bmpArray->surface, (bmpArray - 1)->surface);
-        } else
-            bmpArray--;
-    }
+        SDL_SetColorKey(bmpArray->surface.get(), SDL_TRUE, 0);
 
     // we are finished, the surface is filled
     // increment bmpArray for the next picture
@@ -1013,7 +1003,7 @@ bool CFile::read_bob02(FILE* fp)
     // now we are ready to read the picture lines and fill the surface, so lets create one
     if((bmpArray->surface = makePalSurface(bmpArray->w, bmpArray->h, palActual->colors)) == nullptr)
         return false;
-    SDL_SetColorKey(bmpArray->surface.get(), SDL_TRUE, SDL_MapRGB(bmpArray->surface->format, 0, 0, 0));
+    SDL_SetColorKey(bmpArray->surface.get(), SDL_TRUE, 0);
     // SDL_SetAlpha(bmpArray->surface, SDL_SRCALPHA, 128);
 
     // main loop for reading picture lines
@@ -1174,7 +1164,7 @@ bool CFile::read_bob04(FILE* fp, int player_color)
     if((bmpArray->surface = makePalSurface(bmpArray->w, bmpArray->h, palActual->colors)) == nullptr)
         return false;
 
-    SDL_SetColorKey(bmpArray->surface.get(), SDL_TRUE, SDL_MapRGB(bmpArray->surface->format, 0, 0, 0));
+    SDL_SetColorKey(bmpArray->surface.get(), SDL_TRUE, 0);
 
     // main loop for reading picture lines
     for(Position pos{0, 0}; pos.y < bmpArray->h; pos.y++)

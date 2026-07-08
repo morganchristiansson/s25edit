@@ -190,13 +190,6 @@ unsigned getCharWidth(uint8_t c, FontSize fontsize, FontColor color)
 }
 } // namespace
 
-void CFont::draw(Position parentOrigin) const
-{
-    if(string_.empty())
-        return;
-    draw(string_, parentOrigin + pos_, fontsize_, color_, FontAlign::Left);
-}
-
 void CFont::draw(const std::string& string, Position pos, FontSize fontsize, FontColor color, FontAlign align)
 {
     if(string.empty())
@@ -301,7 +294,10 @@ unsigned CFont::getTextWidth(const std::string& string, FontSize fontsize)
 {
     unsigned w = 0;
     for(unsigned char c : string)
+    {
+        if(c == '\n')
+            break;
         w += getCharWidth(c, fontsize, FontColor::Yellow); // width is same for all colors
-
+    }
     return w;
 }

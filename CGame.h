@@ -49,7 +49,6 @@ private:
     Texture cursor_;
     Texture cursorClicked_;
     Texture cross_;
-    Texture mapTex_; ///< Texture for the map/terrain (Surf_Map may be 8-bit)
 
     // structure for mouse cursor
     struct

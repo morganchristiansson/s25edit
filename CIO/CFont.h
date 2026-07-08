@@ -48,7 +48,7 @@ public:
     void setMouseData(SDL_MouseButtonEvent button);
 
     /// Draw this font's text at the given absolute position
-    void draw(Position parentOrigin) const;
+    void draw(Position parentOrigin) const { draw(string_, parentOrigin + pos_, fontsize_, color_, FontAlign::Left); }
 
     /// Draw text directly
     /// @param pos  Absolute position (top-left of the text, adjusted for alignment).
