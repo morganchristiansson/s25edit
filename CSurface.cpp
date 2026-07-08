@@ -11,11 +11,17 @@
 #include "globals.h"
 #include "gameData/EdgeDesc.h"
 #include "gameData/TerrainDesc.h"
+#include <libsiedler2/ArchivItem_Bitmap.h>
+#include <libsiedler2/ArchivItem_Bitmap_Raw.h>
+#include <libsiedler2/ArchivItem_PaletteAnimation.h>
+#include <libsiedler2/PixelBufferBGRA.h>
+#include <libsiedler2/PixelBufferPaletted.h>
 #include <glad/glad.h>
 
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <map>
 
 static uint8_t intensityToColor(Sint32 val)
 {
@@ -75,111 +81,6 @@ static void DrawFadedTexturedTrigon(const Point16& p1, const Point16& p2, const 
 } // namespace
 
 bool CSurface::drawTextures = false;
-
-bool CSurface::Draw(SDL_Surface* Surf_Dest, SDL_Surface* Surf_Src, int X, int Y)
-{
-    if(!Surf_Dest || !Surf_Src)
-        return false;
-
-    SDL_Rect DestR;
-
-    DestR.x = X;
-    DestR.y = Y;
-
-    SDL_BlitSurface(Surf_Src, nullptr, Surf_Dest, &DestR);
-
-    return true;
-}
-
-bool CSurface::Draw(SDL_Surface* Surf_Dest, SdlSurface& Surf_Src, int X, int Y)
-{
-    return Draw(Surf_Dest, Surf_Src.get(), X, Y);
-}
-
-bool CSurface::Draw(SdlSurface& Surf_Dest, SdlSurface& Surf_Src, Position pos)
-{
-    return Draw(Surf_Dest.get(), Surf_Src.get(), pos.x, pos.y);
-}
-
-bool CSurface::Draw(SdlSurface& Surf_Dest, SDL_Surface* Surf_Src, int X, int Y)
-{
-    return Draw(Surf_Dest.get(), Surf_Src, X, Y);
-}
-
-bool CSurface::Draw(SDL_Surface* Surf_Dest, SDL_Surface* Surf_Src, Position dest, Position srcOffset, Extent srcSize)
-{
-    if(!Surf_Dest || !Surf_Src)
-        return false;
-
-    SDL_Rect DestR;
-
-    DestR.x = dest.x;
-    DestR.y = dest.y;
-
-    SDL_Rect SrcR;
-
-    SrcR.x = srcOffset.x;
-    SrcR.y = srcOffset.y;
-    SrcR.w = static_cast<int>(srcSize.x);
-    SrcR.h = static_cast<int>(srcSize.y);
-
-    SDL_BlitSurface(Surf_Src, &SrcR, Surf_Dest, &DestR);
-
-    return true;
-}
-
-bool CSurface::Draw(SDL_Surface* Surf_Dest, SdlSurface& Surf_Src, Position dest, Position srcOffset, Extent srcSize)
-{
-    return Draw(Surf_Dest, Surf_Src.get(), dest, srcOffset, srcSize);
-}
-
-// this is the example function from the SDL-documentation to draw pixels
-void CSurface::DrawPixel_Color(SDL_Surface* screen, Position pos, Uint32 color)
-{
-    int bpp = screen->format->BytesPerPixel;
-    /* Here p is the address to the pixel we want to retrieve */
-    Uint8* p = (Uint8*)screen->pixels + static_cast<int>(pos.y) * screen->pitch + static_cast<int>(pos.x) * bpp;
-
-    if(SDL_MUSTLOCK(screen))
-        SDL_LockSurface(screen);
-
-    switch(bpp)
-    {
-        case 1: *p = color; break;
-
-        case 2: *(Uint16*)p = color; break;
-
-        case 3:
-            if((SDL_BYTEORDER) == SDL_LIL_ENDIAN)
-            {
-                p[0] = color;
-                p[1] = color >> 8;
-                p[2] = color >> 16;
-            } else
-            {
-                p[2] = color;
-                p[1] = color >> 8;
-                p[0] = color >> 16;
-            }
-            break;
-
-        case 4: *(Uint32*)p = color; break;
-    }
-
-    if(SDL_MUSTLOCK(screen))
-        SDL_UnlockSurface(screen);
-}
-
-// this is the example function from the sdl-documentation to draw pixels
-void CSurface::DrawPixel_RGB(SDL_Surface* screen, Position pos, Uint8 R, Uint8 G, Uint8 B)
-{
-    DrawPixel_Color(screen, pos, SDL_MapRGB(screen->format, R, G, B));
-}
-
-void CSurface::DrawPixel_RGBA(SDL_Surface* screen, Position pos, Uint8 R, Uint8 G, Uint8 B, Uint8 A)
-{
-    DrawPixel_Color(screen, pos, SDL_MapRGBA(screen->format, R, G, B, A));
-}
 
 void CSurface::DrawTriangleField(const DisplayRectangle& displayRect, const bobMAP& myMap)
 {
@@ -516,11 +417,125 @@ bool GetAdjustedPoints(const DisplayRectangle& displayRect, const bobMAP& myMap,
 }
 } // namespace
 
-void CSurface::GetTerrainTextureCoords(MapType mapType, TriangleTerrainType texture, bool isRSU, int texture_move,
-                                       Point16& upper, Point16& left, Point16& right, Point16& upper2, Point16& left2,
-                                       Point16& right2)
+// palette animation helpers
+
+/// Holds pre-rendered frames for one palette-animated terrain.
+struct AnimFrames
 {
-    const auto animOffset = Point16(-texture_move, texture_move);
+    std::vector<Texture> frames;
+};
+
+static std::map<std::pair<const TerrainDesc*, int>, AnimFrames> s_animFrameCache;
+
+static const AnimFrames* getAnimFrames(const TerrainDesc& td, MapType mapType)
+{
+    // Determine tileset index from map type
+    auto& ta = global::tilesetAnims[static_cast<int>(mapType)];
+    if(ta.anims.empty())
+        return nullptr;
+    // palAnimIdx is the index in the tileset Archiv (0 = bitmap, 1+ = animations)
+    // ta.anims[0] = Archiv[1], ta.anims[1] = Archiv[2], etc.
+    if(td.palAnimIdx < 1)
+        return nullptr;
+    size_t animIdx = static_cast<size_t>(td.palAnimIdx) - 1;
+    if(animIdx >= ta.anims.size())
+        return nullptr;
+    const auto* anim = ta.anims[animIdx];
+    if(!anim || !anim->isActive)
+        return nullptr;
+
+    unsigned numFrames = anim->lastClr - anim->firstClr + 1;
+    if(numFrames < 2)
+        return nullptr;
+    if(numFrames > 32)
+        numFrames = 32;
+
+    auto key = std::make_pair(&td, static_cast<int>(mapType));
+    auto it = s_animFrameCache.find(key);
+    if(it != s_animFrameCache.end())
+        return &it->second;
+
+    // Get the tileset bitmap from the typed archive
+    const libsiedler2::baseArchivItem_Bitmap* tsBmp =
+      dynamic_cast<const libsiedler2::baseArchivItem_Bitmap*>(global::typedArchives[ta.archive].get(ta.bmpIdx));
+    if(!tsBmp)
+        return nullptr;
+    const auto* srcPal = tsBmp->getPalette();
+    if(!srcPal)
+        return nullptr;
+
+    // Extract the terrain sub-rect from the tileset
+    auto r = td.posInTexture;
+    Extent texSize = r.getSize();
+    if(texSize.x == 0 || texSize.y == 0)
+        return nullptr;
+
+    // Create paletted pixel buffer with the sub-rect
+    libsiedler2::PixelBufferPaletted buffer(texSize.x, texSize.y);
+    if(tsBmp->print(buffer, nullptr, 0, 0, r.left, r.top, texSize.x, texSize.y))
+        return nullptr;
+
+    // Build the per-frame animation object (direction hardcoded to false,
+    // matching s25client's ExtractAnimatedTexture which ignores the CRNG flags)
+    libsiedler2::ArchivItem_PaletteAnimation frameStep;
+    frameStep.isActive = true;
+    frameStep.moveUp = false;
+    frameStep.firstClr = anim->firstClr;
+    frameStep.lastClr = anim->lastClr;
+
+    auto& result = s_animFrameCache[key];
+    result.frames.reserve(numFrames);
+
+    std::unique_ptr<libsiedler2::ArchivItem_Palette> curPal;
+    for(unsigned fi = 0; fi < numFrames; fi++)
+    {
+        auto pal = (fi == 0) ? std::make_unique<libsiedler2::ArchivItem_Palette>(*srcPal) : frameStep.apply(*curPal);
+        if(!pal)
+            continue;
+
+        // Render frame to BGRA
+        libsiedler2::PixelBufferBGRA bgraBuf(texSize.x, texSize.y);
+        for(unsigned y = 0; y < texSize.y; y++)
+        {
+            for(unsigned x = 0; x < texSize.x; x++)
+            {
+                auto idx = buffer.get(x, y);
+                auto c = pal->get(idx);
+                uint32_t* dst = reinterpret_cast<uint32_t*>(bgraBuf.getPixelPtr()) + y * texSize.x + x;
+                *dst = (0xFFu << 24) | (uint32_t(c.r) << 16) | (uint32_t(c.g) << 8) | uint32_t(c.b);
+            }
+        }
+
+        Texture tex;
+        libsiedler2::ArchivItem_Bitmap_Raw tmpBmp;
+        tmpBmp.create(texSize.x, texSize.y, bgraBuf.getPixelPtr(), texSize.x, texSize.y,
+                      libsiedler2::TextureFormat::BGRA, nullptr);
+        tex.load(tmpBmp, false);
+        result.frames.push_back(std::move(tex));
+
+        curPal = std::move(pal);
+    }
+
+    return result.frames.empty() ? nullptr : &result;
+}
+
+/// Choose the current animation frame based on elapsed wall-clock time.
+/// Matches s25client: each frame is shown for 630*5/16 = ~197 ms.
+static unsigned getAnimFrameIdx(const AnimFrames& af)
+{
+    unsigned numFrames = af.frames.size();
+    if(numFrames <= 1)
+        return 0;
+    // Match s25client's GetGlobalAnimation(numFrames, 5*numFrames, 16, 0):
+    // unit = 630ms * 5 * numFrames / 16  →  197ms per frame
+    constexpr unsigned unitPerFrame = 630 * 5 / 16; // ≈ 197 ms
+    uint32_t now = SDL_GetTicks();
+    return (now / unitPerFrame) % numFrames;
+}
+
+void CSurface::GetTerrainTextureCoords(MapType mapType, TriangleTerrainType texture, bool isRSU, Point16& upper,
+                                       Point16& left, Point16& right, Point16& upper2, Point16& left2, Point16& right2)
+{
     switch(texture)
     {
             // in case of USD-Triangle "upper.x" and "upper.y" means "lowerX" and "lowerY"
@@ -550,14 +565,14 @@ void CSurface::GetTerrainTextureCoords(MapType mapType, TriangleTerrainType text
             {
                 if(isRSU)
                 {
-                    upper2 = Point16(231, 61) + animOffset;
-                    left2 = Point16(207, 62) + animOffset;
-                    right2 = Point16(223, 78) + animOffset;
+                    upper2 = Point16(231, 61);
+                    left2 = Point16(207, 62);
+                    right2 = Point16(223, 78);
                 } else
                 {
-                    upper2 = Point16(224, 79) + animOffset;
-                    left2 = Point16(232, 62) + animOffset;
-                    right2 = Point16(245, 76) + animOffset;
+                    upper2 = Point16(224, 79);
+                    left2 = Point16(232, 62);
+                    right2 = Point16(245, 76);
                 }
             }
             break;
@@ -569,14 +584,14 @@ void CSurface::GetTerrainTextureCoords(MapType mapType, TriangleTerrainType text
             {
                 if(isRSU)
                 {
-                    upper2 = Point16(231, 61) + animOffset;
-                    left2 = Point16(207, 62) + animOffset;
-                    right2 = Point16(223, 78) + animOffset;
+                    upper2 = Point16(231, 61);
+                    left2 = Point16(207, 62);
+                    right2 = Point16(223, 78);
                 } else
                 {
-                    upper2 = Point16(224, 79) + animOffset;
-                    left2 = Point16(232, 62) + animOffset;
-                    right2 = Point16(245, 76) + animOffset;
+                    upper2 = Point16(224, 79);
+                    left2 = Point16(232, 62);
+                    right2 = Point16(245, 76);
                 }
             }
             break;
@@ -593,14 +608,14 @@ void CSurface::GetTerrainTextureCoords(MapType mapType, TriangleTerrainType text
         case TRIANGLE_TEXTURE_WATER__:
             if(isRSU)
             {
-                upper = Point16(231, 61) + animOffset;
-                left = Point16(207, 62) + animOffset;
-                right = Point16(223, 78) + animOffset;
+                upper = Point16(231, 61);
+                left = Point16(207, 62);
+                right = Point16(223, 78);
             } else
             {
-                upper = Point16(224, 79) + animOffset;
-                left = Point16(232, 62) + animOffset;
-                right = Point16(245, 76) + animOffset;
+                upper = Point16(224, 79);
+                left = Point16(232, 62);
+                right = Point16(245, 76);
             }
             break;
         case TRIANGLE_TEXTURE_MEADOW1:
@@ -646,14 +661,14 @@ void CSurface::GetTerrainTextureCoords(MapType mapType, TriangleTerrainType text
         case TRIANGLE_TEXTURE_LAVA:
             if(isRSU)
             {
-                upper = Point16(231, 117) + animOffset;
-                left = Point16(207, 118) + animOffset;
-                right = Point16(223, 134) + animOffset;
+                upper = Point16(231, 117);
+                left = Point16(207, 118);
+                right = Point16(223, 134);
             } else
             {
-                upper = Point16(224, 135) + animOffset;
-                left = Point16(232, 118) + animOffset;
-                right = Point16(245, 132) + animOffset;
+                upper = Point16(224, 135);
+                left = Point16(232, 118);
+                right = Point16(245, 132);
             }
             break;
         case TRIANGLE_TEXTURE_MINING_MEADOW:
@@ -680,20 +695,8 @@ void CSurface::DrawTriangle(const DisplayRectangle& displayRect, const bobMAP& m
     if(!GetAdjustedPoints(displayRect, myMap, p1, p2, p3))
         return;
 
-    // for moving water, lava, objects and so on
-    // This is very tricky: there are ice floes in the winterland and the water under this floes is moving.
-    // I don't know how this works in original settlers 2 but i solved it this way:
-    // i texture the triangle with normal water and then draw the floe over it. To Extract the floe
-    // from it's surrounded water, i use color keys. These are the color values for the water texture.
-    // The OpenGL renderer approximates this via a two-pass draw with GL_ALPHA_TEST.
-    // The water color keys are handled in Texture::load() when converting the 8-bit paletted
-    // tileset surface to RGBA — matching palette entries are set to alpha=0 so that
-    // GL_ALPHA_TEST (GL_GREATER, 0) skips them in the second pass.
-
-    static int texture_move = 0;
     static int roundCount = 0;
     static Uint32 roundTimeObjects = SDL_GetTicks();
-    static Uint32 roundTimeTextures = SDL_GetTicks();
     if(SDL_GetTicks() - roundTimeObjects > 30)
     {
         roundTimeObjects = SDL_GetTicks();
@@ -702,38 +705,32 @@ void CSurface::DrawTriangle(const DisplayRectangle& displayRect, const bobMAP& m
         else
             roundCount++;
     }
-    if(SDL_GetTicks() - roundTimeTextures > 170)
-    {
-        roundTimeTextures = SDL_GetTicks();
-        texture_move++;
-        if(texture_move > 14)
-            texture_move = 0;
-    }
 
     // Determine tileset texture
-    int tilesetIdx;
+    ArchiveID tsArchive;
     switch(type)
     {
         case MAP_GREENLAND:
-        default: tilesetIdx = TILESET_GREENLAND; break;
-        case MAP_WASTELAND: tilesetIdx = TILESET_WASTELAND; break;
-        case MAP_WINTERLAND: tilesetIdx = TILESET_WINTERLAND; break;
+        default: tsArchive = ArchiveID::TEX5; break;
+        case MAP_WASTELAND: tsArchive = ArchiveID::TEX6; break;
+        case MAP_WINTERLAND: tsArchive = ArchiveID::TEX7; break;
     }
     bool const isRSU = p1.y < p2.y;
-    auto& tilesetTex = Texture::getBmpTexture(tilesetIdx);
+    auto& tilesetTex = Texture::getTexture(tsArchive, 0);
     if(!tilesetTex.isValid())
         return;
     glBindTexture(GL_TEXTURE_2D, tilesetTex.getHandle());
 
-    const float texW = static_cast<float>(global::bmpArray[tilesetIdx].w);
-    const float texH = static_cast<float>(global::bmpArray[tilesetIdx].h);
+    const auto* tsBmp =
+      dynamic_cast<const libsiedler2::baseArchivItem_Bitmap*>(global::typedArchives[tsArchive].get(0));
+    const float texW = tsBmp ? static_cast<float>(tsBmp->getWidth()) : 0.0f;
+    const float texH = tsBmp ? static_cast<float>(tsBmp->getHeight()) : 0.0f;
     if(drawTextures)
     {
-        // upper2, ..... are for special use in winterland.
         Point16 upper, left, right, upper2, left2, right2;
         auto const texture =
           TriangleTerrainType((isRSU ? P1.rsuTexture : P2.usdTexture) & ~0x40); // Mask out harbor bit
-        GetTerrainTextureCoords(type, texture, isRSU, texture_move, upper, left, right, upper2, left2, right2);
+        GetTerrainTextureCoords(type, texture, isRSU, upper, left, right, upper2, left2, right2);
 
         const float uvs[3][2] = {{static_cast<float>(upper.x) / texW, static_cast<float>(upper.y) / texH},
                                  {static_cast<float>(left.x) / texW, static_cast<float>(left.y) / texH},
@@ -743,69 +740,53 @@ void CSurface::DrawTriangle(const DisplayRectangle& displayRect, const bobMAP& m
           {float(p1.x), float(p1.y)}, {float(p2.x), float(p2.y)}, {float(p3.x), float(p3.y)}};
         const MapNode* verts[3] = {&P1, &P2, &P3};
 
-        // draw the triangle
-        // do not shade water and lava
-        if(const auto* terrainDesc = getTerrainDesc(myMap, texture);
-           terrainDesc && (terrainDesc->kind == TerrainKind::Water || terrainDesc->kind == TerrainKind::Lava))
+        // --- palette animation: any terrain with palAnimIdx >= 0 ---
+        if(const auto* terrainDesc = getTerrainDesc(myMap, texture); terrainDesc && terrainDesc->palAnimIdx >= 0)
         {
-            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-            glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE, 2.0f);
-            glBegin(GL_TRIANGLES);
-            for(int k = 0; k < 3; k++)
+            const auto* af = getAnimFrames(*terrainDesc, type);
+            if(af && !af->frames.empty())
             {
-                glTexCoord2f(uvs[k][0], uvs[k][1]);
-                glColor4ub(128, 128, 128, 255);
-                glVertex2f(vertCoord[k][0], vertCoord[k][1]);
-            }
-            glEnd();
-        } else
-        {
-            // draw special winterland textures with moving water (ice floe textures)
-            if(type == MAP_WINTERLAND && (texture == TRIANGLE_TEXTURE_SNOW || texture == TRIANGLE_TEXTURE_SWAMP))
-            {
-                const float wuvs[3][2] = {{static_cast<float>(upper2.x) / texW, static_cast<float>(upper2.y) / texH},
-                                          {static_cast<float>(left2.x) / texW, static_cast<float>(left2.y) / texH},
-                                          {static_cast<float>(right2.x) / texW, static_cast<float>(right2.y) / texH}};
+                unsigned frameIdx = getAnimFrameIdx(*af);
+                glBindTexture(GL_TEXTURE_2D, af->frames[frameIdx].getHandle());
 
-                glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-                glBegin(GL_TRIANGLES);
-                for(int k = 0; k < 3; k++)
-                {
-                    glTexCoord2f(wuvs[k][0], wuvs[k][1]);
-                    glColor4ub(128, 128, 128, 255);
-                    glVertex2f(vertCoord[k][0], vertCoord[k][1]);
-                }
-                glEnd();
+                // Use the GDL triangle UVs (the animated texture covers only the terrain sub-rect)
+                auto tri = isRSU ? terrainDesc->GetRSUTriangle() : terrainDesc->GetUSDTriangle();
+                auto r = terrainDesc->posInTexture;
+                float ox = static_cast<float>(r.left);
+                float oy = static_cast<float>(r.top);
+                float sx = static_cast<float>(r.getSize().x);
+                float sy = static_cast<float>(r.getSize().y);
+                float nu[3][2] = {{(tri.tip.x - ox) / sx, (tri.tip.y - oy) / sy},
+                                  {(tri.left.x - ox) / sx, (tri.left.y - oy) / sy},
+                                  {(tri.right.x - ox) / sx, (tri.right.y - oy) / sy}};
 
-                glEnable(GL_ALPHA_TEST);
-                glAlphaFunc(GL_GREATER, 0);
                 glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
                 glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE, 2.0f);
                 glBegin(GL_TRIANGLES);
                 for(int k = 0; k < 3; k++)
                 {
-                    glTexCoord2f(uvs[k][0], uvs[k][1]);
+                    glTexCoord2f(nu[k][0], nu[k][1]);
                     glColor4ub(intensityToColor(verts[k]->i), intensityToColor(verts[k]->i),
                                intensityToColor(verts[k]->i), 255);
                     glVertex2f(vertCoord[k][0], vertCoord[k][1]);
                 }
                 glEnd();
-                glDisable(GL_ALPHA_TEST);
-            } else
-            {
-                glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-                glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE, 2.0f);
-                glBegin(GL_TRIANGLES);
-                for(int k = 0; k < 3; k++)
-                {
-                    glTexCoord2f(uvs[k][0], uvs[k][1]);
-                    glColor4ub(intensityToColor(verts[k]->i), intensityToColor(verts[k]->i),
-                               intensityToColor(verts[k]->i), 255);
-                    glVertex2f(vertCoord[k][0], vertCoord[k][1]);
-                }
-                glEnd();
+                return;
             }
         }
+
+        // Most terrains: draw from the tileset with standard shading
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+        glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE, 2.0f);
+        glBegin(GL_TRIANGLES);
+        for(int k = 0; k < 3; k++)
+        {
+            glTexCoord2f(uvs[k][0], uvs[k][1]);
+            glColor4ub(intensityToColor(verts[k]->i), intensityToColor(verts[k]->i), intensityToColor(verts[k]->i),
+                       255);
+            glVertex2f(vertCoord[k][0], vertCoord[k][1]);
+        }
+        glEnd();
         return;
     }
 
@@ -1029,13 +1010,34 @@ void CSurface::DrawTriangle(const DisplayRectangle& displayRect, const bobMAP& m
 
                     case 0x16: objIdx = MAPPIC_DOOR; break;
 
-                    case 0x18: objIdx = MIS1BOBS_STONE1; break;
-                    case 0x19: objIdx = MIS1BOBS_STONE2; break;
-                    case 0x1A: objIdx = MIS1BOBS_STONE3; break;
-                    case 0x1B: objIdx = MIS1BOBS_STONE4; break;
-                    case 0x1C: objIdx = MIS1BOBS_STONE5; break;
-                    case 0x1D: objIdx = MIS1BOBS_STONE6; break;
-                    case 0x1E: objIdx = MIS1BOBS_STONE7; break;
+                    case 0x18:
+                        Texture::getTexture(ArchiveID::MIS1BOBS, MIS1BOBS_STONE1).drawSprite(p2);
+                        objIdx = 0;
+                        break;
+                    case 0x19:
+                        Texture::getTexture(ArchiveID::MIS1BOBS, MIS1BOBS_STONE2).drawSprite(p2);
+                        objIdx = 0;
+                        break;
+                    case 0x1A:
+                        Texture::getTexture(ArchiveID::MIS1BOBS, MIS1BOBS_STONE3).drawSprite(p2);
+                        objIdx = 0;
+                        break;
+                    case 0x1B:
+                        Texture::getTexture(ArchiveID::MIS1BOBS, MIS1BOBS_STONE4).drawSprite(p2);
+                        objIdx = 0;
+                        break;
+                    case 0x1C:
+                        Texture::getTexture(ArchiveID::MIS1BOBS, MIS1BOBS_STONE5).drawSprite(p2);
+                        objIdx = 0;
+                        break;
+                    case 0x1D:
+                        Texture::getTexture(ArchiveID::MIS1BOBS, MIS1BOBS_STONE6).drawSprite(p2);
+                        objIdx = 0;
+                        break;
+                    case 0x1E:
+                        Texture::getTexture(ArchiveID::MIS1BOBS, MIS1BOBS_STONE7).drawSprite(p2);
+                        objIdx = 0;
+                        break;
 
                     case 0x22: objIdx = MAPPIC_MUSHROOM3; break;
 
@@ -1052,12 +1054,12 @@ void CSurface::DrawTriangle(const DisplayRectangle& displayRect, const bobMAP& m
             // headquarter
             case 0x80: // node2.objectType is the number of the player beginning with 0x00
                        //%7 cause in the original game there are only 7 players and 7 different flags
-                objIdx = FLAG_BLUE_DARK + P2.objectType % 7;
-                break;
+                Texture::getTexture(ArchiveID::EDITBOB, FLAG_BLUE_DARK + P2.objectType % 7).drawSprite(p2);
+                break; // don't set objIdx — drawn directly from typed archive
             default: break;
         }
         if(objIdx != 0)
-            Texture::getBmpTexture(objIdx).drawSprite(p2.x, p2.y);
+            Texture::getTexture(ArchiveID::MAP00, objIdx).drawSprite(p2);
     }
 
     // blit resources
@@ -1066,25 +1068,29 @@ void CSurface::DrawTriangle(const DisplayRectangle& displayRect, const bobMAP& m
         if(P2.resource >= 0x41 && P2.resource <= 0x47)
         {
             for(char i = 0x41; i <= P2.resource; i++)
-                Texture::getBmpTexture(PICTURE_RESOURCE_COAL).drawSprite(p2.x, p2.y - 4 * (i - 0x40));
+                Texture::getTexture(ArchiveID::EDITIO, PICTURE_RESOURCE_COAL)
+                  .drawSprite(Position(p2.x, p2.y - 4 * (i - 0x40)));
         } else if(P2.resource >= 0x49 && P2.resource <= 0x4F)
         {
             for(char i = 0x49; i <= P2.resource; i++)
-                Texture::getBmpTexture(PICTURE_RESOURCE_ORE).drawSprite(p2.x, p2.y - 4 * (i - 0x48));
+                Texture::getTexture(ArchiveID::EDITIO, PICTURE_RESOURCE_ORE)
+                  .drawSprite(Position(p2.x, p2.y - 4 * (i - 0x48)));
         }
         if(P2.resource >= 0x51 && P2.resource <= 0x57)
         {
             for(char i = 0x51; i <= P2.resource; i++)
-                Texture::getBmpTexture(PICTURE_RESOURCE_GOLD).drawSprite(p2.x, p2.y - 4 * (i - 0x50));
+                Texture::getTexture(ArchiveID::EDITIO, PICTURE_RESOURCE_GOLD)
+                  .drawSprite(Position(p2.x, p2.y - 4 * (i - 0x50)));
         }
         if(P2.resource >= 0x59 && P2.resource <= 0x5F)
         {
             for(char i = 0x59; i <= P2.resource; i++)
-                Texture::getBmpTexture(PICTURE_RESOURCE_GRANITE).drawSprite(p2.x, p2.y - 4 * (i - 0x58));
+                Texture::getTexture(ArchiveID::EDITIO, PICTURE_RESOURCE_GRANITE)
+                  .drawSprite(Position(p2.x, p2.y - 4 * (i - 0x58)));
         }
         // blit animals
         if(P2.animal > 0x00 && P2.animal <= 0x06)
-            Texture::getBmpTexture(PICTURE_SMALL_BEAR + P2.animal).drawSprite(p2.x, p2.y);
+            Texture::getTexture(ArchiveID::EDITBOB, PICTURE_SMALL_BEAR + P2.animal).drawSprite(p2);
     }
 
     // blit buildings
@@ -1094,16 +1100,16 @@ void CSurface::DrawTriangle(const DisplayRectangle& displayRect, const bobMAP& m
         {
             switch(P2.build % 8)
             {
-                case 0x01: Texture::getBmpTexture(MAPPIC_FLAG).drawSprite(p2.x, p2.y); break;
-                case 0x02: Texture::getBmpTexture(MAPPIC_HOUSE_SMALL).drawSprite(p2.x, p2.y); break;
-                case 0x03: Texture::getBmpTexture(MAPPIC_HOUSE_MIDDLE).drawSprite(p2.x, p2.y); break;
+                case 0x01: Texture::getTexture(ArchiveID::MAP00, MAPPIC_FLAG).drawSprite(p2); break;
+                case 0x02: Texture::getTexture(ArchiveID::MAP00, MAPPIC_HOUSE_SMALL).drawSprite(p2); break;
+                case 0x03: Texture::getTexture(ArchiveID::MAP00, MAPPIC_HOUSE_MIDDLE).drawSprite(p2); break;
                 case 0x04:
                     if(P2.rsuTexture & 0x40)
-                        Texture::getBmpTexture(MAPPIC_HOUSE_HARBOUR).drawSprite(p2.x, p2.y);
+                        Texture::getTexture(ArchiveID::MAP00, MAPPIC_HOUSE_HARBOUR).drawSprite(p2);
                     else
-                        Texture::getBmpTexture(MAPPIC_HOUSE_BIG).drawSprite(p2.x, p2.y);
+                        Texture::getTexture(ArchiveID::MAP00, MAPPIC_HOUSE_BIG).drawSprite(p2);
                     break;
-                case 0x05: Texture::getBmpTexture(MAPPIC_MINE).drawSprite(p2.x, p2.y); break;
+                case 0x05: Texture::getTexture(ArchiveID::MAP00, MAPPIC_MINE).drawSprite(p2); break;
                 default: break;
             }
         }

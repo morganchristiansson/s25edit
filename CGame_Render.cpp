@@ -78,12 +78,12 @@ void CGame::Render()
         std::array<char, 100> textBuffer;
         // text for x and y of vertex (shown in upper left corner)
         std::snprintf(textBuffer.data(), textBuffer.size(), "%d    %d", MapObj->getVertexX(), MapObj->getVertexY());
-        CFont::draw(textBuffer.data(), Position(20, 20), FontSize::Medium);
+        CFont::draw(textBuffer.data(), Position(20, 20));
         // text for MinReduceHeight and MaxRaiseHeight
         std::snprintf(textBuffer.data(), textBuffer.size(),
                       "min. height: %#04x/0x3C  max. height: %#04x/0x3C  NormalNull: 0x0A",
                       MapObj->getMinReduceHeight(), MapObj->getMaxRaiseHeight());
-        CFont::draw(textBuffer.data(), Position(100, 20), FontSize::Medium);
+        CFont::draw(textBuffer.data(), Position(100, 20));
         // text for MovementLocked
         if(MapObj->isHorizontalMovementLocked() && MapObj->isVerticalMovementLocked())
             CFont::draw("Movement locked (F9 or F10 to unlock)", Position(20, 40), FontSize::Large, FontColor::Orange);

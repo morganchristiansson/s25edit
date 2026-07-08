@@ -55,17 +55,6 @@ public:
     static void draw(const std::string& string, Position pos, FontSize fontsize = FontSize::Small,
                      FontColor color = FontColor::Yellow, FontAlign align = FontAlign::Left);
 
-    /// Static helper: draw text onto an SDL surface (for terrain / minimap rendering).
-    static bool writeText(SDL_Surface* Surf_Dest, const std::string& string, unsigned x = 0, unsigned y = 0,
-                          FontSize fontsize = FontSize::Small, FontColor color = FontColor::Yellow,
-                          FontAlign align = FontAlign::Left);
-    static bool writeText(SdlSurface& Surf_Dest, const std::string& string, Position pos,
-                          FontSize fontsize = FontSize::Small, FontColor color = FontColor::Yellow,
-                          FontAlign align = FontAlign::Left)
-    {
-        return writeText(Surf_Dest.get(), string, pos.x, pos.y, fontsize, color, align);
-    }
-
     /// Compute the pixel width of a string without drawing it.
     static unsigned getTextWidth(const std::string& string, FontSize fontsize);
 };

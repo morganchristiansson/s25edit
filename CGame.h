@@ -6,6 +6,7 @@
 #pragma once
 
 #include "CIO/CFont.h"
+#include "SdlSurface.h"
 #include "Texture.h"
 #include <boost/filesystem/path.hpp>
 #include <Point.h>
