@@ -173,7 +173,7 @@ bool CGame::Init()
         auto& archiv = global::typedArchives[ArchiveID::SETUP997];
         auto* bmp = dynamic_cast<const libsiedler2::baseArchivItem_Bitmap*>(archiv.get(0));
         if(bmp)
-            splashBg_.load(*bmp, true);
+            splashBg_.load(*bmp);
     }
 
     // std::cout << "\nShow loading screen...";

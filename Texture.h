@@ -31,13 +31,13 @@ public:
     Texture& operator=(const Texture&) = delete;
 
     /// Load from a libsiedler2 bitmap (paletted or BGRA).
-    bool load(const libsiedler2::baseArchivItem_Bitmap& bitmap, bool filterLinear = false);
+    bool load(const libsiedler2::baseArchivItem_Bitmap& bitmap);
 
     /// Load raw BGRA pixel data directly.
     void load(const uint8_t* bgraPixels, Extent size);
 
     /// Create an empty texture of the given size (for use as a render-target).
-    void createEmpty(Extent size, bool filterLinear = false);
+    void createEmpty(Extent size);
 
     /// Upload new pixel data to an existing texture (glTexSubImage2D).
     void upload(const void* bgraPixels);
@@ -72,13 +72,12 @@ public:
     // Static bitmap-texture cache
 
     /// Return (or create on first use) a cached GL texture from a typed archive.
-    static Texture& getTexture(ArchiveID archive, int index, bool filterLinear = false);
+    static Texture& getTexture(ArchiveID archive, int index);
 
 private:
     GLuint texture_ = 0;
     Extent size_;
     Position anchor_ = {0, 0}; // sprite anchor offset, set by getTexture
-
 };
 
 /// Draw a filled rectangle with a 32-bit ARGB colour.
@@ -89,4 +88,4 @@ void drawRect(const Rect& rect, unsigned color);
 void drawButtonBox(const Rect& area, bool pressed, unsigned baseTex, unsigned faceTex);
 
 /// Get or create the cached OpenGL texture from a typed archive.
-Texture& getTexture(ArchiveID archive, int index, bool filterLinear = false);
+Texture& getTexture(ArchiveID archive, int index);

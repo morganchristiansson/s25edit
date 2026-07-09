@@ -47,17 +47,17 @@ void Texture::load(const uint8_t* bgraPixels, Extent size)
 
     glGenTextures(1, &texture_);
     glBindTexture(GL_TEXTURE_2D, texture_);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filterLinear ? GL_LINEAR : GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filterLinear ? GL_LINEAR : GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_BGRA, GL_UNSIGNED_BYTE, bgraPixels);
     size_ = size;
 }
 
-void Texture::createEmpty(Extent size, bool filterLinear)
+void Texture::createEmpty(Extent size)
 {
-    load(nullptr, size, filterLinear);
+    load(nullptr, size);
 }
 
 void Texture::upload(const void* bgraPixels)
@@ -68,7 +68,7 @@ void Texture::upload(const void* bgraPixels)
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size_.x, size_.y, GL_BGRA, GL_UNSIGNED_BYTE, bgraPixels);
 }
 
-bool Texture::load(const libsiedler2::baseArchivItem_Bitmap& bitmap, bool filterLinear)
+bool Texture::load(const libsiedler2::baseArchivItem_Bitmap& bitmap)
 {
     const auto w = bitmap.getWidth();
     const auto h = bitmap.getHeight();
@@ -103,7 +103,7 @@ bool Texture::load(const libsiedler2::baseArchivItem_Bitmap& bitmap, bool filter
             return false;
     }
 
-    load(bgra.data(), Extent(w, h), filterLinear);
+    load(bgra.data(), Extent(w, h));
     return true;
 }
 
@@ -224,9 +224,9 @@ void drawRect(const Rect& rect, unsigned color)
     glColor4f(1, 1, 1, 1);
 }
 
-Texture& getTexture(ArchiveID archive, int index, bool filterLinear)
+Texture& getTexture(ArchiveID archive, int index)
 {
-    return Texture::getTexture(archive, index, filterLinear);
+    return Texture::getTexture(archive, index);
 }
 
 void drawButtonBox(const Rect& area, bool pressed, unsigned baseTex, unsigned faceTex)
@@ -256,7 +256,7 @@ void drawButtonBox(const Rect& area, bool pressed, unsigned baseTex, unsigned fa
 // Cache for typed-archive textures: (archive, index) → Texture
 static std::map<std::pair<ArchiveID, int>, std::unique_ptr<Texture>> s_typedTexCache;
 
-Texture& Texture::getTexture(ArchiveID archive, int index, bool filterLinear)
+Texture& Texture::getTexture(ArchiveID archive, int index)
 {
     auto& archiv = global::typedArchives[archive];
     if(index < 0 || static_cast<unsigned>(index) >= archiv.size())
@@ -272,7 +272,7 @@ Texture& Texture::getTexture(ArchiveID archive, int index, bool filterLinear)
         const auto* bmp = dynamic_cast<const libsiedler2::baseArchivItem_Bitmap*>(archiv.get(index));
         if(bmp)
         {
-            tex->load(*bmp, filterLinear);
+            tex->load(*bmp);
             tex->anchor_ = {bmp->getNx(), bmp->getNy()};
         }
         it = s_typedTexCache.emplace(key, std::move(tex)).first;

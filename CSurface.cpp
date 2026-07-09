@@ -510,7 +510,7 @@ static const AnimFrames* getAnimFrames(const TerrainDesc& td, MapType mapType)
         libsiedler2::ArchivItem_Bitmap_Raw tmpBmp;
         tmpBmp.create(texSize.x, texSize.y, bgraBuf.getPixelPtr(), texSize.x, texSize.y,
                       libsiedler2::TextureFormat::BGRA, nullptr);
-        tex.load(tmpBmp, false);
+        tex.load(tmpBmp);
         result.frames.push_back(std::move(tex));
 
         curPal = std::move(pal);
