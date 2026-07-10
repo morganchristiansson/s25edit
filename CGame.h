@@ -6,8 +6,9 @@
 #pragma once
 
 #include "SdlSurface.h"
-#include "Texture.h"
 #include "driver/VideoDriverLoaderInterface.h"
+
+class glArchivItem_Bitmap;
 #include <boost/filesystem/path.hpp>
 #include <Point.h>
 #include <memory>
@@ -34,11 +35,8 @@ private:
     Extent appliedResolution_ = Extent{0, 0}; ///< Last resolution we applied to the window/display
     bool appliedFullscreen_ = false;          ///< Last fullscreen state we applied
 
-    // Textures for splash screen and cursor
-    Texture splashBg_;
-    Texture cursor_;
-    Texture cursorClicked_;
-    Texture cross_;
+    // Loading screen bitmap (loaded via LOADER at startup)
+    glArchivItem_Bitmap* splashBg_ = nullptr;
 
     // structure for mouse cursor
     struct

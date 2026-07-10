@@ -6,10 +6,10 @@
 #include "CGame.h"
 #include "CMap.h"
 #include "CSurface.h"
-#include "Texture.h"
 #include "WindowManager.h"
 #include "globals.h"
 #include "drivers/VideoDriverWrapper.h"
+#include "ogl/glArchivItem_Bitmap.h"
 #include <glad/glad.h>
 #ifdef _WIN32
 #    include "s25editResource.h"
@@ -48,7 +48,8 @@ void CGame::Render()
     // if the S2 loading screen is shown, render only this until user clicks a mouse button
     if(showLoadScreen)
     {
-        splashBg_.draw(Rect(0, 0, GameResolution.x, GameResolution.y));
+        if(splashBg_)
+            splashBg_->DrawFull(Rect(0, 0, GameResolution.x, GameResolution.y));
         VIDEODRIVER.SwapBuffers();
         return;
     }

@@ -11,6 +11,7 @@
 #include "Loader.h"
 #include "lua/GameDataLoader.h"
 #include "ogl/glAllocator.h"
+#include "ogl/glArchivItem_Bitmap.h"
 #include <libsiedler2/Archiv.h>
 #include <libsiedler2/ArchivItem_Bitmap.h>
 #include <libsiedler2/ArchivItem_Palette.h>
@@ -18,6 +19,7 @@
 #include <libsiedler2/libsiedler2.h>
 #include "drivers/VideoDriverWrapper.h"
 #include <glad/glad.h>
+#include <boost/filesystem.hpp>
 #include <iostream>
 #include <exception>
 
@@ -166,34 +168,30 @@ bool CGame::Init()
      *      otherwise all images will be black (in exception of the LBM-Files, they have their own palette).
      */
 
-    // load some pictures (after all the splash-screens)
-    // at first GFX/PICS/SETUP997.LBM, cause this is the S2-loading picture
-    std::cout << "\nLoading file: GFX/PICS/SETUP997.LBM...";
-    if(!global::loadArchive(ArchiveID::SETUP997, global::gameDataFilePath / "GFX/PICS/SETUP997.LBM", nullptr))
+    // Initialize basic LOADER infrastructure early (before LoadFilesAtStart)
+    libsiedler2::setAllocator(new GlAllocator());
+    LOADER.initResourceFolders();
+
+    // Load the loading screen splash before the heavier LoadFilesAtStart
     {
-        std::cout << "failure";
-        // if SETUP997.LBM doesn't exist, it's probably settlers2+mission cd and there we have SETUP998.LBM instead
-        std::cout << "\nTry to load file: GFX/PICS/SETUP998.LBM instead...";
-        if(!global::loadArchive(ArchiveID::SETUP997, global::gameDataFilePath / "GFX/PICS/SETUP998.LBM", nullptr))
+        auto setup997Path = global::gameDataFilePath / "GFX/PICS/SETUP997.LBM";
+        if(!boost::filesystem::exists(setup997Path))
+            setup997Path = global::gameDataFilePath / "GFX/PICS/SETUP998.LBM";
+        if(boost::filesystem::exists(setup997Path))
         {
-            std::cout << "failure";
-            return false;
+            LOADER.Load(setup997Path, nullptr);
+            splashBg_ = LOADER.GetImageN(ResourceId::make(setup997Path), 0);
         }
     }
 
-    // Create texture for splash background
-    {
-        auto& archiv = global::typedArchives[ArchiveID::SETUP997];
-        auto* bmp = dynamic_cast<const libsiedler2::baseArchivItem_Bitmap*>(archiv.get(0));
-        if(bmp)
-            splashBg_.load(*bmp);
-    }
-
-    // std::cout << "\nShow loading screen...";
     showLoadScreen = true;
     glClear(GL_COLOR_BUFFER_BIT);
-    splashBg_.draw(Rect(0, 0, GameResolution.x, GameResolution.y));
+    if(splashBg_)
+        splashBg_->DrawFull(Rect(0, 0, GameResolution.x, GameResolution.y));
     SDL_GL_SwapWindow(window_.get());
+
+    // Now load the full set of LOADER files
+    LOADER.LoadFilesAtStart();
 
     GameDataLoader gdLoader(global::worldDesc);
     if(!gdLoader.Load())
@@ -373,31 +371,26 @@ bool CGame::Init()
         }
     }
 
-    // Initialize the s25main Loader with the same files the game itself uses.
+    // Load editor resources into the LOADER (already initialized at top)
     {
-        libsiedler2::setAllocator(new GlAllocator());
-        LOADER.initResourceFolders();
-        LOADER.LoadFilesAtStart();
+        // Main menu background (not in LoadFilesAtStart)
+        const auto setup010Path = global::gameDataFilePath / "GFX/PICS/SETUP010.LBM";
+        if(boost::filesystem::exists(setup010Path))
+            LOADER.Load(setup010Path, nullptr);
 
-        // Also load the editor's EDITIO.IDX into a separate archive (keyed as "editio")
-        // so the editor toolbar can use its tool icons (MENUBAR_TREE=113, etc.)
-        // without overwriting the game's IO.IDX (needed for s25main button borders etc.).
+        // Editor EDITIO keyed as "editio" (separate from game's IO.IDX)
         const auto editioPath = global::gameDataFilePath / "DATA/IO/EDITIO.IDX";
         LOADER.Load(editioPath, global::currentPalette);
 
-        // Load editor resource archives into the Loader
         const auto editresPath = global::gameDataFilePath / "DATA/EDITRES.IDX";
         LOADER.Load(editresPath, global::currentPalette);
         const auto editbobPath = global::gameDataFilePath / "DATA/EDITBOB.LST";
         LOADER.Load(editbobPath, global::currentPalette);
 
-        // Use editor cursor everywhere instead of the game's default hand
         auto* cursorNorm = LOADER.GetImageN("editres", CURSOR);
         auto* cursorPressed = LOADER.GetImageN("editres", CURSOR_CLICKED);
         if(cursorNorm)
             WINDOWMANAGER.SetCursorImage(Cursor::Hand, cursorNorm, cursorPressed);
-
-
     }
 
     // Show the new Desktop-based main menu via WindowManager

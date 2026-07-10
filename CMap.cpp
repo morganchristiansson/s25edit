@@ -7,7 +7,6 @@
 #include "CGame.h"
 #include "CIO/CFile.h"
 #include "CSurface.h"
-#include "Texture.h"
 #include "globals.h"
 #include "gameData/LandscapeDesc.h"
 #include "gameData/TerrainDesc.h"

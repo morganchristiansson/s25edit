@@ -7,7 +7,6 @@
 #include "CGame.h"
 #include "CMap.h"
 #include "Rect.h"
-#include "Texture.h"
 #include "globals.h"
 #include "gameData/EdgeDesc.h"
 #include "gameData/TerrainDesc.h"

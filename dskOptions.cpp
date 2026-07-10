@@ -4,7 +4,7 @@
 
 #include "dskOptions.h"
 #include "CGame.h"
-#include "Texture.h"
+#include "Loader.h"
 #include "WindowManager.h"
 #include "controls/ctrlButton.h"
 #include "controls/ctrlList.h"
@@ -14,6 +14,7 @@
 #include "globals.h"
 #include "helpers/format.hpp"
 #include "ogl/FontStyle.h"
+#include "ogl/glArchivItem_Bitmap.h"
 
 static constexpr std::pair<int, int> resolutions[] = {
   {800, 600},   {832, 624},  {960, 540},  {964, 544},   {960, 640},   {960, 720},   {1024, 576}, {1024, 600},
@@ -51,9 +52,8 @@ dskOptions::dskOptions()
 
 void dskOptions::Draw_()
 {
-    auto& bg = Texture::getTexture(ArchiveID::SETUP013, SPLASHSCREEN_SUBMENU3);
-    if(bg.isValid())
-        bg.draw(GetDrawRect());
+    if(auto* bg = LOADER.GetImageN("setup013", 0))
+        bg->DrawFull(GetDrawRect());
     Desktop::Draw_();
 }
 

@@ -71,9 +71,6 @@ int CGame::Execute()
 
 void CGame::RenderPresent()
 {
-    const auto& cursorImg = Cursor.clicked ? (Cursor.button.right ? cross_ : cursorClicked_) : cursor_;
-    cursorImg.draw(Cursor.pos);
-
     VIDEODRIVER.SwapBuffers();
 }
 

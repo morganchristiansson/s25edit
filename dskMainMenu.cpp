@@ -5,13 +5,14 @@
 #include "dskMainMenu.h"
 #include "CGame.h"
 #include "EditorWorld.h"
-#include "Texture.h"
+#include "Loader.h"
 #include "WindowManager.h"
 #include "controls/ctrlButton.h"
 #include "defines.h"
 #include "dskEditorInterface.h"
 #include "dskOptions.h"
 #include "globals.h"
+#include "ogl/glArchivItem_Bitmap.h"
 #include "iwLoadMap.h"
 
 dskMainMenu::dskMainMenu()
@@ -26,9 +27,8 @@ dskMainMenu::dskMainMenu()
 
 void dskMainMenu::Draw_()
 {
-    auto& bg = Texture::getTexture(ArchiveID::SETUP010, SPLASHSCREEN_MAINMENU);
-    if(bg.isValid())
-        bg.draw(GetDrawRect());
+    if(auto* bg = LOADER.GetImageN("setup010", 0))
+        bg->DrawFull(GetDrawRect());
     Desktop::Draw_();
 }
 

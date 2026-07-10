@@ -6,7 +6,6 @@
 #pragma once
 
 #include "ArchiveID.h"
-#include "Texture.h"
 #include "gameData/WorldDescription.h"
 #include <libsiedler2/Archiv.h>
 #include <boost/filesystem/path.hpp>
