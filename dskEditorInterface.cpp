@@ -18,6 +18,13 @@
 #include "iwEditorAnimal.h"
 #include "iwEditorPlayer.h"
 #include "iwMinimap.h"
+#include "nodeObjs/noEnvObject.h"
+#include "nodeObjs/noGranite.h"
+#include "nodeObjs/noTree.h"
+#include "nodeObjs/noAnimal.h"
+#include "gameTypes/AnimalTypes.h"
+#include "gameData/AnimalConsts.h"
+#include "enum_cast.hpp"
 #include "iwEditorCreateWorld.h"
 #include "iwEditorCursor.h"
 #include "controls/ctrlButton.h"
@@ -426,12 +433,11 @@ void dskEditorInterface::applyTool()
         }
         case EditorToolMode::Tree:
         {
-            auto& w = world;
             for(const auto& cv : cursorVerts_)
             {
                 if(!cv.active) continue;
                 // Skip if there's already an object
-                if(w.GetNO(cv.pt))
+                if(world.GetNode(cv.pt).obj != nullptr)
                     continue;
                 int treeType = modeContent2_;
                 if(treeType == -1) // mixed wood
@@ -440,10 +446,78 @@ void dskEditorInterface::applyTool()
                     treeType = 3 + rand() % 5; // palm1, palm2, pineapple, cypress, cherry
                 else if(treeType < 0 || treeType > 8)
                     treeType = 0;
-                w.SetNO(cv.pt, new noTree(cv.pt, static_cast<unsigned char>(treeType), 3), true);
+                world.SetNO(cv.pt, new noTree(cv.pt, static_cast<unsigned char>(treeType), 3), true);
             }
             break;
         }
+        case EditorToolMode::Landscape:
+        {
+            int mapPicId = modeContent2_;
+            if(mapPicId <= 0)
+                break;
+            for(const auto& cv : cursorVerts_)
+            {
+                if(!cv.active) continue;
+                if(world.GetNode(cv.pt).obj != nullptr)
+                    continue;
+                // Granite range in MAPPIC: 170-181
+                if(mapPicId >= MAPPIC_GRANITE_1_1 && mapPicId <= MAPPIC_GRANITE_2_6)
+                {
+                    int graniteType = (mapPicId - MAPPIC_GRANITE_1_1) / 6;
+                    int graniteSize = (mapPicId - MAPPIC_GRANITE_1_1) % 6;
+                    world.SetNO(cv.pt, new noGranite(static_cast<GraniteType>(graniteType),
+                                                      static_cast<unsigned char>(graniteSize)), true);
+                } else
+                {
+                    world.SetNO(cv.pt, new noEnvObject(cv.pt, static_cast<unsigned short>(mapPicId), 0xFFFF), true);
+                }
+            }
+            break;
+        }
+        case EditorToolMode::Cut:
+        {
+            for(const auto& cv : cursorVerts_)
+            {
+                if(!cv.active) continue;
+                auto& node = world.GetNodeWriteable(cv.pt);
+                // Destroy node object (trees, granite, landscape objects)
+                if(node.obj != nullptr)
+                    world.DestroyNO(cv.pt, false);
+                // Remove figures (animals)
+                if(!node.figures.empty())
+                {
+                    // Destroy each figure manually
+                    for(auto it = node.figures.begin(); it != node.figures.end();)
+                    {
+                        auto* fig = it->release();
+                        it = node.figures.erase(it);
+                        fig->Destroy();
+                        delete fig;
+                    }
+                }
+            }
+            break;
+        }
+        case EditorToolMode::Animal:
+        {
+            int species = modeContent2_;
+            if(species < 0 || species > rttr::enum_cast(Species::Sheep))
+                break;
+            for(const auto& cv : cursorVerts_)
+            {
+                if(!cv.active) continue;
+                // Animals are figures, not node objects. AddFigure adds to the figures list.
+                // But only if there isn't already an animal there (skip occupied nodes)
+                auto& node = world.GetNodeWriteable(cv.pt);
+                if(!node.figures.empty())
+                    continue;
+                world.AddFigure(cv.pt,
+                    std::make_unique<noAnimal>(static_cast<Species>(species), cv.pt));
+            }
+            break;
+        }
+        case EditorToolMode::Flag:
+        case EditorToolMode::Resource:
         default:
             break;
     }
@@ -600,11 +674,15 @@ void dskEditorInterface::Msg_ButtonClick(unsigned ctrl_id)
             break;
         case ID_btToolLandscape:
             mode_ = EditorToolMode::Landscape;
-            WINDOWMANAGER.Show(std::make_unique<iwEditorLandscape>());
+            WINDOWMANAGER.Show(std::make_unique<iwEditorLandscape>([this](int mapPicId) noexcept {
+                modeContent2_ = mapPicId;
+            }));
             break;
         case ID_btToolAnimal:
             mode_ = EditorToolMode::Animal;
-            WINDOWMANAGER.Show(std::make_unique<iwEditorAnimal>());
+            WINDOWMANAGER.Show(std::make_unique<iwEditorAnimal>([this](int species) noexcept {
+                modeContent2_ = species;
+            }));
             break;
         case ID_btToolPlayer:
             mode_ = EditorToolMode::Flag;

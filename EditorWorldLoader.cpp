@@ -44,6 +44,11 @@ void loadTexturesForEditorWorld(const std::string& gameDataPath)
         return;
     LOADER.Load(map00Path, LOADER.GetPaletteN("pal5", 0));
 
+    // Load MAP_0_Z.LST (greenland full sprites) for animals and other game objects
+    const auto map0zPath = boost::filesystem::path(gameDataPath) / "DATA/MAP_0_Z.LST";
+    if(boost::filesystem::exists(map0zPath))
+        LOADER.Load(map0zPath, LOADER.GetPaletteN("pal5", 0));
+
     // Build the clean-index → archive-index lookup
     auto& arch = LOADER.GetArchive("map00");
     for(unsigned i = 0; i < arch.size(); i++)

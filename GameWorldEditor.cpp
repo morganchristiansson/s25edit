@@ -12,8 +12,14 @@
 #include "gameData/MapConsts.h"
 #include "nodeObjs/noBase.h"
 #include "nodeObjs/noTree.h"
+#include "nodeObjs/noGranite.h"
+#include "nodeObjs/noEnvObject.h"
+#include "nodeObjs/noStaticObject.h"
+#include "nodeObjs/noAnimal.h"
+#include "gameData/AnimalConsts.h"
 #include "libsiedler2/Archiv.h"
 #include "ogl/glArchivItem_Bitmap.h"
+#include "enum_cast.hpp"
 #include <glad/glad.h>
 #include <SDL.h>
 
@@ -95,13 +101,49 @@ void GameWorldEditor::Draw(const Extent& screenSize)
             nodePos += wrapOffset;
 
             // Draw objects using LOADER's MAP00 archive with clean-index lookup
+            // Tree types 0-8, where pineapple (type 5) has only 8 frames.
+            static const int treeStart[9] = {
+                MAPPIC_TREE_PINE,     // 0 pine
+                MAPPIC_TREE_BIRCH,    // 1 birch
+                MAPPIC_TREE_OAK,      // 2 oak
+                MAPPIC_TREE_PALM1,    // 3 palm1
+                MAPPIC_TREE_PALM2,    // 4 palm2
+                MAPPIC_TREE_PINEAPPLE,// 5 pineapple (8 frames)
+                MAPPIC_TREE_CYPRESS,  // 6 cypress
+                MAPPIC_TREE_CHERRY,   // 7 cherry
+                MAPPIC_TREE_FIR       // 8 fir
+            };
+            static constexpr int TREE_FRAMES = 8;  // animate 8 frames (standing animation)
             if(auto* tree = dynamic_cast<noTree*>(obj))
             {
-                static Uint32 lastTick = 0;
-                static unsigned frame = 0;
-                Uint32 now = SDL_GetTicks();
-                if(now - lastTick > 80) { frame = (frame + 1) % 8; lastTick = now; }
-                int cleanIdx = MAPPIC_TREE_PINE + tree->getTreeType() * 15 + frame;
+                unsigned type = tree->getTreeType();
+                if(type < 9)
+                {
+                    static Uint32 lastTick = 0;
+                    static unsigned frame = 0;
+                    Uint32 now = SDL_GetTicks();
+                    if(now - lastTick > 80) { frame = (frame + 1) % TREE_FRAMES; lastTick = now; }
+                    int cleanIdx = treeStart[type] + static_cast<int>(frame);
+                    if(cleanIdx >= 0)
+                    {
+                        int archIdx = editorMapCleanToArchiveIdx(cleanIdx);
+                        if(archIdx >= 0)
+                        {
+                            auto& arch = LOADER.GetArchive("map00");
+                            auto* bmp = dynamic_cast<glArchivItem_Bitmap*>(arch.get(static_cast<unsigned>(archIdx)));
+                            if(bmp)
+                            {
+                                bmp->DrawFull(DrawPoint(nodePos.x, nodePos.y));
+                                // Draw shadow (image + 100 in map_?_z convention, but MAP00 has shadow at offset 7)
+                                // The first 8 frames have shadows at +100 in map_?_z.
+                                // For MAP00 we just draw the image without shadow for simplicity.
+                            }
+                        }
+                    }
+                }
+            } else if(auto* granite = dynamic_cast<noGranite*>(obj))
+            {
+                int cleanIdx = MAPPIC_GRANITE_1_1 + rttr::enum_cast(granite->GetType()) * 6 + granite->GetSize();
                 int archIdx = editorMapCleanToArchiveIdx(cleanIdx);
                 if(archIdx >= 0)
                 {
@@ -110,9 +152,43 @@ void GameWorldEditor::Draw(const Extent& screenSize)
                     if(bmp)
                         bmp->DrawFull(DrawPoint(nodePos.x, nodePos.y));
                 }
-            } else
+            } else if(auto* env = dynamic_cast<noStaticObject*>(obj))
             {
-                obj->Draw(DrawPoint(nodePos.x, nodePos.y));
+                // Map objects (file == 0xFFFF) use MAPPIC indices directly
+                if(env->GetItemFile() == 0xFFFF)
+                {
+                    int cleanIdx = env->GetItemID();
+                    int archIdx = editorMapCleanToArchiveIdx(cleanIdx);
+                    if(archIdx >= 0)
+                    {
+                        auto& arch = LOADER.GetArchive("map00");
+                        auto* bmp = dynamic_cast<glArchivItem_Bitmap*>(arch.get(static_cast<unsigned>(archIdx)));
+                        if(bmp)
+                            bmp->DrawFull(DrawPoint(nodePos.x, nodePos.y));
+                    }
+                } else
+                {
+                    // Non-map objects (mis*bobs) — skip for now
+                }
+            }
+            // Draw animals (figures) at this node — just one static frame for now
+            for(auto& fig : world_.GetFigures(pt))
+            {
+                if(fig.GetGOT() != GO_Type::Animal)
+                    continue;
+                auto& animal = static_cast<noAnimal&>(fig);
+                Species sp = animal.GetSpecies();
+                int walkingId = ANIMALCONSTS[sp].walking_id;
+                int steps = ANIMALCONSTS[sp].animation_steps;
+                // Use East direction (maps to offset 0) and first animation step
+                int rawIdx = walkingId + steps * 0 + 0;
+                auto& archZ = LOADER.GetArchive("map_0_z");
+                if(rawIdx >= 0 && static_cast<unsigned>(rawIdx) < archZ.size())
+                {
+                    auto* bmp = dynamic_cast<glArchivItem_Bitmap*>(archZ.get(static_cast<unsigned>(rawIdx)));
+                    if(bmp)
+                        bmp->DrawFull(DrawPoint(nodePos.x, nodePos.y));
+                }
             }
         }
     }
