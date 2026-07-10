@@ -6,10 +6,12 @@
 
 #include "ingameWindows/IngameWindow.h"
 
+class EditorWorld;
+
 class iwSaveMap : public IngameWindow
 {
 public:
-    iwSaveMap();
+    explicit iwSaveMap(EditorWorld& world);
 
     void Msg_ButtonClick(unsigned ctrl_id) override;
 
@@ -25,4 +27,6 @@ private:
         ID_btSave,
         ID_btAbort
     };
+
+    EditorWorld& world_;
 };

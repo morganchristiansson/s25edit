@@ -27,6 +27,8 @@
 #include "enum_cast.hpp"
 #include "iwEditorCreateWorld.h"
 #include "iwEditorCursor.h"
+#include "iwLoadMap.h"
+#include "iwSaveMap.h"
 #include "controls/ctrlButton.h"
 #include "defines.h"
 #include "world/MapGeometry.h"
@@ -697,7 +699,15 @@ void dskEditorInterface::Msg_ButtonClick(unsigned ctrl_id)
             WINDOWMANAGER.Show(std::make_unique<iwEditorCreateWorld>());
             break;
         case ID_btEditorMenu:
-            WINDOWMANAGER.Show(std::make_unique<iwEditorMenu>());
+            if(world_)
+                WINDOWMANAGER.Show(std::make_unique<iwEditorMenu>(*world_));
+            break;
+        case ID_btRLoad:
+            WINDOWMANAGER.Show(std::make_unique<iwLoadMap>());
+            break;
+        case ID_btRSave:
+            if(world_)
+                WINDOWMANAGER.Show(std::make_unique<iwSaveMap>(*world_));
             break;
     }
 }

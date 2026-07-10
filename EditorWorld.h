@@ -15,6 +15,9 @@
 #include "world/GameWorld.h"
 #include "world/GameWorldViewer.h"
 #include "gameData/MapConsts.h"
+#include "libsiedler2/ArchivItem_Map.h"
+#include <boost/filesystem/path.hpp>
+#include <memory>
 
 class EditorWorld
 {
@@ -27,6 +30,9 @@ class EditorWorld
     boost::filesystem::path filepath_;
 
 public:
+    /// Load an SWD/WLD map file into a new EditorWorld
+    static std::unique_ptr<EditorWorld> loadFromSwd(const boost::filesystem::path& filepath);
+
     EditorWorld(const MapExtent& size, unsigned numPlayers)
         : em_(0), world_(std::vector<PlayerInfo>(numPlayers), ggs_, em_),
           mapName_("Ohne Namen"), author_("Niemand")

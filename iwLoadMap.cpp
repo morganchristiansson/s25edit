@@ -3,16 +3,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "iwLoadMap.h"
-#include "CGame.h"
+#include "EditorWorld.h"
 #include "WindowManager.h"
 #include "controls/ctrlButton.h"
 #include "controls/ctrlList.h"
 #include "defines.h"
 #include "globals.h"
+#include "dskEditorInterface.h"
 #include "helpers/format.hpp"
 #include "s25util/strAlgos.h"
 #include "Loader.h"
 #include <boost/filesystem.hpp>
+#include <iostream>
 
 namespace bfs = boost::filesystem;
 
@@ -54,25 +56,37 @@ void iwLoadMap::Msg_ButtonClick(unsigned ctrl_id)
     switch(ctrl_id)
     {
         case ID_btLoad:
-            if(!selectedFile_.empty())
+        {
+            if(selectedFile_.empty())
             {
-                auto path = global::userMapsPath / selectedFile_;
-                if(!bfs::exists(path))
+                Close();
+                break;
+            }
+            bfs::path path = global::userMapsPath / selectedFile_;
+            if(!bfs::exists(path))
+            {
+                // Try both extensions
+                auto tryPath = global::userMapsPath / (selectedFile_ + ".swd");
+                if(!bfs::exists(tryPath))
+                    tryPath = global::userMapsPath / (selectedFile_ + ".wld");
+                path = tryPath;
+            }
+            if(bfs::exists(path))
+            {
+                auto world = EditorWorld::loadFromSwd(path);
+                if(world)
                 {
-                    path.replace_extension(".swd");
-                    if(!bfs::exists(path))
-                        path.replace_extension(".wld");
-                }
-                if(bfs::exists(path))
+                    WINDOWMANAGER.Switch(std::make_unique<dskEditorInterface>(std::move(world)));
+                } else
                 {
-                    // TODO: Load map into EditorWorld and switch to dskEditorInterface
+                    std::cerr << "Failed to load map from " << path << "\n";
                 }
             }
             Close();
             break;
+        }
         case ID_btAbort:
             Close();
             break;
     }
 }
-

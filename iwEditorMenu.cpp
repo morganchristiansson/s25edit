@@ -13,9 +13,10 @@
 #include "globals.h"
 #include "Loader.h"
 
-iwEditorMenu::iwEditorMenu()
+iwEditorMenu::iwEditorMenu(EditorWorld& world)
     : IngameWindow(100, IngameWindow::posLastOrCenter, Extent(220, 320), "Main menu",
-                   LOADER.GetImageN("resource", 41))
+                   LOADER.GetImageN("resource", 41)),
+      world_(world)
 {
     auto off = DrawPoint(contentOffset.x, contentOffset.y);
     int cx = (GetSize().x - contentOffset.x - contentOffsetEnd.x) / 2 + contentOffset.x;
@@ -34,7 +35,7 @@ void iwEditorMenu::Msg_ButtonClick(unsigned ctrl_id)
             break;
         case ID_btSave:
             Close();
-            WINDOWMANAGER.Show(std::make_unique<iwSaveMap>());
+            WINDOWMANAGER.Show(std::make_unique<iwSaveMap>(world_));
             break;
         case ID_btQuit:
             Close();

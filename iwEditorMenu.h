@@ -6,10 +6,12 @@
 
 #include "ingameWindows/IngameWindow.h"
 
+class EditorWorld;
+
 class iwEditorMenu : public IngameWindow
 {
 public:
-    iwEditorMenu();
+    explicit iwEditorMenu(EditorWorld& world);
 
     void Msg_ButtonClick(unsigned ctrl_id) override;
 
@@ -20,4 +22,5 @@ private:
         ID_btSave,
         ID_btQuit
     };
+    EditorWorld& world_;
 };
