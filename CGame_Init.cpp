@@ -4,11 +4,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "CGame.h"
-#include "CIO/CFile.h"
-#include "CIO/CWindow.h"
 #include "CMap.h"
 #include "WindowManager.h"
-#include "callbacks.h"
 #include "dskMainMenu.h"
 #include "globals.h"
 #include "Loader.h"
@@ -167,12 +164,6 @@ bool CGame::Init()
     }
     /*NOTE: its important to load a palette at first,
      *      otherwise all images will be black (in exception of the LBM-Files, they have their own palette).
-     *      if its necessary to load pictures from a
-     *      specified file with a special palette, so
-     *      load this palette from a file and set
-     *      CFile::palActual = CFile::palArray - 1 (--> last loaden palette)
-     *      and after loading the images set
-     *      CFile::palActual = CFile::palArray (--> first palette)
      */
 
     // load some pictures (after all the splash-screens)
@@ -330,7 +321,7 @@ bool CGame::Init()
         auto* pal = dynamic_cast<libsiedler2::ArchivItem_Palette*>(editres.get(1));
         if(pal)
             global::currentPalette = pal;
-        // Store the complete Archiv in typedArchives — fonts stay inside for CFont to read directly
+        // Store the complete Archiv in typedArchives
         // Indices match file positions: 0=Font, 1=Palette, 2=Font, 3=Font, 4-56=Bitmaps
         global::typedArchives[ArchiveID::EDITRES] = std::move(editres);
     }
@@ -365,14 +356,7 @@ bool CGame::Init()
         std::cout << "done";
     }
 
-    /*
-    std::cout << "\nLoading palette from file: GFX/PALETTE/PAL5.BBM...";
-    if ( !CFile::open_file(global::gameDataFilePath / "GFX/PALETTE/PAL5.BBM", BBM, true) )
-    {
-        std::cout << "failure";
-        return false;
-    }
-    */
+
 
     // EVERY MISSION-FILE SHOULD BE LOADED SEPARATLY IF THE SPECIFIED MISSION GOES ON -- SO THIS IS TEMPORARY
     const ArchiveID misArchives[] = {ArchiveID::MIS0BOBS, ArchiveID::MIS1BOBS, ArchiveID::MIS2BOBS,

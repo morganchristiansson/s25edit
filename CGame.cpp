@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "CGame.h"
-#include "CIO/CWindow.h"
 #include "CMap.h"
 #include "RttrConfig.h"
 #include "files.h"
@@ -34,8 +33,7 @@ namespace bfs = boost::filesystem;
 boost::program_options::variables_map parse_cmdline_args(int argc, char* argv[]);
 
 CGame::CGame(Extent GameResolution_, bool fullscreen_)
-    : GameResolution(GameResolution_), fullscreen(fullscreen_), Running(true), showLoadScreen(true),
-      lastFps("", Position{0, 0}, FontSize::Normal)
+    : GameResolution(GameResolution_), fullscreen(fullscreen_), Running(true), showLoadScreen(true)
 {
     global::s2 = this;
 }
@@ -55,19 +53,13 @@ int CGame::Execute()
     if(!Init())
         return -1;
 
-    lastFps.setText("");
-    lastFpsTick = SDL_GetTicks();
     lastFrameTime = SDL_GetTicks();
-    framesPassedSinceLastFps = 0;
 
     while(Running)
     {
         // Let the video driver poll and dispatch events to the WindowManager
         if(!VIDEODRIVER.Run())
             Running = false;
-
-        // Old-style event handling for CWindows/CMap is disabled during migration.
-        // TODO: Reinstate when old windows are migrated to Desktop/IngameWindow.
 
         GameLoop();
         Render();
@@ -82,35 +74,6 @@ void CGame::RenderPresent()
     cursorImg.draw(Cursor.pos);
 
     VIDEODRIVER.SwapBuffers();
-}
-
-CWindow* CGame::RegisterWindow(std::unique_ptr<CWindow> Window)
-{
-    // first find the highest priority
-    const auto itHighestPriority =
-      std::max_element(Windows.cbegin(), Windows.cend(),
-                       [](const auto& lhs, const auto& rhs) { return lhs->getPriority() < rhs->getPriority(); });
-    const int highestPriority = itHighestPriority == Windows.cend() ? 0 : (*itHighestPriority)->getPriority();
-
-    for(auto& i : Windows)
-        i->setInactive();
-
-    Window->setActive();
-    Window->setPriority(highestPriority + 1);
-    Windows.emplace_back(std::move(Window));
-
-    return Windows.back().get();
-}
-
-bool CGame::UnregisterWindow(CWindow* Window)
-{
-    auto it = std::find_if(Windows.begin(), Windows.end(), [Window](const auto& cur) { return cur.get() == Window; });
-    if(it == Windows.end())
-        return false;
-    if(it != Windows.begin())
-        it[-1]->setActive();
-    Windows.erase(it);
-    return true;
 }
 
 void CGame::RegisterCallback(void (*callback)(int))
@@ -178,13 +141,6 @@ void CGame::GameLoop()
 {
     for(auto&& callback : Callbacks)
         callback(CALL_FROM_GAMELOOP);
-    const auto isWaste = [](const auto& p) { return p->isWaste(); };
-    auto itWnd = std::find_if(Windows.begin(), Windows.end(), isWaste);
-    while(itWnd != Windows.end())
-    {
-        UnregisterWindow(itWnd->get());
-        itWnd = std::find_if(Windows.begin(), Windows.end(), isWaste);
-    }
 }
 
 namespace {

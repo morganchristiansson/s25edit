@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "CIO/CFont.h"
 #include "SdlSurface.h"
 #include "Texture.h"
 #include "driver/VideoDriverLoaderInterface.h"
@@ -14,12 +13,10 @@
 #include <memory>
 #include <vector>
 
-class CWindow;
 class CMap;
 
 class CGame : public VideoDriverLoaderInterface
 {
-    friend class CDebug;
 
 public:
     Extent GameResolution;
@@ -31,16 +28,8 @@ public:
     SdlWindow window_;
 
 private:
-#ifdef _ADMINMODE
-    // some debugging variables
-    unsigned long int FrameCounter = 0;
-#endif
     // milliseconds for SDL_Delay()
     Uint32 msWait = 0;
-    Uint32 framesPassedSinceLastFps = 0;
-    Uint32 lastFpsTick = 0;
-    CFont lastFps;
-
     Uint32 lastFrameTime = 0;
     Extent appliedResolution_ = Extent{0, 0}; ///< Last resolution we applied to the window/display
     bool appliedFullscreen_ = false;          ///< Last fullscreen state we applied
@@ -63,8 +52,6 @@ private:
         } button;
     } Cursor;
 
-    // Object for Windows
-    std::vector<std::unique_ptr<CWindow>> Windows;
     // Object for Callbacks
     std::vector<void (*)(int)> Callbacks;
     // Object for the Map
@@ -102,7 +89,6 @@ public:
     bool Init();
     void UpdateDisplaySize(const Extent& newSize);
 
-    void EventHandling(SDL_Event* Event);
     void ForwardEventToWindowManager(SDL_Event* Event);
 
     void GameLoop();
@@ -111,13 +97,10 @@ public:
 
     void RenderPresent();
 
-    CWindow* RegisterWindow(std::unique_ptr<CWindow> Window);
-    bool UnregisterWindow(CWindow* Window);
     void RegisterCallback(void (*callback)(int));
     bool UnregisterCallback(void (*callback)(int));
     void setMapObj(std::unique_ptr<CMap> MapObj);
     CMap* getMapObj();
     void delMapObj();
     void enterEditor(const boost::filesystem::path& filepath);
-    auto getRes() const { return GameResolution; }
 };

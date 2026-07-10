@@ -42,7 +42,6 @@ struct SavedVertex
 
 class CMap
 {
-    friend class CDebug;
     friend class CSurface;
 
 private:

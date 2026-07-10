@@ -4,8 +4,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "CGame.h"
-#include "CIO/CFont.h"
-#include "CIO/CWindow.h"
 #include "CMap.h"
 #include "CSurface.h"
 #include "Texture.h"
@@ -90,72 +88,14 @@ void CGame::Render()
         glPopMatrix();
         glMatrixMode(GL_MODELVIEW);
         glPopMatrix();
-
-        // HUD text overlays drawn directly via OpenGL
-        std::array<char, 100> textBuffer;
-        // text for x and y of vertex (shown in upper left corner)
-        std::snprintf(textBuffer.data(), textBuffer.size(), "%d    %d", MapObj->getVertexX(), MapObj->getVertexY());
-        CFont::draw(textBuffer.data(), Position(20, 20));
-        // text for MinReduceHeight and MaxRaiseHeight
-        std::snprintf(textBuffer.data(), textBuffer.size(),
-                      "min. height: %#04x/0x3C  max. height: %#04x/0x3C  NormalNull: 0x0A",
-                      MapObj->getMinReduceHeight(), MapObj->getMaxRaiseHeight());
-        CFont::draw(textBuffer.data(), Position(100, 20));
-        // text for MovementLocked
-        if(MapObj->isHorizontalMovementLocked() && MapObj->isVerticalMovementLocked())
-            CFont::draw("Movement locked (F9 or F10 to unlock)", Position(20, 40), FontSize::Large, FontColor::Orange);
-        else if(MapObj->isHorizontalMovementLocked())
-            CFont::draw("Horizontal movement locked (F9 to unlock)", Position(20, 40), FontSize::Large,
-                        FontColor::Orange);
-        else if(MapObj->isVerticalMovementLocked())
-            CFont::draw("Vertical movement locked (F10 to unlock)", Position(20, 40), FontSize::Large,
-                        FontColor::Orange);
     }
-
-    // render windows ordered by priority
-    int highestPriority = 0;
-    // first find the highest priority
-    for(auto& Window : Windows)
-    {
-        if(Window->getPriority() > highestPriority)
-            highestPriority = Window->getPriority();
-    }
-    // render from lowest priority to highest
-    for(int actualPriority = 0; actualPriority <= highestPriority; actualPriority++)
-    {
-        for(auto& Window : Windows)
-        {
-            if(Window->getPriority() == actualPriority)
-                Window->draw(Position(0, 0));
-        }
-    }
-
-#ifdef _ADMINMODE
-    FrameCounter++;
-#endif
-
-    ++framesPassedSinceLastFps;
-    const auto curTicks = SDL_GetTicks();
-    const auto diffTicks = curTicks - lastFpsTick;
-    if(diffTicks > 1000)
-    {
-        lastFps.setText(std::to_string((framesPassedSinceLastFps * 1000) / diffTicks) + " FPS");
-        framesPassedSinceLastFps = 0;
-        lastFpsTick = curTicks;
-    }
-    lastFps.draw(Position(0, 0));
-
-    // Cursor is drawn by WindowManager via DrawCursor()
 
     VIDEODRIVER.SwapBuffers();
-
-#ifdef _ADMINMODE
-    FrameCounter++;
-#endif
 
     if(msWait)
         SDL_Delay(msWait);
 
+    const auto curTicks = SDL_GetTicks();
     const auto timeSinceLastFrame = curTicks - lastFrameTime;
     const auto targetFPS = 60;
     const auto targetMsPerFrame = 1000 / targetFPS;

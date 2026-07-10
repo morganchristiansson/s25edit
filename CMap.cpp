@@ -6,10 +6,8 @@
 #include "CMap.h"
 #include "CGame.h"
 #include "CIO/CFile.h"
-#include "CIO/CFont.h"
 #include "CSurface.h"
 #include "Texture.h"
-#include "callbacks.h"
 #include "globals.h"
 #include "gameData/LandscapeDesc.h"
 #include "gameData/TerrainDesc.h"
@@ -521,31 +519,31 @@ void CMap::onLeftMouseDown(const Point32& pos)
     {
         // the texture-mode picture was clicked
         mode = EDITOR_MODE_TEXTURE;
-        callback::EditorTextureMenu(INITIALIZING_CALL);
+        // callback::EditorTextureMenu() — removed, old menu system deleted
     } else if(pos.x >= (displaySize.x / 2 - 162) && pos.x <= (displaySize.x / 2 - 125) && pos.y >= (displaySize.y - 35)
               && pos.y <= (displaySize.y - 3))
     {
         // the tree-mode picture was clicked
         mode = EDITOR_MODE_TREE;
-        callback::EditorTreeMenu(INITIALIZING_CALL);
+        // callback::EditorTreeMenu() — removed, old menu system deleted
     } else if(pos.x >= (displaySize.x / 2 - 125) && pos.x <= (displaySize.x / 2 - 88) && pos.y >= (displaySize.y - 35)
               && pos.y <= (displaySize.y - 3))
     {
         // the resource-mode picture was clicked
         mode = EDITOR_MODE_RESOURCE_RAISE;
-        callback::EditorResourceMenu(INITIALIZING_CALL);
+        // callback::EditorResourceMenu() — removed, old menu system deleted
     } else if(pos.x >= (displaySize.x / 2 - 88) && pos.x <= (displaySize.x / 2 - 51) && pos.y >= (displaySize.y - 35)
               && pos.y <= (displaySize.y - 3))
     {
         // the landscape-mode picture was clicked
         mode = EDITOR_MODE_LANDSCAPE;
-        callback::EditorLandscapeMenu(INITIALIZING_CALL);
+        // callback::EditorLandscapeMenu() — removed, old menu system deleted
     } else if(pos.x >= (displaySize.x / 2 - 51) && pos.x <= (displaySize.x / 2 - 14) && pos.y >= (displaySize.y - 35)
               && pos.y <= (displaySize.y - 3))
     {
         // the animal-mode picture was clicked
         mode = EDITOR_MODE_ANIMAL;
-        callback::EditorAnimalMenu(INITIALIZING_CALL);
+        // callback::EditorAnimalMenu() — removed, old menu system deleted
     } else if(pos.x >= (displaySize.x / 2 - 14) && pos.x <= (displaySize.x / 2 + 23) && pos.y >= (displaySize.y - 35)
               && pos.y <= (displaySize.y - 3))
     {
@@ -553,7 +551,7 @@ void CMap::onLeftMouseDown(const Point32& pos)
         mode = EDITOR_MODE_FLAG;
         ChangeSection_ = 0;
         setupVerticesActivity();
-        callback::EditorPlayerMenu(INITIALIZING_CALL);
+        // callback::EditorPlayerMenu() — removed, old menu system deleted
     } else if(pos.x >= (displaySize.x / 2 + 96) && pos.x <= (displaySize.x / 2 + 133) && pos.y >= (displaySize.y - 35)
               && pos.y <= (displaySize.y - 3))
     {
@@ -563,53 +561,53 @@ void CMap::onLeftMouseDown(const Point32& pos)
               && pos.y <= (displaySize.y - 3))
     {
         // the minimap picture was clicked
-        callback::MinimapMenu(INITIALIZING_CALL);
+        // callback::MinimapMenu() — removed, old menu system deleted
     } else if(pos.x >= (displaySize.x / 2 + 166) && pos.x <= (displaySize.x / 2 + 203) && pos.y >= (displaySize.y - 35)
               && pos.y <= (displaySize.y - 3))
     {
         // the create-world picture was clicked
-        callback::EditorCreateMenu(INITIALIZING_CALL);
+        // callback::EditorCreateMenu() — removed, old menu system deleted
     } else if(pos.x >= (displaySize.x / 2 + 203) && pos.x <= (displaySize.x / 2 + 240) && pos.y >= (displaySize.y - 35)
               && pos.y <= (displaySize.y - 3))
     {
         // the editor-main-menu picture was clicked
-        callback::EditorMainMenu(INITIALIZING_CALL);
+        // callback::EditorMainMenu() — removed, old menu system deleted
     }
     // now we check the right menubar
     else if(pos.x >= (displaySize.x - 37) && pos.x <= (displaySize.x) && pos.y >= (displaySize.y / 2 + 162)
             && pos.y <= (displaySize.y / 2 + 199))
     {
         // the bugkill picture was clicked for quickload
-        callback::PleaseWait(INITIALIZING_CALL);
+        // callback::PleaseWait() — removed, old menu system deleted
         // we have to close the windows and initialize them again to prevent failures
-        callback::EditorCursorMenu(MAP_QUIT);
-        callback::EditorTextureMenu(MAP_QUIT);
-        callback::EditorTreeMenu(MAP_QUIT);
-        callback::EditorLandscapeMenu(MAP_QUIT);
-        callback::MinimapMenu(MAP_QUIT);
-        callback::EditorResourceMenu(MAP_QUIT);
-        callback::EditorAnimalMenu(MAP_QUIT);
-        callback::EditorPlayerMenu(MAP_QUIT);
+        // callback::EditorCursorMenu() — removed, old menu system deleted
+        // callback::EditorTextureMenu() — removed, old menu system deleted
+        // callback::EditorTreeMenu() — removed, old menu system deleted
+        // callback::EditorLandscapeMenu() — removed, old menu system deleted
+        // callback::MinimapMenu() — removed, old menu system deleted
+        // callback::EditorResourceMenu() — removed, old menu system deleted
+        // callback::EditorAnimalMenu() — removed, old menu system deleted
+        // callback::EditorPlayerMenu() — removed, old menu system deleted
 
         destructMap();
         constructMap(global::userMapsPath / "quicksave.swd");
-        callback::PleaseWait(WINDOW_QUIT_MESSAGE);
+        // callback::PleaseWait() — removed, old menu system deleted
     } else if(pos.x >= (displaySize.x - 37) && pos.x <= (displaySize.x) && pos.y >= (displaySize.y / 2 + 200)
               && pos.y <= (displaySize.y / 2 + 237))
     {
         // the bugkill picture was clicked for quicksave
-        callback::PleaseWait(INITIALIZING_CALL);
+        // callback::PleaseWait() — removed, old menu system deleted
         if(!CFile::save_file(global::userMapsPath / "quicksave.swd", SWD, getMap()))
         {
-            callback::ShowStatus(INITIALIZING_CALL);
-            callback::ShowStatus(2);
+            // callback::ShowStatus() — removed, old menu system deleted
+            // callback::ShowStatus() — removed, old menu system deleted
         }
-        callback::PleaseWait(WINDOW_QUIT_MESSAGE);
+        // callback::PleaseWait() — removed, old menu system deleted
     } else if(pos.x >= (displaySize.x - 37) && pos.x <= (displaySize.x) && pos.y >= (displaySize.y / 2 - 239)
               && pos.y <= (displaySize.y / 2 - 202))
     {
         // the cursor picture was clicked
-        callback::EditorCursorMenu(INITIALIZING_CALL);
+        // callback::EditorCursorMenu() — removed, old menu system deleted
     } else
     {
         // no picture was clicked
@@ -770,20 +768,20 @@ void CMap::setKeyboardData(const SDL_KeyboardEvent& key)
                 }
                 break;
             case SDLK_r:
-                callback::PleaseWait(INITIALIZING_CALL);
+                // callback::PleaseWait() — removed, old menu system deleted
                 rotateMap();
                 rotateMap();
-                callback::PleaseWait(WINDOW_QUIT_MESSAGE);
+                // callback::PleaseWait() — removed, old menu system deleted
                 break;
             case SDLK_x:
-                callback::PleaseWait(INITIALIZING_CALL);
+                // callback::PleaseWait() — removed, old menu system deleted
                 MirrorMapOnXAxis();
-                callback::PleaseWait(WINDOW_QUIT_MESSAGE);
+                // callback::PleaseWait() — removed, old menu system deleted
                 break;
             case SDLK_y:
-                callback::PleaseWait(INITIALIZING_CALL);
+                // callback::PleaseWait() — removed, old menu system deleted
                 MirrorMapOnYAxis();
-                callback::PleaseWait(WINDOW_QUIT_MESSAGE);
+                // callback::PleaseWait() — removed, old menu system deleted
                 break;
             case SDLK_KP_PLUS:
                 if(ChangeSection_ < MAX_CHANGE_SECTION)
@@ -876,64 +874,64 @@ void CMap::setKeyboardData(const SDL_KeyboardEvent& key)
             }
             break;
             case SDLK_F1: // help menu
-                callback::EditorHelpMenu(INITIALIZING_CALL);
+                // callback::EditorHelpMenu() — removed, old menu system deleted
                 break;
             case SDLK_g: // convert map to greenland
-                callback::PleaseWait(INITIALIZING_CALL);
+                // callback::PleaseWait() — removed, old menu system deleted
 
                 // we have to close the windows and initialize them again to prevent failures
-                callback::EditorCursorMenu(MAP_QUIT);
-                callback::EditorTextureMenu(MAP_QUIT);
-                callback::EditorTreeMenu(MAP_QUIT);
-                callback::EditorLandscapeMenu(MAP_QUIT);
-                callback::MinimapMenu(MAP_QUIT);
-                callback::EditorResourceMenu(MAP_QUIT);
-                callback::EditorAnimalMenu(MAP_QUIT);
-                callback::EditorPlayerMenu(MAP_QUIT);
+                // callback::EditorCursorMenu() — removed, old menu system deleted
+                // callback::EditorTextureMenu() — removed, old menu system deleted
+                // callback::EditorTreeMenu() — removed, old menu system deleted
+                // callback::EditorLandscapeMenu() — removed, old menu system deleted
+                // callback::MinimapMenu() — removed, old menu system deleted
+                // callback::EditorResourceMenu() — removed, old menu system deleted
+                // callback::EditorAnimalMenu() — removed, old menu system deleted
+                // callback::EditorPlayerMenu() — removed, old menu system deleted
 
                 map->type = MAP_GREENLAND;
                 unloadMapPics();
                 loadMapPics();
 
-                callback::PleaseWait(WINDOW_QUIT_MESSAGE);
+                // callback::PleaseWait() — removed, old menu system deleted
                 break;
             case SDLK_o: // convert map to wasteland
-                callback::PleaseWait(INITIALIZING_CALL);
+                // callback::PleaseWait() — removed, old menu system deleted
 
                 // we have to close the windows and initialize them again to prevent failures
-                callback::EditorCursorMenu(MAP_QUIT);
-                callback::EditorTextureMenu(MAP_QUIT);
-                callback::EditorTreeMenu(MAP_QUIT);
-                callback::EditorLandscapeMenu(MAP_QUIT);
-                callback::MinimapMenu(MAP_QUIT);
-                callback::EditorResourceMenu(MAP_QUIT);
-                callback::EditorAnimalMenu(MAP_QUIT);
-                callback::EditorPlayerMenu(MAP_QUIT);
+                // callback::EditorCursorMenu() — removed, old menu system deleted
+                // callback::EditorTextureMenu() — removed, old menu system deleted
+                // callback::EditorTreeMenu() — removed, old menu system deleted
+                // callback::EditorLandscapeMenu() — removed, old menu system deleted
+                // callback::MinimapMenu() — removed, old menu system deleted
+                // callback::EditorResourceMenu() — removed, old menu system deleted
+                // callback::EditorAnimalMenu() — removed, old menu system deleted
+                // callback::EditorPlayerMenu() — removed, old menu system deleted
 
                 map->type = MAP_WASTELAND;
                 unloadMapPics();
                 loadMapPics();
 
-                callback::PleaseWait(WINDOW_QUIT_MESSAGE);
+                // callback::PleaseWait() — removed, old menu system deleted
                 break;
             case SDLK_w: // convert map to winterland
-                callback::PleaseWait(INITIALIZING_CALL);
+                // callback::PleaseWait() — removed, old menu system deleted
 
                 // we have to close the windows and initialize them again to prevent failures
-                callback::EditorCursorMenu(MAP_QUIT);
-                callback::EditorTextureMenu(MAP_QUIT);
-                callback::EditorTreeMenu(MAP_QUIT);
-                callback::EditorLandscapeMenu(MAP_QUIT);
-                callback::MinimapMenu(MAP_QUIT);
-                callback::EditorResourceMenu(MAP_QUIT);
-                callback::EditorAnimalMenu(MAP_QUIT);
-                callback::EditorPlayerMenu(MAP_QUIT);
+                // callback::EditorCursorMenu() — removed, old menu system deleted
+                // callback::EditorTextureMenu() — removed, old menu system deleted
+                // callback::EditorTreeMenu() — removed, old menu system deleted
+                // callback::EditorLandscapeMenu() — removed, old menu system deleted
+                // callback::MinimapMenu() — removed, old menu system deleted
+                // callback::EditorResourceMenu() — removed, old menu system deleted
+                // callback::EditorAnimalMenu() — removed, old menu system deleted
+                // callback::EditorPlayerMenu() — removed, old menu system deleted
 
                 map->type = MAP_WINTERLAND;
                 unloadMapPics();
                 loadMapPics();
 
-                callback::PleaseWait(WINDOW_QUIT_MESSAGE);
+                // callback::PleaseWait() — removed, old menu system deleted
                 break;
 
             case SDLK_F9: // lock horizontal movement
@@ -1322,14 +1320,12 @@ void CMap::render()
       .draw(Position(rightMenubarPos.x - 33, rightMenubarPos.y - 220));
     Texture::getTexture(ArchiveID::EDITBOB, CURSOR_SYMBOL_ARROW_UP)
       .draw(Position(rightMenubarPos.x - 20, rightMenubarPos.y - 220));
-    // bugkill picture for quickload with text
+    // bugkill picture for quickload
     Texture::getTexture(ArchiveID::EDITIO, MENUBAR_BUGKILL)
       .draw(Position(rightMenubarPos.x - 37, rightMenubarPos.y + 162));
-    CFont::draw("Load", Position(rightMenubarPos.x - 35, rightMenubarPos.y + 193));
-    // bugkill picture for quicksave with text
+    // bugkill picture for quicksave
     Texture::getTexture(ArchiveID::EDITIO, MENUBAR_BUGKILL)
       .draw(Position(rightMenubarPos.x - 37, rightMenubarPos.y + 200));
-    CFont::draw("Save", Position(rightMenubarPos.x - 35, rightMenubarPos.y + 231));
 
     // Restore matrices
     glMatrixMode(GL_PROJECTION);
