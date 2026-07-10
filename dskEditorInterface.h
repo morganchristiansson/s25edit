@@ -74,6 +74,9 @@ private:
     int brushSize_ = 1;                 // 0..MAX_BRUSH
     MapPoint cursorPos_{0, 0};
     bool isModifying_ = false;
+    int modeContent_ = 8;               // selected terrain s2Id (default TRIANGLE_TEXTURE_MEADOW1)
+    int modeContent2_ = 0;              // secondary: tree type (0-8) or -1/-2 for mixed
+    bool pendingTerrainRefresh_ = false;
 
     // Cursor vertex field
     static constexpr int MAX_BRUSH = 10;

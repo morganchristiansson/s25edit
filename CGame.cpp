@@ -6,6 +6,7 @@
 #include "CGame.h"
 #include "CMap.h"
 #include "RttrConfig.h"
+#include "defines.h"
 #include "files.h"
 #include "globals.h"
 #include "s25util/file_handle.h"

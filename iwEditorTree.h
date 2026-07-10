@@ -5,9 +5,17 @@
 #pragma once
 
 #include "ingameWindows/IngameWindow.h"
+#include <functional>
 
 class iwEditorTree : public IngameWindow
 {
 public:
-    iwEditorTree();
+    /// Callback receives the noTree type (0-8) or -1 for mixed wood, -2 for mixed palm
+    using CbFunc = std::function<void(int)>;
+    iwEditorTree(CbFunc onSelect);
+
+    void Msg_ButtonClick(unsigned ctrl_id) override;
+
+private:
+    CbFunc onSelect_;
 };

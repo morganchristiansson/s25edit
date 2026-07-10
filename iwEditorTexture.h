@@ -5,9 +5,17 @@
 #pragma once
 
 #include "ingameWindows/IngameWindow.h"
+#include <functional>
 
 class iwEditorTexture : public IngameWindow
 {
 public:
-    iwEditorTexture();
+    /// Callback receives the selected terrain s2Id (TRIANGLE_TEXTURE_* value & ~0x40)
+    using CbFunc = std::function<void(int)>;
+    iwEditorTexture(CbFunc onSelect);
+
+    void Msg_ButtonClick(unsigned ctrl_id) override;
+
+private:
+    CbFunc onSelect_;
 };

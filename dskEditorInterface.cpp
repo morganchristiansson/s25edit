@@ -24,7 +24,12 @@
 #include "defines.h"
 #include "world/MapGeometry.h"
 #include "world/MapBase.h"
+#include "world/World.h"
+#include "TerrainRenderer.h"
 #include "ogl/glArchivItem_Bitmap.h"
+#include "gameData/WorldDescription.h"
+#include "gameData/TerrainDesc.h"
+#include "nodeObjs/noTree.h"
 #include <glad/glad.h>
 
 dskEditorInterface::dskEditorInterface(std::unique_ptr<EditorWorld> world)
@@ -389,6 +394,56 @@ void dskEditorInterface::applyTool()
             }
             break;
         }
+        case EditorToolMode::Texture:
+        {
+            // Map legacy s2Id (TRIANGLE_TEXTURE_* value) to DescIdx<TerrainDesc>
+            auto terrainByS2Id = [&](int s2Id) -> DescIdx<TerrainDesc> {
+                for(DescIdx<TerrainDesc> i(0); i.value < global::worldDesc.terrain.size(); i.value++)
+                    if(global::worldDesc.terrain.get(i).s2Id == s2Id)
+                        return i;
+                return DescIdx<TerrainDesc>();
+            };
+            auto getTerrainOrMix = [&](int s2Id) -> DescIdx<TerrainDesc> {
+                // MEADOW_MIXED is a sentinel: pick randomly from MEADOW1/2/3
+                if(s2Id == TRIANGLE_TEXTURE_MEADOW_MIXED)
+                {
+                    int ids[] = {TRIANGLE_TEXTURE_MEADOW1, TRIANGLE_TEXTURE_MEADOW2, TRIANGLE_TEXTURE_MEADOW3};
+                    return terrainByS2Id(ids[rand() % 3]);
+                }
+                return terrainByS2Id(s2Id);
+            };
+            for(const auto& cv : cursorVerts_)
+            {
+                if(!cv.active) continue;
+                auto& node = world.GetNodeWriteable(cv.pt);
+                auto terrain = getTerrainOrMix(modeContent_);
+                if(!terrain) continue;
+                node.t1 = terrain;
+                node.t2 = terrain;
+            }
+            pendingTerrainRefresh_ = true;
+            break;
+        }
+        case EditorToolMode::Tree:
+        {
+            auto& w = world;
+            for(const auto& cv : cursorVerts_)
+            {
+                if(!cv.active) continue;
+                // Skip if there's already an object
+                if(w.GetNO(cv.pt))
+                    continue;
+                int treeType = modeContent2_;
+                if(treeType == -1) // mixed wood
+                    treeType = rand() % 3; // pine, birch, oak
+                else if(treeType == -2) // mixed palm
+                    treeType = 3 + rand() % 5; // palm1, palm2, pineapple, cypress, cherry
+                else if(treeType < 0 || treeType > 8)
+                    treeType = 0;
+                w.SetNO(cv.pt, new noTree(cv.pt, static_cast<unsigned char>(treeType), 3), true);
+            }
+            break;
+        }
         default:
             break;
     }
@@ -406,6 +461,13 @@ void dskEditorInterface::Msg_PaintBefore()
     const auto screenSize = VIDEODRIVER.GetRenderSize();
     const int w = static_cast<int>(screenSize.x);
     const int h = static_cast<int>(screenSize.y);
+
+    // ── Refresh terrain renderer if world data was modified (e.g. texture painting) ──
+    if(pendingTerrainRefresh_)
+    {
+        pendingTerrainRefresh_ = false;
+        world_->getViewer().GetTerrainRenderer().GenerateOpenGL(world_->getViewer());
+    }
 
     // ── Terrain via GameWorldEditor ──
     if(gwEditor_)
@@ -522,11 +584,15 @@ void dskEditorInterface::Msg_ButtonClick(unsigned ctrl_id)
             break;
         case ID_btToolTexture:
             mode_ = EditorToolMode::Texture;
-            WINDOWMANAGER.Show(std::make_unique<iwEditorTexture>());
+            WINDOWMANAGER.Show(std::make_unique<iwEditorTexture>([this](int s2Id) noexcept {
+                modeContent_ = s2Id;
+            }));
             break;
         case ID_btToolTree:
             mode_ = EditorToolMode::Tree;
-            WINDOWMANAGER.Show(std::make_unique<iwEditorTree>());
+            WINDOWMANAGER.Show(std::make_unique<iwEditorTree>([this](int treeType) noexcept {
+                modeContent2_ = treeType;
+            }));
             break;
         case ID_btToolResource:
             mode_ = EditorToolMode::Resource;
