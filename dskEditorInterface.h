@@ -8,9 +8,8 @@
 #include <memory>
 
 class EditorWorld;
+class GameWorldEditor;
 
-/// In-editor desktop — owns the map view, editor toolbar, and handles editor input.
-/// Analogous to dskGameInterface in the game.
 class dskEditorInterface : public Desktop
 {
 public:
@@ -31,6 +30,7 @@ protected:
 
 private:
     std::unique_ptr<EditorWorld> world_;
+    std::unique_ptr<GameWorldEditor> gwEditor_;
 
     enum ControlIds
     {
@@ -38,7 +38,6 @@ private:
         ID_btSave,
         ID_btLoad,
         ID_btMinimap,
-        // Bottom toolbar
         ID_btToolCut,
         ID_btToolTree,
         ID_btToolHeightRaise,
@@ -49,10 +48,9 @@ private:
         ID_btToolResource,
         ID_btToolAnimal,
         ID_btToolPlayer,
-        ID_btToolSettings,
+        ID_btEditorMenu,
         ID_FIRST_TOOL = ID_btToolCut,
-        ID_LAST_TOOL = ID_btToolSettings,
-        // Right menubar
+        ID_LAST_TOOL = ID_btEditorMenu,
         ID_btRLoad,
         ID_btRSave,
     };

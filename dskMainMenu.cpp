@@ -7,12 +7,12 @@
 #include "EditorWorld.h"
 #include "Texture.h"
 #include "WindowManager.h"
-#include "callbacks.h"
 #include "controls/ctrlButton.h"
 #include "defines.h"
 #include "dskEditorInterface.h"
 #include "dskOptions.h"
 #include "globals.h"
+#include "iwLoadMap.h"
 
 dskMainMenu::dskMainMenu()
     : Desktop(nullptr)
@@ -44,7 +44,7 @@ void dskMainMenu::Msg_ButtonClick(unsigned ctrl_id)
             break;
         }
         case ID_btLoadMap:
-            callback::EditorLoadMenu(INITIALIZING_CALL);
+            WINDOWMANAGER.Show(std::make_unique<iwLoadMap>());
             break;
         case ID_btOptions:
             WINDOWMANAGER.Switch(std::make_unique<dskOptions>());

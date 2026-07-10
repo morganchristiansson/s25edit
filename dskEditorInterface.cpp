@@ -5,8 +5,13 @@
 #include "dskEditorInterface.h"
 #include "CGame.h"
 #include "EditorWorld.h"
+#include "GameWorldEditor.h"
 #include "Loader.h"
 #include "WindowManager.h"
+#include "callbacks.h"
+#include "driver/KeyEvent.h"
+#include "drivers/VideoDriverWrapper.h"
+#include "iwEditorMenu.h"
 #include "controls/ctrlButton.h"
 #include "defines.h"
 #include "driver/MouseCoords.h"
@@ -20,11 +25,11 @@
 dskEditorInterface::dskEditorInterface(std::unique_ptr<EditorWorld> world)
     : Desktop(nullptr), world_(std::move(world))
 {
-    AddTextButton(ID_btQuitEditor, DrawPoint(10, 10), Extent(100, 22), TextureColor::Red1,
-                  "Main menu", NormalFont);
+    gwEditor_ = std::make_unique<GameWorldEditor>(world_->getViewer(), world_->getWorld());
 
-    // Bottom menubar tool buttons — invisible border, icon drawn by control
     const auto screenSize = VIDEODRIVER.GetRenderSize();
+
+    // Bottom menubar tool buttons
     const int cx = static_cast<int>(screenSize.x / 2);
     auto addTool = [&](unsigned id, int texIdx, int xOff) {
         auto* img = LOADER.GetImageN("editio", texIdx);
@@ -42,7 +47,7 @@ dskEditorInterface::dskEditorInterface(std::unique_ptr<EditorWorld> world)
     addTool(ID_btToolCut,         MENUBAR_BUILDHELP, 92);
     addTool(ID_btToolFlag,        MENUBAR_MINIMAP,   129);
     addTool(ID_btToolHeightReduce,MENUBAR_NEWWORLD,  166);
-    addTool(ID_btToolSettings,    MENUBAR_COMPUTER,  203);
+    addTool(ID_btEditorMenu,     MENUBAR_COMPUTER,  203);
 
     // Right menubar: Load/Save buttons
     const int rx = static_cast<int>(screenSize.x);
@@ -68,21 +73,9 @@ void dskEditorInterface::Msg_PaintBefore()
     const int w = static_cast<int>(screenSize.x);
     const int h = static_cast<int>(screenSize.y);
 
-    // ── Terrain ──
-    {
-        Position firstPt(0, 0);
-        Position lastPt(
-          std::min<int>(world_->getWorld().GetWidth() - 1, screenSize.x / 56 + 2),
-          std::min<int>(world_->getWorld().GetHeight() - 1, screenSize.y / 28 + 2));
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix(); glLoadIdentity();
-        glOrtho(0, screenSize.x, screenSize.y, 0, -100, 100);
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix(); glLoadIdentity();
-        world_->draw(firstPt, lastPt);
-        glMatrixMode(GL_PROJECTION); glPopMatrix();
-        glMatrixMode(GL_MODELVIEW); glPopMatrix();
-    }
+    // ── Terrain via GameWorldEditor ──
+    if(gwEditor_)
+        gwEditor_->Draw(VIDEODRIVER.GetRenderSize());
 
     // ── Editor frame (glArchivItem_Bitmap from "editres") ──
     auto* frameTex = LOADER.GetImageN("editres", MAINFRAME_640_480);
@@ -193,9 +186,8 @@ void dskEditorInterface::Msg_ButtonClick(unsigned ctrl_id)
 {
     switch(ctrl_id)
     {
-        case ID_btQuitEditor:
-            world_.reset();
-            WINDOWMANAGER.Switch(std::make_unique<dskMainMenu>());
+        case ID_btEditorMenu:
+            WINDOWMANAGER.Show(std::make_unique<iwEditorMenu>());
             break;
     }
 }
@@ -203,6 +195,19 @@ void dskEditorInterface::Msg_ButtonClick(unsigned ctrl_id)
 bool dskEditorInterface::Msg_LeftDown(const MouseCoords& mc) { return Desktop::Msg_LeftDown(mc); }
 bool dskEditorInterface::Msg_LeftUp(const MouseCoords& mc) { return Desktop::Msg_LeftUp(mc); }
 bool dskEditorInterface::Msg_MouseMove(const MouseCoords&) { return false; }
-bool dskEditorInterface::Msg_KeyDown(const KeyEvent&) { return false; }
+bool dskEditorInterface::Msg_KeyDown(const KeyEvent& ke)
+{
+    // Arrow keys for scrolling (temporary until full map interaction is wired)
+    static constexpr int scrollSpeed = 20;
+    if(!gwEditor_) return false;
+    switch(ke.kt)
+    {
+        case KeyType::Left:  gwEditor_->MoveBy(DrawPoint(-scrollSpeed, 0)); return true;
+        case KeyType::Right: gwEditor_->MoveBy(DrawPoint(scrollSpeed, 0)); return true;
+        case KeyType::Up:    gwEditor_->MoveBy(DrawPoint(0, -scrollSpeed)); return true;
+        case KeyType::Down:  gwEditor_->MoveBy(DrawPoint(0, scrollSpeed)); return true;
+        default: return false;
+    }
+}
 bool dskEditorInterface::Msg_WheelUp(const MouseCoords&) { return false; }
 bool dskEditorInterface::Msg_WheelDown(const MouseCoords&) { return false; }
