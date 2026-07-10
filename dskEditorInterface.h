@@ -5,10 +5,34 @@
 #pragma once
 
 #include "desktops/Desktop.h"
+#include "gameTypes/MapCoordinates.h"
 #include <memory>
+#include <vector>
 
 class EditorWorld;
 class GameWorldEditor;
+
+struct CursorVertex
+{
+    MapPoint pt;
+    Position screenPos;
+    bool active;
+};
+
+/// Editor tool modes (matches old EDITOR_MODE_* semantics)
+enum class EditorToolMode
+{
+    HeightRaise,
+    HeightReduce,
+    HeightPlane,
+    Texture,
+    Tree,
+    Landscape,
+    Resource,
+    Animal,
+    Flag,
+    Cut
+};
 
 class dskEditorInterface : public Desktop
 {
@@ -29,28 +53,51 @@ protected:
     void Draw_() override;
 
 private:
+    /// Convert screen pixel position to the nearest MapPoint
+    MapPoint screenToMapPoint(Position screenPos) const;
+    /// Get pixel position of a map point (screen-space, accounting for scroll offset)
+    Position mapPointToScreen(MapPoint pt) const;
+    /// Recalculate cursor vertices based on cursorPos_ and brushSize_
+    void recalcCursor();
+    /// Draw the cursor sprites at all active vertices
+    void drawCursor();
+    /// Apply the current tool to the vertices under the cursor
+    void applyTool();
+    /// Effective mode considering modifier keys (read from SDL_GetModState())
+    EditorToolMode effectiveMode() const;
+
     std::unique_ptr<EditorWorld> world_;
     std::unique_ptr<GameWorldEditor> gwEditor_;
 
+    // ── Editor state ──
+    EditorToolMode mode_ = EditorToolMode::HeightRaise;
+    int brushSize_ = 1;                 // 0..MAX_BRUSH
+    MapPoint cursorPos_{0, 0};
+    bool isModifying_ = false;
+
+    // Cursor vertex field
+    static constexpr int MAX_BRUSH = 10;
+    std::vector<CursorVertex> cursorVerts_;
+    bool needRecalcCursor_ = true;
+
     enum ControlIds
     {
-        ID_btQuitEditor,
-        ID_btSave,
-        ID_btLoad,
-        ID_btMinimap,
-        ID_btToolCut,
-        ID_btToolTree,
+        // Bottom menubar tools (matching CMap.cpp button order)
         ID_btToolHeightRaise,
-        ID_btToolHeightReduce,
         ID_btToolTexture,
-        ID_btToolLandscape,
-        ID_btToolFlag,
+        ID_btToolTree,
         ID_btToolResource,
+        ID_btToolLandscape,
         ID_btToolAnimal,
         ID_btToolPlayer,
-        ID_btEditorMenu,
-        ID_FIRST_TOOL = ID_btToolCut,
+        ID_btToolBuildHelp,  // toggle, no window
+        ID_btToolMinimap,
+        ID_btToolNewWorld,
+        ID_btEditorMenu,     // main menu
+        ID_FIRST_TOOL = ID_btToolHeightRaise,
         ID_LAST_TOOL = ID_btEditorMenu,
+        // Right menubar
+        ID_btCursor,
         ID_btRLoad,
         ID_btRSave,
     };
