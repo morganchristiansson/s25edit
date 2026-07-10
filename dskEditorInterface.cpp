@@ -519,6 +519,28 @@ void dskEditorInterface::applyTool()
             break;
         }
         case EditorToolMode::Flag:
+        {
+            // Place HQ for current player at cursor, or remove if already there
+            if(world_ && cursorPos_.isValid())
+            {
+                const auto& hqPos = world_->getHQPositions();
+                // Check if there's already an HQ at this position
+                bool alreadyHQ = false;
+                for(unsigned p = 0; p < MAX_PLAYERS; p++)
+                {
+                    if(hqPos[p] == cursorPos_)
+                    {
+                        // Remove it
+                        world_->clearHQPosition(p);
+                        alreadyHQ = true;
+                        break;
+                    }
+                }
+                if(!alreadyHQ)
+                    world_->setHQPosition(static_cast<unsigned>(currentPlayer_), cursorPos_);
+            }
+            break;
+        }
         case EditorToolMode::Resource:
         default:
             break;
@@ -546,8 +568,8 @@ void dskEditorInterface::Msg_PaintBefore()
     }
 
     // ── Terrain via GameWorldEditor ──
-    if(gwEditor_)
-        gwEditor_->Draw(screenSize);
+    if(gwEditor_ && world_)
+        gwEditor_->Draw(screenSize, world_->getHQPositions());
 
     // ── Cursor sprites (under UI chrome) ──
     drawCursor();
@@ -688,7 +710,9 @@ void dskEditorInterface::Msg_ButtonClick(unsigned ctrl_id)
             break;
         case ID_btToolPlayer:
             mode_ = EditorToolMode::Flag;
-            WINDOWMANAGER.Show(std::make_unique<iwEditorPlayer>());
+            WINDOWMANAGER.Show(std::make_unique<iwEditorPlayer>(
+                currentPlayer_,
+                [this](int player) noexcept { currentPlayer_ = player; }));
             break;
         case ID_btToolBuildHelp:
             break;

@@ -84,7 +84,16 @@ std::unique_ptr<EditorWorld> EditorWorld::loadFromSwd(const bfs::path& filepath)
     ew->author_ = hdr.getAuthor();
     ew->filepath_ = filepath;
 
-    // ── 5. Set the correct landscape type ──
+    // ── 5. Store HQ positions from the map header (max 7 players) ──
+    for(unsigned p = 0; p < MAX_PLAYERS && p < 7u; p++)
+    {
+        uint16_t hx, hy;
+        hdr.getPlayerHQ(p, hx, hy);
+        if(hx != 0xFFFF && hy != 0xFFFF)
+            ew->hqPositions_[p] = MapPoint(hx, hy);
+    }
+
+    // ── 6. Set the correct landscape type ──
     ew->world_.SetLandscapeType(landscape);
 
     // ── 6. Helper: look up a terrain DescIdx by s2Id + current landscape ──
@@ -169,7 +178,6 @@ std::unique_ptr<EditorWorld> EditorWorld::loadFromSwd(const bfs::path& filepath)
 
     // ── 8. Place objects (trees, granite, decorations, HQ markers) ──
     {
-        std::vector<MapPoint> hqPositions; // indexed by player number
         RTTR_FOREACH_PT(MapPoint, MapExtent(w, h))
         {
             using libsiedler2::MapLayer;
@@ -179,15 +187,11 @@ std::unique_ptr<EditorWorld> EditorWorld::loadFromSwd(const bfs::path& filepath)
 
             switch(type)
             {
-                // ── Player HQ ──
+                // ── Player HQ (override header position from layer data) ──
                 case 0x80:
                 {
                     if(lc < MAX_PLAYERS)
-                    {
-                        while(hqPositions.size() <= lc)
-                            hqPositions.push_back(MapPoint::Invalid());
-                        hqPositions[lc] = pt;
-                    }
+                        ew->hqPositions_[lc] = pt;
                     break;
                 }
 

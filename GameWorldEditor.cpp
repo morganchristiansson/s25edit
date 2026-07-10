@@ -50,7 +50,7 @@ void GameWorldEditor::WrapOffset()
     }
 }
 
-void GameWorldEditor::Draw(const Extent& screenSize)
+void GameWorldEditor::Draw(const Extent& screenSize, const HQArray& hqPositions)
 {
     // Same tile range calculation as GameWorldView::CalcFxLx()
     int firstX = offset_.x / TR_W - 1;
@@ -189,6 +189,25 @@ void GameWorldEditor::Draw(const Extent& screenSize)
                     if(bmp)
                         bmp->DrawFull(DrawPoint(nodePos.x, nodePos.y));
                 }
+            }
+        }
+    }
+
+    // ── Draw HQ markers (colored flags from editbob) ──
+    {
+        for(unsigned player = 0; player < MAX_PLAYERS; player++)
+        {
+            const MapPoint& hqPt = hqPositions[player];
+            if(!hqPt.isValid())
+                continue;
+            // Draw at the node's world position — OpenGL already has the -offset_ translation
+            Position nodePos = world_.GetNodePos(hqPt);
+
+            int flagIdx = 11 + static_cast<int>(player); // FLAG_BLUE_DARK..FLAG_ORANGE
+            if(auto* flagImg = LOADER.GetImageN("editbob", flagIdx))
+            {
+                // DrawFull compensates for origin offset (nx/ny); offset slightly above the node
+                flagImg->DrawFull(DrawPoint(nodePos.x - 10, nodePos.y - 20));
             }
         }
     }

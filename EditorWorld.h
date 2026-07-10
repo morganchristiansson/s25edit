@@ -77,6 +77,18 @@ public:
     const boost::filesystem::path& getFilepath() const { return filepath_; }
     void setFilepath(const boost::filesystem::path& fp) { filepath_ = fp; }
 
+    /// HQ position per player (MapPoint::Invalid() = unused)
+    using HQArray = std::array<MapPoint, MAX_PLAYERS>;
+    const HQArray& getHQPositions() const { return hqPositions_; }
+    void setHQPosition(unsigned player, MapPoint pt) { if(player < MAX_PLAYERS) hqPositions_[player] = pt; }
+    void clearHQPosition(unsigned player) { if(player < MAX_PLAYERS) hqPositions_[player] = MapPoint::Invalid(); }
+
+    /// Get index into editbob FLAG_* icons for a player (0-6 -> 11-17)
+    static int getHQIconForPlayer(unsigned player) { return 11 + player; }
+
+private:
+    HQArray hqPositions_{};
+
     void notifyChanged(MapPoint pt)
     {
         world_.GetNotifications().publish(NodeNote(NodeNote::Altitude, pt));

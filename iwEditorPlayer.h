@@ -5,9 +5,26 @@
 #pragma once
 
 #include "ingameWindows/IngameWindow.h"
+#include <functional>
 
 class iwEditorPlayer : public IngameWindow
 {
 public:
-    iwEditorPlayer();
+    using CbFunc = std::function<void(int)>;
+    iwEditorPlayer(int currentPlayer, CbFunc onPlayerChanged);
+
+    void Msg_ButtonClick(unsigned ctrl_id) override;
+
+private:
+    enum
+    {
+        ID_btPrev,
+        ID_txtPlayer,
+        ID_btNext,
+        ID_btGoTo
+    };
+    void updateDisplay();
+
+    int currentPlayer_;
+    CbFunc onPlayerChanged_;
 };

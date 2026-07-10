@@ -106,6 +106,16 @@ void iwSaveMap::Msg_ButtonClick(unsigned ctrl_id)
             header->setName(mapName);
             header->setAuthor(author);
 
+            // ── Store HQ positions in header (max 7 players) ──
+            {
+                const auto& hqPos = world_.getHQPositions();
+                for(unsigned p = 0; p < MAX_PLAYERS && p < 7u; p++)
+                {
+                    if(hqPos[p].isValid())
+                        header->setPlayerHQ(p, hqPos[p].x, hqPos[p].y);
+                }
+            }
+
             // ── Build ArchivItem_Map ──
             auto mapItem = std::make_unique<libsiedler2::ArchivItem_Map>();
             mapItem->init(std::move(header));
@@ -166,6 +176,23 @@ void iwSaveMap::Msg_ButtonClick(unsigned ctrl_id)
 
                         case MapLayer::ObjectIndex:
                         {
+                            // Check for HQ marker first
+                            const auto& hqPos = world_.getHQPositions();
+                            unsigned hqPlayer = MAX_PLAYERS;
+                            for(unsigned p = 0; p < MAX_PLAYERS; p++)
+                            {
+                                if(hqPos[p] == pt)
+                                {
+                                    hqPlayer = p;
+                                    break;
+                                }
+                            }
+                            if(hqPlayer < MAX_PLAYERS)
+                            {
+                                layerData[i] = static_cast<uint8_t>(hqPlayer);
+                                break;
+                            }
+
                             noBase* obj = gameWorld.GetNO(pt);
                             uint8_t val = 0;
                             if(obj)
@@ -191,6 +218,23 @@ void iwSaveMap::Msg_ButtonClick(unsigned ctrl_id)
 
                         case MapLayer::ObjectType:
                         {
+                            // Check for HQ marker first
+                            const auto& hqPos = world_.getHQPositions();
+                            bool isHQ = false;
+                            for(unsigned p = 0; p < MAX_PLAYERS; p++)
+                            {
+                                if(hqPos[p] == pt)
+                                {
+                                    isHQ = true;
+                                    break;
+                                }
+                            }
+                            if(isHQ)
+                            {
+                                layerData[i] = 0x80;
+                                break;
+                            }
+
                             noBase* obj = gameWorld.GetNO(pt);
                             uint8_t val = 0;
                             if(obj)
