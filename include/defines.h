@@ -8,6 +8,7 @@
 #include "Point.h"
 #include "Rect.h"
 #include "gameData/DescIdx.h"
+#include "Loader.h"
 #include <SDL.h>
 #include <array>
 #include <string>
@@ -97,7 +98,7 @@ struct MapHeaderItem
     Uint32 area; // number of vertices this area has
 };
 // point structure
-struct MapNode
+struct EditorMapNode
 {
     Uint16 VertexX; /* number of the vertex on x-axis */
     Uint16 VertexY; /* number of the vertex on y-axis */
@@ -155,11 +156,11 @@ struct bobMAP
     std::array<Uint16, 7> HQy;
     // 250 items from the big map header
     std::array<MapHeaderItem, 250> header;
-    std::vector<MapNode> vertex;
-    MapNode& getVertex(unsigned x, unsigned y) { return vertex[y * width + x]; }
-    MapNode& getVertex(Point32 pos) { return vertex[pos.y * width + pos.x]; }
-    const MapNode& getVertex(unsigned x, unsigned y) const { return vertex[y * width + x]; }
-    const MapNode& getVertex(Point32 pos) const { return vertex[pos.y * width + pos.x]; }
+    std::vector<EditorMapNode> vertex;
+    EditorMapNode& getVertex(unsigned x, unsigned y) { return vertex[y * width + x]; }
+    EditorMapNode& getVertex(Point32 pos) { return vertex[pos.y * width + pos.x]; }
+    const EditorMapNode& getVertex(unsigned x, unsigned y) const { return vertex[y * width + x]; }
+    const EditorMapNode& getVertex(Point32 pos) const { return vertex[pos.y * width + pos.x]; }
     std::vector<DescIdx<TerrainDesc>> s2IdToTerrain;
     // Initializes or updates the vertex indices and coordinates
     void initVertexCoords();
@@ -216,23 +217,26 @@ enum class FontColor
 };
 constexpr unsigned NUM_FONT_COLORS = static_cast<unsigned>(FontColor::BrightRed) + 1u;
 
-/// Font sizes with values equal to height in pixels
-enum class FontSize
+/// Map s25main FontSize to pixel heights used by the editor's font atlas
+inline unsigned getFontHeightPx(FontSize size)
 {
-    Small = 9,
-    Medium = 11,
-    Large = 14
-};
-/// Height of 1 line for the given font including vertical spacing
-inline unsigned getLineHeight(FontSize size)
-{
-    const auto fontSize = static_cast<unsigned>(size);
     switch(size)
     {
         default:
-        case FontSize::Small: return fontSize + 1;
-        case FontSize::Medium: return fontSize + 3;
-        case FontSize::Large: return fontSize + 4;
+        case FontSize::Small: return 9;
+        case FontSize::Normal: return 11;
+        case FontSize::Large: return 14;
+    }
+}
+/// Height of 1 line for the given font including vertical spacing
+inline unsigned getLineHeight(FontSize size)
+{
+    switch(size)
+    {
+        default:
+        case FontSize::Small: return getFontHeightPx(size) + 1;
+        case FontSize::Normal: return getFontHeightPx(size) + 3;
+        case FontSize::Large: return getFontHeightPx(size) + 4;
     }
 }
 

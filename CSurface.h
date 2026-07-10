@@ -17,8 +17,8 @@ public:
     static void DrawTriangleField(const DisplayRectangle& displayRect, const bobMAP& myMap);
 
     /// Draw a single triangle given its three vertices.
-    static void DrawTriangle(const DisplayRectangle& displayRect, const bobMAP& myMap, MapType type, const MapNode& P1,
-                             const MapNode& P2, const MapNode& P3);
+    static void DrawTriangle(const DisplayRectangle& displayRect, const bobMAP& myMap, MapType type, const EditorMapNode& P1,
+                             const EditorMapNode& P2, const EditorMapNode& P3);
 
     static void get_nodeVectors(bobMAP& myMap);
     static void update_shading(bobMAP& myMap, Position pos);

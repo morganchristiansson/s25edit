@@ -5,42 +5,64 @@
 
 #include "CGame.h"
 #include "CIO/CFile.h"
-#include "CIO/CMenu.h"
 #include "CIO/CWindow.h"
 #include "CMap.h"
+#include "WindowManager.h"
 #include "callbacks.h"
+#include "dskMainMenu.h"
 #include "globals.h"
+#include "Loader.h"
 #include "lua/GameDataLoader.h"
+#include "ogl/glAllocator.h"
 #include <libsiedler2/Archiv.h>
 #include <libsiedler2/ArchivItem_Bitmap.h>
 #include <libsiedler2/ArchivItem_Palette.h>
 #include <libsiedler2/ErrorCodes.h>
 #include <libsiedler2/libsiedler2.h>
+#include "drivers/VideoDriverWrapper.h"
 #include <glad/glad.h>
 #include <iostream>
+#include <exception>
 
 bool CGame::CreateWindow()
 {
     if(window_)
         return false;
 
-    window_.reset(SDL_CreateWindow("Return to the Roots Map editor [BETA]", SDL_WINDOWPOS_CENTERED,
-                                   SDL_WINDOWPOS_CENTERED, GameResolution.x, GameResolution.y,
-                                   SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE));
-    if(!window_)
+    // Load the SDL2 video driver plugin
+    std::string driverName = "SDL2";
+    try
+    {
+        if(!VIDEODRIVER.LoadDriver(driverName))
+        {
+            std::cerr << "LoadDriver failed" << std::endl;
+            return false;
+        }
+    } catch(std::exception& e)
+    {
+        std::cerr << "LoadDriver exception: " << e.what() << std::endl;
+        return false;
+    } catch(...)
+    {
+        std::cerr << "LoadDriver unknown exception" << std::endl;
+        return false;
+    }
+
+    if(!VIDEODRIVER.CreateScreen({static_cast<unsigned short>(GameResolution.x),
+                                  static_cast<unsigned short>(GameResolution.y)},
+                                 DisplayMode::Windowed))
         return false;
 
-    glContext_ = SDL_GL_CreateContext(window_.get());
-    if(!glContext_ || !gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
-        return false;
+    // Keep our own SDL window handle for event polling and resize handling
+    window_.reset(SDL_GL_GetCurrentWindow());
 
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_SCISSOR_TEST);
     glClearColor(0, 0, 0, 1);
-
-    SDL_ShowWindow(window_.get());
 
     ApplyWindowChanges();
 
@@ -367,17 +389,38 @@ bool CGame::Init()
         }
     }
 
-    // create the mainmenu
-    callback::mainmenu(INITIALIZING_CALL);
+    // Initialize the s25main Loader with the same files the game itself uses.
+    {
+        libsiedler2::setAllocator(new GlAllocator());
+        LOADER.initResourceFolders();
+        LOADER.LoadFilesAtStart();
 
-    // Create textures for cursor (from typed archive)
-    auto& resArchiv = global::typedArchives[ArchiveID::EDITRES];
-    if(auto* bmp = dynamic_cast<const libsiedler2::baseArchivItem_Bitmap*>(resArchiv.get(CURSOR)))
-        cursor_.load(*bmp);
-    if(auto* bmp = dynamic_cast<const libsiedler2::baseArchivItem_Bitmap*>(resArchiv.get(CURSOR_CLICKED)))
-        cursorClicked_.load(*bmp);
-    if(auto* bmp = dynamic_cast<const libsiedler2::baseArchivItem_Bitmap*>(resArchiv.get(CROSS)))
-        cross_.load(*bmp);
+        // Also load the editor's EDITIO.IDX into a separate archive (keyed as "editio")
+        // so the editor toolbar can use its tool icons (MENUBAR_TREE=113, etc.)
+        // without overwriting the game's IO.IDX (needed for s25main button borders etc.).
+        const auto editioPath = global::gameDataFilePath / "DATA/IO/EDITIO.IDX";
+        LOADER.Load(editioPath, global::currentPalette);
+
+        // Load editor resource archives into the Loader
+        const auto editresPath = global::gameDataFilePath / "DATA/EDITRES.IDX";
+        LOADER.Load(editresPath, global::currentPalette);
+        const auto editbobPath = global::gameDataFilePath / "DATA/EDITBOB.LST";
+        LOADER.Load(editbobPath, global::currentPalette);
+
+        // Use editor cursor everywhere instead of the game's default hand
+        auto* cursorNorm = LOADER.GetImageN("editres", CURSOR);
+        auto* cursorPressed = LOADER.GetImageN("editres", CURSOR_CLICKED);
+        if(cursorNorm)
+            WINDOWMANAGER.SetCursorImage(Cursor::Hand, cursorNorm, cursorPressed);
+
+
+    }
+
+    // Show the new Desktop-based main menu via WindowManager
+    WINDOWMANAGER.Switch(std::make_unique<dskMainMenu>());
+
+    // All resources loaded, dismiss the loading splash so the Desktop renders
+    showLoadScreen = false;
 
     return true;
 }

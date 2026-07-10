@@ -38,7 +38,7 @@ void bobMAP::initVertexCoords()
     {
         for(unsigned i = 0; i < width; i++)
         {
-            MapNode& curVertex = getVertex(i, j);
+            EditorMapNode& curVertex = getVertex(i, j);
             curVertex.VertexX = i;
             curVertex.VertexY = j;
         }
@@ -48,27 +48,27 @@ void bobMAP::initVertexCoords()
 
 void bobMAP::updateVertexCoords()
 {
-    width_pixel = width * triangleWidth;
-    height_pixel = height * triangleHeight;
+    width_pixel = width * TR_W;
+    height_pixel = height * TR_H;
 
     Sint32 b = 0;
     for(unsigned j = 0; j < height; j++)
     {
         Sint32 a;
         if(j % 2u == 0u)
-            a = triangleWidth / 2u;
+            a = TR_W / 2u;
         else
-            a = triangleWidth;
+            a = TR_W;
 
         for(unsigned i = 0; i < width; i++)
         {
-            MapNode& curVertex = getVertex(i, j);
+            EditorMapNode& curVertex = getVertex(i, j);
             curVertex.x = a;
-            curVertex.y = b - triangleIncrease * (curVertex.h - 0x0A);
-            curVertex.z = triangleIncrease * (curVertex.h - 0x0A);
-            a += triangleWidth;
+            curVertex.y = b - HEIGHT_FACTOR * (curVertex.h - 0x0A);
+            curVertex.z = HEIGHT_FACTOR * (curVertex.h - 0x0A);
+            a += TR_W;
         }
-        b += triangleHeight;
+        b += TR_H;
     }
 }
 
@@ -194,7 +194,7 @@ void CMap::constructMap(const boost::filesystem::path& filepath, int width, int 
     {
         for(int x = 0; x < map->width; x++)
         {
-            MapNode& curVertex = map->getVertex(x, y);
+            EditorMapNode& curVertex = map->getVertex(x, y);
             if(curVertex.objectInfo == 0x80)
             {
                 CountPlayers++;
@@ -219,6 +219,31 @@ void CMap::constructMap(const boost::filesystem::path& filepath, int width, int 
 
     HorizontalMovementLocked = false;
     VerticalMovementLocked = false;
+
+    // Init EditorWorld for TerrainRenderer rendering
+    terrainWorld_ = std::make_unique<EditorWorld>(MapExtent(map->width, map->height), 7u);
+    {
+        auto& gameWorld = terrainWorld_->getWorld();
+        const auto& terrains = gameWorld.GetDescription().terrain;
+        std::array<DescIdx<TerrainDesc>, 256> texIdToDesc;
+        for(unsigned i = 0; i < terrains.size(); i++)
+        {
+            auto idx = DescIdx<TerrainDesc>(i);
+            texIdToDesc[terrains.get(idx).s2Id] = idx;
+        }
+        for(unsigned y = 0; y < map->height; y++)
+        {
+            for(unsigned x = 0; x < map->width; x++)
+            {
+                const auto& src = map->getVertex(x, y);
+                auto& dst = gameWorld.GetNodeWriteable(MapPoint(x, y));
+                dst.altitude = src.h;
+                dst.t1 = texIdToDesc[src.rsuTexture];
+                dst.t2 = texIdToDesc[src.usdTexture];
+                dst.shadow = src.shading;
+            }
+        }
+    }
 }
 void CMap::destructMap()
 {
@@ -228,6 +253,7 @@ void CMap::destructMap()
     Vertices.clear();
     // free map structure memory
     map.reset();
+    terrainWorld_.reset();
     filepath_.clear();
 }
 
@@ -256,7 +282,7 @@ std::unique_ptr<bobMAP> CMap::generateMap(int width, int height, MapType type, T
     {
         for(int i = 0; i < myMap->width; i++)
         {
-            MapNode& curVertex = myMap->getVertex(i, j);
+            EditorMapNode& curVertex = myMap->getVertex(i, j);
             curVertex.h = 0x0A;
 
             if((j < border || myMap->height - j <= border) || (i < border || myMap->width - i <= border))
@@ -291,7 +317,7 @@ std::unique_ptr<bobMAP> CMap::generateMap(int width, int height, MapType type, T
 void CMap::rotateMap()
 {
     // we allocate memory for the new triangle field but with x equals the height and y equals the width
-    std::vector<MapNode> new_vertex(map->vertex.size());
+    std::vector<EditorMapNode> new_vertex(map->vertex.size());
 
     undoBuffer.clear();
     redoBuffer.clear();
@@ -959,15 +985,15 @@ void CMap::storeVerticesFromMouse(Position mousePos, Uint8 /*MouseState*/)
 
     // get X
     // following out commented lines are the correct ones, but for tolerance (to prevent to early jumps of the cursor)
-    // we subtract "triangleWidth/2"  Xeven = (MouseX + displayRect.left) / triangleWidth;
-    Xeven = (mousePos.x + displayRect.left - triangleWidth / 2) / triangleWidth;
+    // we subtract "TR_W/2"  Xeven = (MouseX + displayRect.left) / TR_W;
+    Xeven = (mousePos.x + displayRect.left - TR_W / 2) / TR_W;
     if(Xeven < 0)
         Xeven += (map->width);
     else if(Xeven > map->width - 1)
         Xeven -= (map->width - 1);
-    // Add rows are already shifted by triangleWidth / 2
-    Xodd = (mousePos.x + displayRect.left) / triangleWidth;
-    // Xodd = (mousePos.x + displayRect.left) / triangleWidth;
+    // Add rows are already shifted by TR_W / 2
+    Xodd = (mousePos.x + displayRect.left) / TR_W;
+    // Xodd = (mousePos.x + displayRect.left) / TR_W;
     if(Xodd < 0)
         Xodd += (map->width - 1);
     else if(Xodd > map->width - 1)
@@ -985,8 +1011,8 @@ void CMap::storeVerticesFromMouse(Position mousePos, Uint8 /*MouseState*/)
     {
         if(j % 2 == 0)
         {
-            // subtract "triangleHeight/2" is for tolerance, we did the same for X
-            if((MousePosY - triangleHeight / 2) > map->getVertex(Xeven, j).y)
+            // subtract "TR_H/2" is for tolerance, we did the same for X
+            if((MousePosY - TR_H / 2) > map->getVertex(Xeven, j).y)
                 Y++;
             else
             {
@@ -995,7 +1021,7 @@ void CMap::storeVerticesFromMouse(Position mousePos, Uint8 /*MouseState*/)
             }
         } else
         {
-            if((MousePosY - triangleHeight / 2) > map->getVertex(Xodd, j).y)
+            if((MousePosY - TR_H / 2) > map->getVertex(Xodd, j).y)
                 Y++;
             else
             {
@@ -1048,9 +1074,29 @@ void CMap::render()
         modifyVertex();
     }
 
-    // 1. Draw terrain with OpenGL
-    if(!map->vertex.empty())
-        CSurface::DrawTriangleField(displayRect, *map);
+    // 1. Draw terrain
+    if(terrainWorld_ && !map->vertex.empty())
+    {
+        Position firstPt(std::max(0, displayRect.left / TR_W - 1),
+                         std::max(0, displayRect.top / TR_H - 1));
+        Position lastPt(std::min<int>(map->width - 1, displayRect.right / TR_W + 1),
+                        std::min<int>(map->height - 1, displayRect.bottom / TR_H + 1));
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glLoadIdentity();
+        glOrtho(static_cast<GLdouble>(displayRect.left),
+                static_cast<GLdouble>(displayRect.right),
+                static_cast<GLdouble>(displayRect.bottom),
+                static_cast<GLdouble>(displayRect.top), -100, 100);
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        glLoadIdentity();
+        terrainWorld_->draw(firstPt, lastPt);
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+        glMatrixMode(GL_MODELVIEW);
+        glPopMatrix();
+    }
 
     // 2. Draw editor UI chrome on top (screen-space)
     // Switch to screen-space projection for UI chrome
@@ -1065,6 +1111,8 @@ void CMap::render()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_SCISSOR_TEST);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
     // draw pictures to cursor position
@@ -1302,7 +1350,7 @@ static const TerrainDesc* getTerrainDesc(const bobMAP& map, Uint8 rawTextureId)
     return nullptr;
 }
 
-static bool nodeHasTerrainFlag(const bobMAP& map, const MapNode& node, ETerrain flag, bool checkBoth = true)
+static bool nodeHasTerrainFlag(const bobMAP& map, const EditorMapNode& node, ETerrain flag, bool checkBoth = true)
 {
     const auto* rsu = getTerrainDesc(map, node.rsuTexture);
     const auto* usd = getTerrainDesc(map, node.usdTexture);
@@ -1477,7 +1525,7 @@ void CMap::modifyHeightRaise(Position pos)
 {
     // vertex count for the points
     int X, Y;
-    MapNode* tempP = &map->getVertex(pos.x, pos.y);
+    EditorMapNode* tempP = &map->getVertex(pos.x, pos.y);
     // this is to setup the building depending on the vertices around
     std::array<Point32, 19> tempVertices;
     calculateVerticesAround(tempVertices, pos);
@@ -1487,18 +1535,18 @@ void CMap::modifyHeightRaise(Position pos)
         even = true;
 
     // DO IT
-    if(tempP->z >= triangleIncrease * (MaxRaiseHeight - 0x0A)) // user specified maximum reached
+    if(tempP->z >= HEIGHT_FACTOR * (MaxRaiseHeight - 0x0A)) // user specified maximum reached
         return;
 
-    if(tempP->z >= triangleIncrease * (0x3C - 0x0A)) // maximum reached (0x3C is max)
+    if(tempP->z >= HEIGHT_FACTOR * (0x3C - 0x0A)) // maximum reached (0x3C is max)
         return;
 
-    tempP->y -= triangleIncrease;
-    tempP->z += triangleIncrease;
+    tempP->y -= HEIGHT_FACTOR;
+    tempP->z += HEIGHT_FACTOR;
     tempP->h += 0x01;
     CSurface::update_shading(*map, pos);
 
-    // after (5*triangleIncrease) pixel all vertices around will be raised too
+    // after (5*HEIGHT_FACTOR) pixel all vertices around will be raised too
     // update first vertex left upside
     X = pos.x - (even ? 1 : 0);
     if(X < 0)
@@ -1508,7 +1556,7 @@ void CMap::modifyHeightRaise(Position pos)
         Y += map->height;
     // only modify if the other point is lower than the middle point of the hexagon (-5 cause point was raised a few
     // lines before)
-    if(map->getVertex(X, Y).z < tempP->z - (5 * triangleIncrease)) //-V807
+    if(map->getVertex(X, Y).z < tempP->z - (5 * HEIGHT_FACTOR)) //-V807
         modifyHeightRaise(Position(X, Y));
     // update second vertex right upside
     X = pos.x + (even ? 0 : 1);
@@ -1519,7 +1567,7 @@ void CMap::modifyHeightRaise(Position pos)
         Y += map->height;
     // only modify if the other point is lower than the middle point of the hexagon (-5 cause point was raised a few
     // lines before)
-    if(map->getVertex(X, Y).z < tempP->z - (5 * triangleIncrease))
+    if(map->getVertex(X, Y).z < tempP->z - (5 * HEIGHT_FACTOR))
         modifyHeightRaise(Position(X, Y));
     // update third point bottom left
     X = pos.x - 1;
@@ -1528,7 +1576,7 @@ void CMap::modifyHeightRaise(Position pos)
     Y = pos.y;
     // only modify if the other point is lower than the middle point of the hexagon (-5 cause point was raised a few
     // lines before)
-    if(map->getVertex(X, Y).z < tempP->z - (5 * triangleIncrease))
+    if(map->getVertex(X, Y).z < tempP->z - (5 * HEIGHT_FACTOR))
         modifyHeightRaise(Position(X, Y));
     // update fourth point bottom right
     X = pos.x + 1;
@@ -1537,7 +1585,7 @@ void CMap::modifyHeightRaise(Position pos)
     Y = pos.y;
     // only modify if the other point is lower than the middle point of the hexagon (-5 cause point was raised a few
     // lines before)
-    if(map->getVertex(X, Y).z < tempP->z - (5 * triangleIncrease))
+    if(map->getVertex(X, Y).z < tempP->z - (5 * HEIGHT_FACTOR))
         modifyHeightRaise(Position(X, Y));
     // update fifth point down left
     X = pos.x - (even ? 1 : 0);
@@ -1548,7 +1596,7 @@ void CMap::modifyHeightRaise(Position pos)
         Y -= map->height;
     // only modify if the other point is lower than the middle point of the hexagon (-5 cause point was raised a few
     // lines before)
-    if(map->getVertex(X, Y).z < tempP->z - (5 * triangleIncrease))
+    if(map->getVertex(X, Y).z < tempP->z - (5 * HEIGHT_FACTOR))
         modifyHeightRaise(Position(X, Y));
     // update sixth point down right
     X = pos.x + (even ? 0 : 1);
@@ -1559,7 +1607,7 @@ void CMap::modifyHeightRaise(Position pos)
         Y -= map->height;
     // only modify if the other point is lower than the middle point of the hexagon (-5 cause point was raised a few
     // lines before)
-    if(map->getVertex(X, Y).z < tempP->z - (5 * triangleIncrease))
+    if(map->getVertex(X, Y).z < tempP->z - (5 * HEIGHT_FACTOR))
         modifyHeightRaise(Position(X, Y));
 
     // at least setup the possible building and shading at the vertex and 2 sections around
@@ -1574,7 +1622,7 @@ void CMap::modifyHeightReduce(Position pos)
 {
     // vertex count for the points
     int X, Y;
-    MapNode* tempP = &map->getVertex(pos.x, pos.y);
+    EditorMapNode* tempP = &map->getVertex(pos.x, pos.y);
     // this is to setup the building depending on the vertices around
     std::array<Point32, 19> tempVertices;
     calculateVerticesAround(tempVertices, pos);
@@ -1584,17 +1632,17 @@ void CMap::modifyHeightReduce(Position pos)
         even = true;
 
     // DO IT
-    if(tempP->z <= triangleIncrease * (MinReduceHeight - 0x0A)) // user specified minimum reached
+    if(tempP->z <= HEIGHT_FACTOR * (MinReduceHeight - 0x0A)) // user specified minimum reached
         return;
 
-    if(tempP->z <= triangleIncrease * (0x00 - 0x0A)) // minimum reached (0x00 is min)
+    if(tempP->z <= HEIGHT_FACTOR * (0x00 - 0x0A)) // minimum reached (0x00 is min)
         return;
 
-    tempP->y += triangleIncrease;
-    tempP->z -= triangleIncrease;
+    tempP->y += HEIGHT_FACTOR;
+    tempP->z -= HEIGHT_FACTOR;
     tempP->h -= 0x01;
     CSurface::update_shading(*map, pos);
-    // after (5*triangleIncrease) pixel all vertices around will be reduced too
+    // after (5*HEIGHT_FACTOR) pixel all vertices around will be reduced too
     // update first vertex left upside
     X = pos.x - (even ? 1 : 0);
     if(X < 0)
@@ -1604,7 +1652,7 @@ void CMap::modifyHeightReduce(Position pos)
         Y += map->height;
     // only modify if the other point is higher than the middle point of the hexagon (+5 cause point was reduced a few
     // lines before)
-    if(map->getVertex(X, Y).z > tempP->z + (5 * triangleIncrease)) //-V807
+    if(map->getVertex(X, Y).z > tempP->z + (5 * HEIGHT_FACTOR)) //-V807
         modifyHeightReduce(Position(X, Y));
     // update second vertex right upside
     X = pos.x + (even ? 0 : 1);
@@ -1615,7 +1663,7 @@ void CMap::modifyHeightReduce(Position pos)
         Y += map->height;
     // only modify if the other point is higher than the middle point of the hexagon (+5 cause point was reduced a few
     // lines before)
-    if(map->getVertex(X, Y).z > tempP->z + (5 * triangleIncrease))
+    if(map->getVertex(X, Y).z > tempP->z + (5 * HEIGHT_FACTOR))
         modifyHeightReduce(Position(X, Y));
     // update third point bottom left
     X = pos.x - 1;
@@ -1624,7 +1672,7 @@ void CMap::modifyHeightReduce(Position pos)
     Y = pos.y;
     // only modify if the other point is higher than the middle point of the hexagon (+5 cause point was reduced a few
     // lines before)
-    if(map->getVertex(X, Y).z > tempP->z + (5 * triangleIncrease))
+    if(map->getVertex(X, Y).z > tempP->z + (5 * HEIGHT_FACTOR))
         modifyHeightReduce(Position(X, Y));
     // update fourth point bottom right
     X = pos.x + 1;
@@ -1633,7 +1681,7 @@ void CMap::modifyHeightReduce(Position pos)
     Y = pos.y;
     // only modify if the other point is higher than the middle point of the hexagon (+5 cause point was reduced a few
     // lines before)
-    if(map->getVertex(X, Y).z > tempP->z + (5 * triangleIncrease))
+    if(map->getVertex(X, Y).z > tempP->z + (5 * HEIGHT_FACTOR))
         modifyHeightReduce(Position(X, Y));
     // update fifth point down left
     X = pos.x - (even ? 1 : 0);
@@ -1644,7 +1692,7 @@ void CMap::modifyHeightReduce(Position pos)
         Y -= map->height;
     // only modify if the other point is higher than the middle point of the hexagon (+5 cause point was reduced a few
     // lines before)
-    if(map->getVertex(X, Y).z > tempP->z + (5 * triangleIncrease))
+    if(map->getVertex(X, Y).z > tempP->z + (5 * HEIGHT_FACTOR))
         modifyHeightReduce(Position(X, Y));
     // update sixth point down right
     X = pos.x + (even ? 0 : 1);
@@ -1655,7 +1703,7 @@ void CMap::modifyHeightReduce(Position pos)
         Y -= map->height;
     // only modify if the other point is higher than the middle point of the hexagon (+5 cause point was reduced a few
     // lines before)
-    if(map->getVertex(X, Y).z > tempP->z + (5 * triangleIncrease))
+    if(map->getVertex(X, Y).z > tempP->z + (5 * HEIGHT_FACTOR))
         modifyHeightReduce(Position(X, Y));
 
     // at least setup the possible building and shading at the vertex and 2 sections around
@@ -1682,7 +1730,7 @@ void CMap::modifyHeightMakeBigHouse(Position pos)
     std::array<Point32, 19> tempVertices;
     calculateVerticesAround(tempVertices, pos);
 
-    MapNode& middleVertex = map->getVertex(pos.x, pos.y);
+    EditorMapNode& middleVertex = map->getVertex(pos.x, pos.y);
     Uint8 height = middleVertex.h;
 
     // calculate the building using the height of the vertices
@@ -1690,7 +1738,7 @@ void CMap::modifyHeightMakeBigHouse(Position pos)
     // test the whole section
     for(int i = 0; i < 6; i++)
     {
-        MapNode& vertex = map->getVertex(tempVertices[i]);
+        EditorMapNode& vertex = map->getVertex(tempVertices[i]);
         for(int j = height - vertex.h; j >= 0x04; --j)
             modifyHeightRaise(tempVertices[i]);
 
@@ -1699,7 +1747,7 @@ void CMap::modifyHeightMakeBigHouse(Position pos)
     }
 
     // test vertex lower right
-    MapNode& vertex = map->getVertex(tempVertices[6]);
+    EditorMapNode& vertex = map->getVertex(tempVertices[6]);
     for(int j = height - vertex.h; j >= 0x04; --j)
         modifyHeightRaise(tempVertices[6]);
 
@@ -1711,7 +1759,7 @@ void CMap::modifyHeightMakeBigHouse(Position pos)
     // test the whole section
     for(int i = 7; i < 19; i++)
     {
-        MapNode& vertex = map->getVertex(tempVertices[i]);
+        EditorMapNode& vertex = map->getVertex(tempVertices[i]);
         for(int j = height - vertex.h; j >= 0x03; --j)
             modifyHeightRaise(tempVertices[i]);
 
@@ -1733,7 +1781,7 @@ void CMap::modifyShading(Position pos)
     // this is to setup the shading depending on the vertices around (2 sections from the cursor)
     std::array<Point32, 19> tempVertices;
     calculateVerticesAround(tempVertices, pos);
-    MapNode& middleVertex = map->getVertex(pos.x, pos.y);
+    EditorMapNode& middleVertex = map->getVertex(pos.x, pos.y);
 
     // shading stakes
     int A, B, C, D, Result;
@@ -1813,7 +1861,7 @@ void CMap::modifyTexture(Position pos, bool rsu, bool usd)
 
 void CMap::modifyTextureMakeHarbour(Position pos)
 {
-    MapNode& vertex = map->getVertex(pos.x, pos.y);
+    EditorMapNode& vertex = map->getVertex(pos.x, pos.y);
     const auto* desc = getTerrainDesc(*map, vertex.rsuTexture);
     if(desc && desc->kind == TerrainKind::Land && desc->Is(ETerrain::Buildable))
     {
@@ -1823,7 +1871,7 @@ void CMap::modifyTextureMakeHarbour(Position pos)
 
 void CMap::modifyObject(Position pos)
 {
-    MapNode& curVertex = map->getVertex(pos.x, pos.y);
+    EditorMapNode& curVertex = map->getVertex(pos.x, pos.y);
     if(mode == EDITOR_MODE_CUT)
     {
         // prevent cutting a player position
@@ -2011,9 +2059,9 @@ void CMap::modifyBuild(Position pos)
     /// 0x00 sondern 0x68)
 
     Uint8 building;
-    MapNode& curVertex = map->getVertex(pos.x, pos.y);
+    EditorMapNode& curVertex = map->getVertex(pos.x, pos.y);
     const Uint8 height = curVertex.h;
-    std::array<const MapNode*, 7> mapVertices;
+    std::array<const EditorMapNode*, 7> mapVertices;
     for(unsigned i = 0; i < mapVertices.size(); i++)
         mapVertices[i] = &map->getVertex(tempVertices[i]);
 
@@ -2100,7 +2148,7 @@ void CMap::modifyBuild(Position pos)
     {
         for(int i = 1; i < 7; i++)
         {
-            const MapNode& vertexI = *mapVertices[i];
+            const EditorMapNode& vertexI = *mapVertices[i];
             if(vertexI.objectInfo == 0xC4    // tree
                || vertexI.objectInfo == 0xC5 // tree
                || vertexI.objectInfo == 0xC6 // tree
@@ -2182,8 +2230,8 @@ void CMap::modifyResource(Position pos)
     // at first save all vertices we need to check
     std::array<Point32, 19> tempVertices;
     calculateVerticesAround(tempVertices, pos);
-    MapNode& curVertex = map->getVertex(pos.x, pos.y);
-    std::array<const MapNode*, 7> mapVertices;
+    EditorMapNode& curVertex = map->getVertex(pos.x, pos.y);
+    std::array<const EditorMapNode*, 7> mapVertices;
     for(unsigned i = 0; i < mapVertices.size(); i++)
         mapVertices[i] = &map->getVertex(tempVertices[i]);
 
@@ -2267,7 +2315,7 @@ void CMap::modifyPlayer(Position pos)
     bool PlayerRePositioned = false;
     int oldPositionX = 0;
     int oldPositionY = 0;
-    MapNode& vertex = map->getVertex(pos.x, pos.y);
+    EditorMapNode& vertex = map->getVertex(pos.x, pos.y);
 
     // set player position
     if(mode == EDITOR_MODE_FLAG)

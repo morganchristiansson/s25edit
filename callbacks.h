@@ -17,8 +17,7 @@ namespace callback {
 // "Please wait..."
 void PleaseWait(int Param);
 void ShowStatus(int Param);
-void mainmenu(int Param);
-void submenuOptions(int Param);
+
 void MinimapMenu(int Param);
 void EditorHelpMenu(int Param);
 void EditorMainMenu(int Param);
@@ -36,6 +35,6 @@ void EditorCursorMenu(int Param);
 
 #ifdef _ADMINMODE
 void debugger(int Param);
-void submenu1(int Param);
+
 #endif
 } // namespace callback

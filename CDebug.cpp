@@ -157,7 +157,7 @@ void CDebug::actualizeData()
     if(!RegisteredMenusText)
         RegisteredMenusText = dbgWnd->addText("", Position(0, 60), fontsize);
     // write new RegisteredMenusText and draw it
-    RegisteredMenusText->setText(helpers::format("Registered Menus: %d", global::s2->Menus.size()));
+    RegisteredMenusText->setText("Registered Menus: 0");
 
     // del RegisteredWindowsText before drawing new
     if(!RegisteredWindowsText)
@@ -183,7 +183,7 @@ void CDebug::actualizeData()
     if(MapObj)
     {
         map = MapObj->getMap();
-        const MapNode& vertex = map->getVertex(MapObj->Vertex_);
+        const EditorMapNode& vertex = map->getVertex(MapObj->Vertex_);
 
         if(!MapNameText)
             MapNameText = dbgWnd->addText("", Position(260, 10), fontsize);

@@ -106,19 +106,12 @@ static FontAtlas& getAtlas(FontSize size, FontColor color)
     int ci = static_cast<int>(color);
     if(ci < 0 || ci > 6)
         ci = 0;
-    int si;
-    switch(size)
-    {
-        case FontSize::Small: si = 0; break;
-        case FontSize::Medium: si = 1; break;
-        case FontSize::Large: si = 2; break;
-        default: si = 0; break;
-    }
+    int si = static_cast<int>(size);
     if(!atlases[si][ci].tex.isValid())
     {
         auto& a = atlases[si][ci];
         // Resolve the font from the EDITRES archive by height
-        unsigned targetDy = static_cast<unsigned>(size);
+        unsigned targetDy = getFontHeightPx(size);
         auto& archiv = global::typedArchives[ArchiveID::EDITRES];
         const libsiedler2::ArchivItem_Font* font = nullptr;
         for(unsigned i = 0; i < archiv.size(); i++)

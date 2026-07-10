@@ -8,6 +8,7 @@
 #include "CIO/CFont.h"
 #include "SdlSurface.h"
 #include "Texture.h"
+#include "driver/VideoDriverLoaderInterface.h"
 #include <boost/filesystem/path.hpp>
 #include <Point.h>
 #include <memory>
@@ -15,9 +16,8 @@
 
 class CWindow;
 class CMap;
-class CMenu;
 
-class CGame
+class CGame : public VideoDriverLoaderInterface
 {
     friend class CDebug;
 
@@ -63,8 +63,6 @@ private:
         } button;
     } Cursor;
 
-    // Object for Menu Screens
-    std::vector<std::unique_ptr<CMenu>> Menus;
     // Object for Windows
     std::vector<std::unique_ptr<CWindow>> Windows;
     // Object for Callbacks
@@ -75,6 +73,19 @@ private:
     void SetAppIcon();
     void setGLViewport();
     bool CreateWindow();
+
+    // VideoDriverLoaderInterface callbacks
+    void Msg_LeftDown(MouseCoords mc) override;
+    void Msg_LeftUp(MouseCoords mc) override;
+    void Msg_RightDown(const MouseCoords& mc) override;
+    void Msg_RightUp(const MouseCoords& mc) override;
+    void Msg_MiddleDown(const MouseCoords& mc) override;
+    void Msg_MiddleUp(const MouseCoords& mc) override;
+    void Msg_WheelUp(const MouseCoords& mc) override;
+    void Msg_WheelDown(const MouseCoords& mc) override;
+    void Msg_MouseMove(const MouseCoords& mc) override;
+    void Msg_KeyDown(const KeyEvent& ke) override;
+    void WindowResized() override;
 
 public:
     // Apply current GameResolution and fullscreen settings to the window/display.
@@ -92,6 +103,7 @@ public:
     void UpdateDisplaySize(const Extent& newSize);
 
     void EventHandling(SDL_Event* Event);
+    void ForwardEventToWindowManager(SDL_Event* Event);
 
     void GameLoop();
 
@@ -99,8 +111,6 @@ public:
 
     void RenderPresent();
 
-    CMenu* RegisterMenu(std::unique_ptr<CMenu> Menu);
-    bool UnregisterMenu(CMenu* Menu);
     CWindow* RegisterWindow(std::unique_ptr<CWindow> Window);
     bool UnregisterWindow(CWindow* Window);
     void RegisterCallback(void (*callback)(int));

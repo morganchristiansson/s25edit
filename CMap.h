@@ -6,6 +6,7 @@
 #pragma once
 
 #include "CSurface.h"
+#include "EditorWorld.h"
 #include "defines.h"
 #include <boost/filesystem/path.hpp>
 #include <Point.h>
@@ -34,7 +35,7 @@ struct SavedVertex
     // Using int due to signed arithmetic used later
     static constexpr int NODES_PER_DIR = MAX_CHANGE_SECTION + 10 + 2;
     static constexpr size_t NUM_NODES = NODES_PER_DIR * 2 + 1;
-    using PointArray = std::array<std::array<MapNode, NUM_NODES>, NUM_NODES>;
+    using PointArray = std::array<std::array<EditorMapNode, NUM_NODES>, NUM_NODES>;
     // Use a unique pointer to not create huge stack arrays
     ArrayPtr<PointArray> PointsArroundVertex;
 };
@@ -47,6 +48,7 @@ class CMap
 private:
     boost::filesystem::path filepath_;
     std::unique_ptr<bobMAP> map;
+    std::unique_ptr<EditorWorld> terrainWorld_;
     DisplayRectangle displayRect;
     bool active;
     Position Vertex_;
@@ -137,6 +139,7 @@ public:
     int getModeContent() const { return modeContent; }
     int getModeContent2() const { return modeContent2; }
     bobMAP* getMap() { return map.get(); }
+    EditorWorld* getTerrainWorld() { return terrainWorld_.get(); }
     /// Render terrain directly with OpenGL, then draw editor UI chrome.
     /// Should be called from the main render loop with the correct GL projection set.
     void render();

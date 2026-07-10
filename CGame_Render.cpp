@@ -5,12 +5,13 @@
 
 #include "CGame.h"
 #include "CIO/CFont.h"
-#include "CIO/CMenu.h"
 #include "CIO/CWindow.h"
 #include "CMap.h"
 #include "CSurface.h"
 #include "Texture.h"
+#include "WindowManager.h"
 #include "globals.h"
+#include "drivers/VideoDriverWrapper.h"
 #include <glad/glad.h>
 #ifdef _WIN32
 #    include "s25editResource.h"
@@ -43,13 +44,29 @@ void CGame::Render()
     glClear(GL_COLOR_BUFFER_BIT);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_SCISSOR_TEST);
 
     // if the S2 loading screen is shown, render only this until user clicks a mouse button
     if(showLoadScreen)
     {
         splashBg_.draw(Rect(0, 0, GameResolution.x, GameResolution.y));
-        SDL_GL_SwapWindow(window_.get());
+        VIDEODRIVER.SwapBuffers();
         return;
+    }
+
+    // If no map is active, let the WindowManager render the Desktop (and any IngameWindows)
+    if(!MapObj || !MapObj->isActive())
+    {
+        // Reset projection to screen-space before WindowManager draws
+        const auto rs = VIDEODRIVER.GetRenderSize();
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0, rs.x, rs.y, 0, -1, 1);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        WINDOWMANAGER.Draw();
     }
 
     // render the map if active
@@ -95,13 +112,6 @@ void CGame::Render()
                         FontColor::Orange);
     }
 
-    // render active menus
-    for(auto& Menu : Menus)
-    {
-        if(Menu->isActive())
-            Menu->draw(Position(0, 0));
-    }
-
     // render windows ordered by priority
     int highestPriority = 0;
     // first find the highest priority
@@ -135,10 +145,9 @@ void CGame::Render()
     }
     lastFps.draw(Position(0, 0));
 
-    const auto& cursorImg = Cursor.clicked ? (Cursor.button.right ? cross_ : cursorClicked_) : cursor_;
-    cursorImg.draw(Cursor.pos);
+    // Cursor is drawn by WindowManager via DrawCursor()
 
-    SDL_GL_SwapWindow(window_.get());
+    VIDEODRIVER.SwapBuffers();
 
 #ifdef _ADMINMODE
     FrameCounter++;

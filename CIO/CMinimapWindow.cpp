@@ -59,7 +59,7 @@ void CMinimapWindow::draw(Position /*parentOrigin*/)
         const Position arrowCenter = dispRect.getOrigin() + dispRect.getSize() / 2u;
         auto& tex = Texture::getTexture(ArchiveID::MAP00, arrowIdx);
         const Position arrowPos =
-          contentPos + arrowCenter / Position(triangleWidth, triangleHeight) / scale - tex.anchor();
+          contentPos + arrowCenter / Position(TR_W, TR_H) / scale - tex.anchor();
         tex.draw(arrowPos);
     }
 }

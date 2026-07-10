@@ -148,6 +148,4 @@ boost::filesystem::path global::gameDataFilePath(".");
 boost::filesystem::path global::userMapsPath;
 WorldDescription global::worldDesc;
 
-unsigned char triangleHeight = TRIANGLE_HEIGHT_DEFAULT;
-unsigned char triangleWidth = TRIANGLE_WIDTH_DEFAULT;
-unsigned char triangleIncrease = TRIANGLE_INCREASE_DEFAULT;
+
