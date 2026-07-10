@@ -3,9 +3,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "iwSaveMap.h"
-#include "CGame.h"
-#include "CIO/CFile.h"
-#include "CMap.h"
 #include <boost/filesystem.hpp>
 namespace bfs = boost::filesystem;
 #include "WindowManager.h"
@@ -25,17 +22,13 @@ iwSaveMap::iwSaveMap()
 
     AddText(ID_lblFilename, DrawPoint(labelX, off.y + 2), "Filename", COLOR_YELLOW, FontStyle::CENTER, SmallFont);
     auto* editFile = AddEdit(ID_edtFilename, off + DrawPoint(10, 13), Extent(210, 22), TextureColor::Grey, NormalFont);
-    auto* mapObj = global::s2->getMapObj();
-    bfs::path defaultPath = mapObj ? mapObj->getFilepath() : "";
-    editFile->SetText(defaultPath.empty() ? "MyMap" : defaultPath.filename().string());
+    editFile->SetText("MyMap");
 
     AddText(ID_lblMapname, DrawPoint(labelX, off.y + 38), "Mapname", COLOR_YELLOW, FontStyle::CENTER, SmallFont);
-    auto* editName = AddEdit(ID_edtMapname, off + DrawPoint(10, 50), Extent(210, 22), TextureColor::Grey, NormalFont);
-    editName->SetText(mapObj ? mapObj->getMapname() : "");
+    AddEdit(ID_edtMapname, off + DrawPoint(10, 50), Extent(210, 22), TextureColor::Grey, NormalFont);
 
     AddText(ID_lblAuthor, DrawPoint(labelX, off.y + 75), "Author", COLOR_YELLOW, FontStyle::CENTER, SmallFont);
-    auto* editAuthor = AddEdit(ID_edtAuthor, off + DrawPoint(10, 87), Extent(210, 22), TextureColor::Grey, NormalFont);
-    editAuthor->SetText(mapObj ? mapObj->getAuthor() : "");
+    AddEdit(ID_edtAuthor, off + DrawPoint(10, 87), Extent(210, 22), TextureColor::Grey, NormalFont);
 
     off += DrawPoint(0, 20);
     AddTextButton(ID_btSave, off + DrawPoint(10, 115), Extent(100, 22), TextureColor::Green2, "Save", NormalFont);
@@ -48,24 +41,7 @@ void iwSaveMap::Msg_ButtonClick(unsigned ctrl_id)
     {
         case ID_btSave:
         {
-            auto* mapObj = global::s2->getMapObj();
-            if(!mapObj)
-                break;
-            auto* editFile = GetCtrl<ctrlEdit>(ID_edtFilename);
-            auto* editName = GetCtrl<ctrlEdit>(ID_edtMapname);
-            auto* editAuthor = GetCtrl<ctrlEdit>(ID_edtAuthor);
-            if(!editFile || !editName || !editAuthor)
-                break;
-
-            mapObj->setMapname(editName->GetText());
-            mapObj->setAuthor(editAuthor->GetText());
-
-            bfs::path filepath = global::userMapsPath / editFile->GetText();
-            if(!filepath.has_extension())
-                filepath.replace_extension("SWD");
-            mapObj->setFilepath(filepath);
-            CFile::save_file(filepath, WLD, mapObj->getMap()); // ignore return for now
-
+            // TODO: wire up to EditorWorld/GameWorld for saving
             Close();
             break;
         }
