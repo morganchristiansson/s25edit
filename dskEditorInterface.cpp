@@ -54,13 +54,9 @@ dskEditorInterface::dskEditorInterface(std::unique_ptr<EditorWorld> world)
     addTool(ID_btToolNewWorld,    MENUBAR_NEWWORLD,  166);
     addTool(ID_btEditorMenu,     MENUBAR_COMPUTER,  203);
 
-    // Right menubar: Cursor, Load/Save buttons
+    // Right menubar: Cursor (coord check in Msg_LeftDown), Load/Save buttons
     const int rx = static_cast<int>(screenSize.x);
     const int ry = static_cast<int>(screenSize.y) / 2;
-
-    AddImageButton(ID_btCursor, DrawPoint(rx - 36, ry - 202), Extent(32, 37),
-                   TextureColor::Invisible,
-                   LOADER.GetImageN("editbob", CURSOR_SYMBOL_ARROW_UP), "")->SetBorder(false);
 
     AddImageButton(ID_btRLoad, DrawPoint(rx - 36, ry + 163), Extent(32, 37),
                    TextureColor::Invisible,
@@ -497,14 +493,17 @@ void dskEditorInterface::Msg_PaintBefore()
                 slotBg->Draw(Rect(rx - 36, ry + yOff, 32, 37), Rect(0, 0, 32, 37), COLOR_WHITE);
         }
 
+        // Draw arrow indicators — glArchivItem_Bitmap::Draw subtracts GetOrigin()
+        // (the libsiedler2 anchor nx/ny), so we add it back to match the old
+        // Texture::draw(Position) which did not adjust for origin.
         if(auto* texUp = LOADER.GetImageN("editbob", CURSOR_SYMBOL_ARROW_UP))
-            texUp->DrawFull(DrawPoint(rx - 33, ry - 237));
+            texUp->DrawFull(DrawPoint(rx - 33 + texUp->getNx(), ry - 237 + texUp->getNy()));
         if(auto* texDn = LOADER.GetImageN("editbob", CURSOR_SYMBOL_ARROW_DOWN))
-            texDn->DrawFull(DrawPoint(rx - 20, ry - 235));
+            texDn->DrawFull(DrawPoint(rx - 20 + texDn->getNx(), ry - 235 + texDn->getNy()));
         if(auto* texDn2 = LOADER.GetImageN("editbob", CURSOR_SYMBOL_ARROW_DOWN))
-            texDn2->DrawFull(DrawPoint(rx - 33, ry - 220));
+            texDn2->DrawFull(DrawPoint(rx - 33 + texDn2->getNx(), ry - 220 + texDn2->getNy()));
         if(auto* texUp2 = LOADER.GetImageN("editbob", CURSOR_SYMBOL_ARROW_UP))
-            texUp2->DrawFull(DrawPoint(rx - 20, ry - 220));
+            texUp2->DrawFull(DrawPoint(rx - 20 + texUp2->getNx(), ry - 220 + texUp2->getNy()));
     }
 }
 
@@ -556,16 +555,24 @@ void dskEditorInterface::Msg_ButtonClick(unsigned ctrl_id)
         case ID_btEditorMenu:
             WINDOWMANAGER.Show(std::make_unique<iwEditorMenu>());
             break;
-        case ID_btCursor:
-            WINDOWMANAGER.Show(std::make_unique<iwEditorCursor>());
-            break;
     }
 }
 
 bool dskEditorInterface::Msg_LeftDown(const MouseCoords& mc)
 {
-    // Check if click is on the map area (not UI chrome)
     const auto screenSize = VIDEODRIVER.GetRenderSize();
+    const int rx = static_cast<int>(screenSize.x);
+    const int ry = static_cast<int>(screenSize.y) / 2;
+
+    // Right-menubar: cursor menu slot (coord check matching CMap.cpp)
+    if(mc.pos.x >= rx - 37 && mc.pos.x <= rx
+       && mc.pos.y >= ry - 239 && mc.pos.y <= ry - 202)
+    {
+        WINDOWMANAGER.Show(std::make_unique<iwEditorCursor>());
+        return true;
+    }
+
+    // Check if click is on the map area (not UI chrome)
     if(mc.pos.x >= 0 && mc.pos.x < static_cast<int>(screenSize.x) - 37
        && mc.pos.y >= 0 && mc.pos.y < static_cast<int>(screenSize.y) - 36)
     {

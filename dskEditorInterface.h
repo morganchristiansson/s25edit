@@ -97,7 +97,6 @@ private:
         ID_FIRST_TOOL = ID_btToolHeightRaise,
         ID_LAST_TOOL = ID_btEditorMenu,
         // Right menubar
-        ID_btCursor,
         ID_btRLoad,
         ID_btRSave,
     };
