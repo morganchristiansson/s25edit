@@ -10,17 +10,12 @@
 #include <libsiedler2/Archiv.h>
 #include <libsiedler2/ArchivItem_Bitmap.h>
 
-CPicture::CPicture(void callback(int), int clickedParam, Position pos, ArchiveID archive, int picture)
-    : pos_(pos), archive_(archive), picture_(picture >= 0 ? picture : 0)
+CPicture::CPicture(void callback(int), int clickedParam, Position pos, ArchiveID archive, unsigned picture)
+    : pos_(pos), archive_(archive), picture_(picture)
 {
     marked = false;
     clicked = false;
-    auto& archiv = global::typedArchives[archive];
-    if(picture >= 0 && static_cast<unsigned>(picture) < archiv.size())
-    {
-        if(auto* bmp = dynamic_cast<const libsiedler2::baseArchivItem_Bitmap*>(archiv.get(picture)))
-            size_ = Extent(bmp->getWidth(), bmp->getHeight());
-    }
+    size_ = global::getBitmapSize(archive, picture);
     this->callback = callback;
     this->clickedParam = clickedParam;
     motionEntryParam = -1;

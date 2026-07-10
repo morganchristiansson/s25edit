@@ -119,7 +119,7 @@ bool CControlContainer::delText(CFont* TextToDelete)
 }
 
 CPicture* CControlContainer::addPicture(void callback(int), int clickedParam, Position pos, ArchiveID archive,
-                                        int localIndex)
+                                        unsigned localIndex)
 {
     pos = pos + Position(border.left, border.top);
 
@@ -132,10 +132,8 @@ bool CControlContainer::delPicture(CPicture* PictureToDelete)
     return eraseElement(pictures, PictureToDelete);
 }
 
-int CControlContainer::addStaticPicture(Position pos, ArchiveID archive, int localIndex)
+int CControlContainer::addStaticPicture(Position pos, ArchiveID archive, unsigned localIndex)
 {
-    if(localIndex < 0)
-        return -1;
     pos = pos + Position(border.left, border.top);
 
     unsigned id = static_pictures.empty() ? 0u : static_pictures.back().id + 1u;

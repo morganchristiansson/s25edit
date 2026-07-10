@@ -41,7 +41,7 @@ private:
     {
         Position pos;
         ArchiveID archive;
-        int pic;
+        unsigned pic;
         unsigned id;
     };
 
@@ -95,9 +95,9 @@ public:
     bool delButton(CButton* ButtonToDelete);
     CFont* addText(std::string string, Position pos, FontSize fontsize, FontColor color = FontColor::Yellow);
     bool delText(CFont* TextToDelete);
-    CPicture* addPicture(void callback(int), int clickedParam, Position pos, ArchiveID archive, int localIndex);
+    CPicture* addPicture(void callback(int), int clickedParam, Position pos, ArchiveID archive, unsigned localIndex);
     bool delPicture(CPicture* PictureToDelete);
-    int addStaticPicture(Position pos, ArchiveID archive, int localIndex);
+    int addStaticPicture(Position pos, ArchiveID archive, unsigned localIndex);
     bool delStaticPicture(int picId);
     CTextfield* addTextfield(Position pos = {0, 0}, Uint16 cols = 10, Uint16 rows = 1,
                              FontSize fontsize = FontSize::Large, FontColor text_color = FontColor::Yellow,

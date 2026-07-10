@@ -17,7 +17,7 @@ private:
     Position pos_;
     Extent size_;
     ArchiveID archive_;
-    int picture_;
+    unsigned picture_;
     bool marked;
     bool clicked;
     void (*callback)(int);
@@ -26,7 +26,7 @@ private:
     int motionLeaveParam;
 
 public:
-    CPicture(void callback(int), int clickedParam, Position pos, ArchiveID archive, int picture);
+    CPicture(void callback(int), int clickedParam, Position pos, ArchiveID archive, unsigned picture);
     // Access
     int getX() const { return pos_.x; };
     int getY() const { return pos_.y; };
