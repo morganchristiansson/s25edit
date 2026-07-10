@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "CGame.h"
-#include "CMap.h"
 #include "WindowManager.h"
 #include "dskMainMenu.h"
+#include "defines.h"
 #include "globals.h"
 #include "Loader.h"
 #include "lua/GameDataLoader.h"
@@ -200,192 +200,24 @@ bool CGame::Init()
         return false;
     }
 
-    // continue loading pictures
-    const struct
-    {
-        ArchiveID id;
-        const char* path;
-    } setupFiles[] = {
-      {ArchiveID::SETUP000, "GFX/PICS/SETUP000.LBM"}, {ArchiveID::SETUP010, "GFX/PICS/SETUP010.LBM"},
-      {ArchiveID::SETUP011, "GFX/PICS/SETUP011.LBM"}, {ArchiveID::SETUP012, "GFX/PICS/SETUP012.LBM"},
-      {ArchiveID::SETUP013, "GFX/PICS/SETUP013.LBM"}, {ArchiveID::SETUP014, "GFX/PICS/SETUP014.LBM"},
-      {ArchiveID::SETUP015, "GFX/PICS/SETUP015.LBM"},
-    };
-    for(const auto& sf : setupFiles)
-    {
-        std::cout << "\nLoading file: " << sf.path << "...";
-        if(!global::loadArchive(sf.id, global::gameDataFilePath / sf.path, nullptr))
-        {
-            std::cout << "failure";
-            // if it doesn't exist, it's probably settlers2+missioncd and we simply load SETUP010.LBM instead
-            std::cout << "\nLoading file: GFX/PICS/SETUP010.LBM instead...";
-            if(!global::loadArchive(ArchiveID::SETUP010, global::gameDataFilePath / "GFX/PICS/SETUP010.LBM", nullptr))
-            {
-                std::cout << "failure";
-                return false;
-            }
-        }
-    }
-
-    { // batch 2: SETUP666-896
-        const struct
-        {
-            ArchiveID id;
-            const char* path;
-        } files[] = {
-          {ArchiveID::SETUP666, "GFX/PICS/SETUP666.LBM"}, {ArchiveID::SETUP667, "GFX/PICS/SETUP667.LBM"},
-          {ArchiveID::SETUP801, "GFX/PICS/SETUP801.LBM"}, {ArchiveID::SETUP802, "GFX/PICS/SETUP802.LBM"},
-          {ArchiveID::SETUP803, "GFX/PICS/SETUP803.LBM"}, {ArchiveID::SETUP804, "GFX/PICS/SETUP804.LBM"},
-          {ArchiveID::SETUP805, "GFX/PICS/SETUP805.LBM"}, {ArchiveID::SETUP806, "GFX/PICS/SETUP806.LBM"},
-          {ArchiveID::SETUP810, "GFX/PICS/SETUP810.LBM"}, {ArchiveID::SETUP811, "GFX/PICS/SETUP811.LBM"},
-          {ArchiveID::SETUP895, "GFX/PICS/SETUP895.LBM"}, {ArchiveID::SETUP896, "GFX/PICS/SETUP896.LBM"},
-        };
-        for(const auto& f : files)
-        {
-            std::cout << "\nLoading file: " << f.path << "...";
-            if(!global::loadArchive(f.id, global::gameDataFilePath / f.path, nullptr))
-            {
-                std::cout << "failure";
-                return false;
-            }
-        }
-    }
-
-    { // batch 3: SETUP897-898 with fallback to SETUP896
-        const struct
-        {
-            ArchiveID id;
-            const char* path;
-        } files[] = {
-          {ArchiveID::SETUP897, "GFX/PICS/SETUP897.LBM"},
-          {ArchiveID::SETUP898, "GFX/PICS/SETUP898.LBM"},
-        };
-        for(const auto& f : files)
-        {
-            std::cout << "\nLoading file: " << f.path << "...";
-            if(!global::loadArchive(f.id, global::gameDataFilePath / f.path, nullptr))
-            {
-                std::cout << "failure";
-                std::cout << "\nLoading file: GFX/PICS/SETUP896.LBM instead...";
-                if(!global::loadArchive(f.id, global::gameDataFilePath / "GFX/PICS/SETUP896.LBM", nullptr))
-                {
-                    std::cout << "failure";
-                    return false;
-                }
-            }
-        }
-    }
-
-    { // batch 4: remaining loading screens
-        const struct
-        {
-            ArchiveID id;
-            const char* path;
-        } files[] = {
-          {ArchiveID::SETUP899, "GFX/PICS/SETUP899.LBM"},
-          {ArchiveID::SETUP990, "GFX/PICS/SETUP990.LBM"},
-          {ArchiveID::WORLD_LBM, "GFX/PICS/WORLD.LBM"},
-          {ArchiveID::WORLDMSK_LBM, "GFX/PICS/WORLDMSK.LBM"},
-        };
-        for(const auto& f : files)
-        {
-            std::cout << "\nLoading file: " << f.path << "...";
-            if(!global::loadArchive(f.id, global::gameDataFilePath / f.path, nullptr))
-            {
-                std::cout << "failure";
-                return false;
-            }
-        }
-    }
-
-    // Load the default palette first so all subsequent loads have it available
+    // Load EDITRES for fonts, and palette
     std::cout << "\nLoading default palette from file: GFX/PALETTE/PAL5.BBM...";
-    if(!global::loadPalette(global::gameDataFilePath / "GFX/PALETTE/PAL5.BBM"))
-    {
-        std::cout << "failure";
-        return false;
-    }
-
-    // Load EDITRES.IDX as a complete bundle in typedArchives
-    {
-        libsiedler2::Archiv editres;
-        int ec = libsiedler2::Load(global::gameDataFilePath / "DATA/EDITRES.IDX", editres, global::currentPalette);
-        if(ec)
-        {
-            std::cout << "\nError loading EDITRES.IDX: " << libsiedler2::getErrorString(ec) << std::endl;
-            return false;
-        }
-        // The palette in EDITRES (item 1) may override the default
-        auto* pal = dynamic_cast<libsiedler2::ArchivItem_Palette*>(editres.get(1));
-        if(pal)
-            global::currentPalette = pal;
-        // Store the complete Archiv in typedArchives
-        // Indices match file positions: 0=Font, 1=Palette, 2=Font, 3=Font, 4-56=Bitmaps
-        global::typedArchives[ArchiveID::EDITRES] = std::move(editres);
-    }
-
-    std::cout << "\nLoading file: DATA/IO/EDITIO.IDX...";
-    if(!global::loadArchive(ArchiveID::EDITIO, global::gameDataFilePath / "DATA/IO/EDITIO.IDX", global::currentPalette))
-    {
-        std::cout << "failure";
-        return false;
-    }
-    std::cout << "done";
-
-    std::cout << "\nLoading file: DATA/EDITBOB.LST...";
-    if(!global::loadArchive(ArchiveID::EDITBOB, global::gameDataFilePath / "DATA/EDITBOB.LST", global::currentPalette))
-    {
-        std::cout << "failure";
-        return false;
-    }
-    std::cout << "done";
-
-    // texture tilesets
-    const ArchiveID texArchives[3] = {ArchiveID::TEX5, ArchiveID::TEX6, ArchiveID::TEX7};
-    const std::string texFiles[3] = {"GFX/TEXTURES/TEX5.LBM", "GFX/TEXTURES/TEX6.LBM", "GFX/TEXTURES/TEX7.LBM"};
-    for(unsigned ti = 0; ti < 3; ti++)
-    {
-        std::cout << "\nLoading file: " << texFiles[ti] << "...";
-        if(!global::loadTileset(texArchives[ti], ti, global::gameDataFilePath / texFiles[ti]))
-        {
-            std::cout << "failure";
-            return false;
-        }
-        std::cout << "done";
-    }
-
-
-
-    // EVERY MISSION-FILE SHOULD BE LOADED SEPARATLY IF THE SPECIFIED MISSION GOES ON -- SO THIS IS TEMPORARY
-    const ArchiveID misArchives[] = {ArchiveID::MIS0BOBS, ArchiveID::MIS1BOBS, ArchiveID::MIS2BOBS,
-                                     ArchiveID::MIS3BOBS, ArchiveID::MIS4BOBS, ArchiveID::MIS5BOBS};
-    const std::string misFiles[] = {"DATA/MIS0BOBS.LST", "DATA/MIS1BOBS.LST", "DATA/MIS2BOBS.LST",
-                                    "DATA/MIS3BOBS.LST", "DATA/MIS4BOBS.LST", "DATA/MIS5BOBS.LST"};
-    for(unsigned mi = 0; mi < 6; mi++)
-    {
-        std::cout << "\nLoading file: " << misFiles[mi] << "...";
-        if(!global::loadArchive(misArchives[mi], global::gameDataFilePath / misFiles[mi], global::currentPalette))
-        {
-            std::cout << "failure";
-            return false;
-        }
-    }
-
     // Load editor resources into the LOADER (already initialized at top)
     {
+        const auto* pal5 = LOADER.GetPaletteN("pal5", 0);
+
         // Main menu background (not in LoadFilesAtStart)
         const auto setup010Path = global::gameDataFilePath / "GFX/PICS/SETUP010.LBM";
         if(boost::filesystem::exists(setup010Path))
             LOADER.Load(setup010Path, nullptr);
 
-        // Editor EDITIO keyed as "editio" (separate from game's IO.IDX)
+        // Editor archives keyed separately from game's IO.IDX etc.
         const auto editioPath = global::gameDataFilePath / "DATA/IO/EDITIO.IDX";
-        LOADER.Load(editioPath, global::currentPalette);
-
+        LOADER.Load(editioPath, pal5);
         const auto editresPath = global::gameDataFilePath / "DATA/EDITRES.IDX";
-        LOADER.Load(editresPath, global::currentPalette);
+        LOADER.Load(editresPath, pal5);
         const auto editbobPath = global::gameDataFilePath / "DATA/EDITBOB.LST";
-        LOADER.Load(editbobPath, global::currentPalette);
+        LOADER.Load(editbobPath, pal5);
 
         auto* cursorNorm = LOADER.GetImageN("editres", CURSOR);
         auto* cursorPressed = LOADER.GetImageN("editres", CURSOR_CLICKED);

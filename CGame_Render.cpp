@@ -4,8 +4,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "CGame.h"
-#include "CMap.h"
-#include "CSurface.h"
 #include "WindowManager.h"
 #include "globals.h"
 #include "drivers/VideoDriverWrapper.h"
@@ -54,42 +52,15 @@ void CGame::Render()
         return;
     }
 
-    // If no map is active, let the WindowManager render the Desktop (and any IngameWindows)
-    if(!MapObj || !MapObj->isActive())
-    {
-        // Reset projection to screen-space before WindowManager draws
-        const auto rs = VIDEODRIVER.GetRenderSize();
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrtho(0, rs.x, rs.y, 0, -1, 1);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
+    // Reset projection to screen-space before WindowManager draws
+    const auto rs = VIDEODRIVER.GetRenderSize();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, rs.x, rs.y, 0, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
-        WINDOWMANAGER.Draw();
-    }
-
-    // render the map if active
-    if(MapObj && MapObj->isActive())
-    {
-        // Set up map-space projection: (displayRect.left, top) maps to (0,0) screen
-        auto viewRect = MapObj->getDisplayRect();
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        glLoadIdentity();
-        glOrtho(static_cast<GLdouble>(viewRect.left), static_cast<GLdouble>(viewRect.left + GameResolution.x),
-                static_cast<GLdouble>(viewRect.top + GameResolution.y), static_cast<GLdouble>(viewRect.top), -1, 1);
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glLoadIdentity();
-
-        MapObj->render();
-
-        // Restore screen-space projection
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
-        glPopMatrix();
-    }
+    WINDOWMANAGER.Draw();
 
     VIDEODRIVER.SwapBuffers();
 

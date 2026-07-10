@@ -1,6 +1,5 @@
 #include "EditorWorldLoader.h"
 #include "Loader.h"
-#include "globals.h"
 #include "libsiedler2/Archiv.h"
 #include "libsiedler2/ArchivItem.h"
 #include "libsiedler2/ArchivItem_Bitmap.h"
@@ -43,7 +42,7 @@ void loadTexturesForEditorWorld(const std::string& gameDataPath)
     const auto map00Path = boost::filesystem::path(gameDataPath) / "DATA/MAP00.LST";
     if(!boost::filesystem::exists(map00Path))
         return;
-    LOADER.Load(map00Path, global::currentPalette);
+    LOADER.Load(map00Path, LOADER.GetPaletteN("pal5", 0));
 
     // Build the clean-index → archive-index lookup
     auto& arch = LOADER.GetArchive("map00");

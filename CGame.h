@@ -14,8 +14,6 @@ class glArchivItem_Bitmap;
 #include <memory>
 #include <vector>
 
-class CMap;
-
 class CGame : public VideoDriverLoaderInterface
 {
 
@@ -52,8 +50,6 @@ private:
 
     // Object for Callbacks
     std::vector<void (*)(int)> Callbacks;
-    // Object for the Map
-    std::unique_ptr<CMap> MapObj;
 
     void SetAppIcon();
     void setGLViewport();
@@ -97,8 +93,4 @@ public:
 
     void RegisterCallback(void (*callback)(int));
     bool UnregisterCallback(void (*callback)(int));
-    void setMapObj(std::unique_ptr<CMap> MapObj);
-    CMap* getMapObj();
-    void delMapObj();
-    void enterEditor(const boost::filesystem::path& filepath);
 };

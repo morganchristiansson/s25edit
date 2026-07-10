@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "CGame.h"
-#include "CMap.h"
 #include "RttrConfig.h"
 #include "defines.h"
 #include "files.h"
@@ -87,26 +86,6 @@ bool CGame::UnregisterCallback(void (*callback)(int))
         return false;
     Callbacks.erase(it);
     return true;
-}
-
-void CGame::setMapObj(std::unique_ptr<CMap> MapObj)
-{
-    this->MapObj = std::move(MapObj);
-}
-
-CMap* CGame::getMapObj()
-{
-    return MapObj.get();
-}
-
-void CGame::delMapObj()
-{
-    MapObj.reset();
-}
-
-void CGame::enterEditor(const boost::filesystem::path& filepath)
-{
-    setMapObj(std::make_unique<CMap>(filepath));
 }
 
 void CGame::LoadSettings()

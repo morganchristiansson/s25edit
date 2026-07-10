@@ -64,7 +64,9 @@ void iwLoadMap::Msg_ButtonClick(unsigned ctrl_id)
                         path.replace_extension(".wld");
                 }
                 if(bfs::exists(path))
-                    global::s2->enterEditor(path);
+                {
+                    // TODO: Load map into EditorWorld and switch to dskEditorInterface
+                }
             }
             Close();
             break;
